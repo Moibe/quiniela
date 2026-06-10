@@ -86,10 +86,12 @@
 		color: #86efac;
 	}
 
-	/* Dos columnas lado a lado; en pantallas angostas se apilan (flex-wrap). */
+	/* Dos columnas lado a lado, centradas en el panel; en pantallas angostas se
+	   apilan (flex-wrap). */
 	.cols {
 		display: flex;
 		flex-wrap: wrap;
+		justify-content: center;
 		gap: 1rem 1.25rem;
 		align-items: flex-start;
 	}
