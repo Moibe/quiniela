@@ -3,6 +3,11 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	// Columna de participante "fijada" por doble clic: se queda pegada junto a las
+	// columnas de equipo (sticky) mientras recorres las demás. null = ninguna.
+	let pinned = $state<number | null>(null);
+	const togglePin = (i: number) => (pinned = pinned === i ? null : i);
 </script>
 
 <section class="participantes">
@@ -15,6 +20,7 @@
 			<span class="leg"><span class="sw sw-res"></span> Acertó resultado · 1 pt</span>
 			<span class="leg"><span class="sw sw-exa"></span> Marcador exacto · 3 pts</span>
 		</div>
+		<p class="hint">💡 Doble clic en un participante para fijar su columna y recorrer las demás.</p>
 	</div>
 
 	<div class="table-wrap">
@@ -29,7 +35,14 @@
 					<th scope="col" class="col-team col-a">Equipo 1</th>
 					<th scope="col" class="col-team col-b">Equipo 2</th>
 					{#each data.participantes as nombre, i (i)}
-						<th scope="col" class="col-p">{nombre}</th>
+						<th
+							scope="col"
+							class="col-p"
+							class:pinned={pinned === i}
+							title="Doble clic para fijar o soltar esta columna"
+							ondblclick={() => togglePin(i)}
+							>{#if pinned === i}<span class="pin" aria-hidden="true">📌</span>{/if}{nombre}</th
+						>
 					{/each}
 				</tr>
 			</thead>
@@ -56,6 +69,7 @@
 						{#each r.pronos as cell, i (i)}
 							<td
 								class="prono"
+								class:pinned={pinned === i}
 								class:hit-resultado={cell.hit === 1}
 								class:hit-exacto={cell.hit === 2}>{cell.s}</td
 							>
@@ -97,9 +111,16 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.4rem 1.1rem;
-		margin: 0 0 0.75rem;
+		margin: 0 0 0.35rem;
 		font-size: 0.72rem;
 		color: rgba(255, 255, 255, 0.62);
+	}
+
+	.hint {
+		margin: 0 0 0.75rem;
+		font-size: 0.72rem;
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.5);
 	}
 
 	.leg {
@@ -233,6 +254,8 @@
 	.col-p {
 		min-width: 2.9rem;
 		color: rgba(255, 255, 255, 0.9);
+		cursor: pointer;
+		user-select: none;
 	}
 
 	.prono {
@@ -281,6 +304,46 @@
 	tbody tr.jugado .col-num {
 		box-shadow: inset 3px 0 0 rgba(190, 18, 60, 0.85);
 		color: rgba(255, 255, 255, 0.82);
+	}
+
+	/* --- Columna fijada por doble clic (sticky-left junto a los equipos) ---
+	   Se pega al borde izquierdo (tras #/Equipo1/Equipo2) con el MISMO offset que
+	   usan esas columnas, así queda visible mientras recorres las demás. Lleva
+	   bordes azules a los lados y fondo opaco para que no se transparente lo que
+	   se desplaza por detrás. */
+	.col-p.pinned {
+		position: sticky;
+		left: calc(var(--w-num) + 2 * var(--w-team));
+		z-index: 3;
+		box-shadow:
+			inset 2px 0 0 rgba(96, 165, 250, 0.85),
+			inset -2px 0 0 rgba(96, 165, 250, 0.65);
+	}
+
+	tbody tr td.prono.pinned {
+		position: sticky;
+		left: calc(var(--w-num) + 2 * var(--w-team));
+		z-index: 1;
+		background: #0a2a19;
+		box-shadow:
+			inset 2px 0 0 rgba(96, 165, 250, 0.75),
+			inset -2px 0 0 rgba(96, 165, 250, 0.55);
+	}
+
+	/* Si la celda fijada además es acierto, conserva su color (rosa/guinda) pero
+	   OPACO: capa de color sobre base oscura, para que tampoco se transparente. */
+	tbody tr td.prono.pinned.hit-resultado {
+		background: linear-gradient(rgba(240, 76, 158, 0.5), rgba(240, 76, 158, 0.5)), #0a2a19;
+		color: #fff;
+	}
+
+	tbody tr td.prono.pinned.hit-exacto {
+		background: linear-gradient(rgba(190, 18, 60, 0.92), rgba(190, 18, 60, 0.92)), #0a2a19;
+		color: #fff;
+	}
+
+	.pin {
+		margin-right: 0.2rem;
 	}
 
 	/* En panel angosto (móvil) achica las columnas congeladas para que no se
