@@ -2,7 +2,7 @@
 // Lee table.txt (generado con `pdftotext -enc UTF-8 -table`) y produce
 // scripts/quiniela-data.json: participantes[] + partidos[{numero,equipoA,
 // equipoB,pronosticos[]}], donde pronosticos[i] = [golesA,golesB] del
-// participante i. Imprime verificación y spot-checks para cotejar vs el PDF.
+// participante i. El número de participantes se detecta del header (dinámico).
 import fs from 'node:fs';
 
 const raw = fs.readFileSync('table.txt', 'utf8');
@@ -12,13 +12,14 @@ const lines = raw.split(/\r?\n/);
 const headerLine = lines.find((l) => /Equipo\s*1/.test(l));
 const headerCols = headerLine.trim().split(/\s{2,}/);
 const participantes = headerCols.slice(2); // quita "Equipo 1" y "Equipo 2"
+const N = participantes.length;
 
 const partidos = [];
 for (const l of lines) {
 	if (!/^\s*\d+\s/.test(l)) continue; // solo filas de datos
 	const scores = l.match(/\d+-\d+/g) || [];
-	if (scores.length !== 29) {
-		throw new Error(`Fila con ${scores.length} marcadores (esperaba 29): ${l}`);
+	if (scores.length !== N) {
+		throw new Error(`Fila con ${scores.length} marcadores (esperaba ${N}): ${l}`);
 	}
 	// Texto antes del primer marcador = "<num>  EquipoA   EquipoB"
 	const firstScoreIdx = l.search(/\d+-\d+/);
@@ -35,32 +36,28 @@ for (const l of lines) {
 
 // --- Verificación ---
 const problems = [];
-if (participantes.length !== 29) problems.push(`participantes=${participantes.length} (esperaba 29)`);
 if (partidos.length !== 72) problems.push(`partidos=${partidos.length} (esperaba 72)`);
 const nums = partidos.map((p) => p.numero);
 for (let i = 1; i <= 72; i++) if (!nums.includes(i)) problems.push(`falta partido ${i}`);
 for (const p of partidos) {
-	if (p.pronosticos.length !== 29) problems.push(`partido ${p.numero}: ${p.pronosticos.length} pronósticos`);
+	if (p.pronosticos.length !== N) problems.push(`partido ${p.numero}: ${p.pronosticos.length} pronósticos`);
 	for (const [a, b] of p.pronosticos)
 		if (!Number.isInteger(a) || !Number.isInteger(b)) problems.push(`partido ${p.numero}: marcador inválido`);
 }
 
-console.log('participantes (' + participantes.length + '):', participantes.join(', '));
-console.log('partidos:', partidos.length, '| pronósticos totales:', partidos.length * 29);
+console.log('participantes (' + N + '):', participantes.join(', '));
+console.log('partidos:', partidos.length, '| pronósticos totales:', partidos.length * N);
 console.log('problemas:', problems.length ? problems.join(' | ') : 'NINGUNO ✓');
 
-const idxMemo = 0, idxMimi = 1, idxRuben = 28;
+const idxLast = N - 1;
 console.log('\n=== SPOT-CHECKS (cotejar vs PDF) ===');
 for (const n of [1, 11, 19, 36, 37, 72]) {
 	const p = partidos.find((x) => x.numero === n);
 	const f = (i) => p.pronosticos[i].join('-');
 	console.log(
-		`#${n} ${p.equipoA} vs ${p.equipoB} | Memo=${f(idxMemo)} Mimi=${f(idxMimi)} Ruben(últ)=${f(idxRuben)}`
+		`#${n} ${p.equipoA} vs ${p.equipoB} | ${participantes[0]}=${f(0)} ${participantes[1]}=${f(1)} ${participantes[idxLast]}(últ)=${f(idxLast)}`
 	);
 }
-
-console.log('\n=== Lista completa de partidos ===');
-console.log(partidos.map((p) => `${p.numero}. ${p.equipoA} - ${p.equipoB}`).join('\n'));
 
 fs.writeFileSync('scripts/quiniela-data.json', JSON.stringify({ participantes, partidos }, null, '\t'));
 console.log('\n→ escrito scripts/quiniela-data.json');
