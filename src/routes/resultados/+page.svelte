@@ -17,10 +17,6 @@
 </script>
 
 <section class="resultados">
-	<div class="head">
-		<h1>Resultados</h1>
-	</div>
-
 	<p class="sub">
 		Resultados oficiales de los 72 partidos de fase de grupos.{#if data.isAdmin}
 			Captura o edita el marcador real de cada partido.{/if}
@@ -95,20 +91,8 @@
 
 <style>
 	.resultados {
-		padding: 1.5rem 1.75rem;
+		padding: 0.85rem 1.75rem 1.25rem;
 		color: rgba(255, 255, 255, 0.95);
-	}
-
-	.head {
-		margin-bottom: 0.4rem;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: 1.6rem;
-		text-shadow:
-			0 0 10px rgba(255, 255, 255, 0.28),
-			0 0 24px rgba(255, 255, 255, 0.14);
 	}
 
 	.sub {

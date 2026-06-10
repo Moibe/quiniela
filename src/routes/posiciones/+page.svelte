@@ -8,7 +8,6 @@
 
 <section class="posiciones">
 	<div class="head">
-		<h1>Posiciones</h1>
 		<p class="sub">
 			3 pts por marcador exacto · 1 pt por resultado correcto ·
 			<strong>{data.partidosJugados}</strong> de {data.totalPartidos} partidos con resultado
@@ -55,7 +54,7 @@
 		flex-direction: column;
 		height: 100%;
 		box-sizing: border-box;
-		padding: 1.25rem 1.5rem 1rem;
+		padding: 0.85rem 1.5rem 1rem;
 		color: rgba(255, 255, 255, 0.95);
 	}
 
@@ -63,16 +62,8 @@
 		flex-shrink: 0;
 	}
 
-	h1 {
-		margin: 0;
-		font-size: 1.6rem;
-		text-shadow:
-			0 0 10px rgba(255, 255, 255, 0.28),
-			0 0 24px rgba(255, 255, 255, 0.14);
-	}
-
 	.sub {
-		margin: 0.3rem 0 1rem;
+		margin: 0 0 1rem;
 		font-size: 0.85rem;
 		font-weight: 400;
 		color: rgba(255, 255, 255, 0.65);
