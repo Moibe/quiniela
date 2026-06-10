@@ -152,6 +152,26 @@
 		background: rgba(34, 197, 94, 0.07);
 	}
 
+	/* Columna Pts resaltada: es la que define el lugar (la "buena").
+	   Banda vertical con bordes verdes a los lados. El tinte de fondo va por
+	   box-shadow inset (no por background) para que NO lo pisen el hover ni el
+	   fondo de las filas de podio. */
+	thead th.col-pts {
+		color: #bbf7d0;
+		background: #0c3d24;
+		box-shadow:
+			inset 2px 0 0 rgba(134, 239, 172, 0.55),
+			inset -2px 0 0 rgba(134, 239, 172, 0.55);
+	}
+
+	tbody td.col-pts {
+		color: #bbf7d0;
+		box-shadow:
+			inset 2px 0 0 rgba(134, 239, 172, 0.45),
+			inset -2px 0 0 rgba(134, 239, 172, 0.45),
+			inset 0 0 0 100px rgba(34, 197, 94, 0.12);
+	}
+
 	.sr-only {
 		position: absolute;
 		width: 1px;
