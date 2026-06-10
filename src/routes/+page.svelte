@@ -67,7 +67,7 @@
 		/* Anchos border-box (incluyen padding) para que el offset de las
 		   columnas pegadas sea exacto y no se traslapen. */
 		--w-num: 3rem;
-		--w-team: 9.5rem;
+		--w-team: 7.5rem;
 	}
 
 	.head {
