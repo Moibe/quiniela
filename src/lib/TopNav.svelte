@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trophy, Users, Newspaper, Lock, LogOut } from '@lucide/svelte';
+  import { Trophy, Users, Newspaper, LogOut } from '@lucide/svelte';
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
 
@@ -76,11 +76,6 @@
         <span>Salir</span>
       </button>
     </form>
-  {:else}
-    <a class="topnav-btn" href="/acceso?redirectTo={redirectTo}" title="Iniciar sesión como administrador">
-      <Lock size={15} strokeWidth={2} aria-hidden="true" />
-      <span>Entrar como admin</span>
-    </a>
   {/if}
 </header>
 
