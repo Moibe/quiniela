@@ -1,0 +1,36 @@
+name: deploy quiniela 🏆⚽
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch: # permite correrlo a mano desde la pestaña Actions
+
+jobs:
+    deploy:
+        name: pull · build · restart
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: install ssh key
+              run: |
+                  install -m 600 -D /dev/null ~/.ssh/id_rsa
+                  echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+
+            # bash -lc carga el PATH (node/npm/pm2) en la sesión SSH no-interactiva.
+            # La cadena con && aborta si algo falla, así pm2 NO reinicia con un build
+            # roto (la versión vieja sigue viva = sin downtime en deploys fallidos).
+            - name: deploy on droplet
+              run: |
+                  ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+                    'bash -lc "cd ~/code/quiniela \
+                      && git checkout main \
+                      && git pull origin main \
+                      && npm ci \
+                      && npm run db:migrate \
+                      && npm run build \
+                      && pm2 restart quiniela"'
+
+            - name: cleanup
+              run: rm -rf ~/.ssh
