@@ -55,9 +55,14 @@
 		</p>
 	{/if}
 
-	<div class="cols">
+	<!-- Pantallas anchas: dos columnas (lugares 1→16 / 17→31). -->
+	<div class="cols-desktop">
 		{@render tabla(izquierda, 'columna izquierda')}
 		{@render tabla(derecha, 'columna derecha')}
+	</div>
+	<!-- Móvil / pantallas angostas: una sola tabla continua con todos. -->
+	<div class="cols-mobile">
+		{@render tabla(data.standings, 'tabla completa')}
 	</div>
 </section>
 
@@ -86,14 +91,33 @@
 		color: #86efac;
 	}
 
-	/* Dos columnas lado a lado, centradas en el panel; en pantallas angostas se
-	   apilan (flex-wrap). */
-	.cols {
+	/* Pantallas anchas: dos columnas centradas, lado a lado (sin envolver, para
+	   no quedar como dos secciones apiladas). */
+	.cols-desktop {
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		justify-content: center;
-		gap: 1rem 1.25rem;
+		gap: 1.25rem;
 		align-items: flex-start;
+	}
+
+	/* Móvil / angosto: una sola tabla continua con los 31, a todo el ancho. */
+	.cols-mobile {
+		display: none;
+	}
+
+	.cols-mobile .table-wrap {
+		max-width: none;
+	}
+
+	/* Bajo ~960px se cambia a una sola tabla (en vez de dos columnas apiladas). */
+	@media (max-width: 60rem) {
+		.cols-desktop {
+			display: none;
+		}
+		.cols-mobile {
+			display: block;
+		}
 	}
 
 	.table-wrap {
