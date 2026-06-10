@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Bandera from '$lib/Bandera.svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -30,7 +31,10 @@
 			{@const jugado = p.golesA !== null && p.golesB !== null}
 			<li class="partido" class:jugado>
 				<span class="num">#{p.numero}</span>
-				<span class="team a">{p.equipoA}</span>
+				<span class="team a">
+					<span class="tname">{p.equipoA}</span>
+					<Bandera equipo={p.equipoA} />
+				</span>
 
 				{#if data.isAdmin}
 					<form method="POST" action="?/setResult" use:enhance class="score-form">
@@ -62,7 +66,10 @@
 					<span class="score-box pending">–<span class="sep">–</span>–</span>
 				{/if}
 
-				<span class="team b">{p.equipoB}</span>
+				<span class="team b">
+					<Bandera equipo={p.equipoB} />
+					<span class="tname">{p.equipoB}</span>
+				</span>
 
 				<span class="meta">
 					{#if jugado}
@@ -143,17 +150,24 @@
 
 	.team {
 		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
 	}
 
 	.team.a {
-		text-align: right;
+		justify-content: flex-end; /* nombre + bandera, hacia el centro */
 	}
 
 	.team.b {
-		text-align: left;
+		justify-content: flex-start; /* bandera + nombre, hacia el centro */
+	}
+
+	.tname {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
 	}
 
 	.score-box {

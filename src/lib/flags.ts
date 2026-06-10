@@ -17,7 +17,7 @@ const MAPA: Record<string, string> = {
 	Canadá: 'ca',
 	Catar: 'qa',
 	Colombia: 'co',
-	Congo: 'cg', // ⚠️ Rep. del Congo (cg). Si es RD Congo, cambiar a 'cd'.
+	Congo: 'cd', // RD Congo (confirmado por el usuario)
 	Corea: 'kr', // Corea del Sur
 	Croacia: 'hr',
 	Curazao: 'cw',
