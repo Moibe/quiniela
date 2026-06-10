@@ -5,17 +5,10 @@ import { partidos } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
+	// Orden FIJO por número de partido (#1→#72): nada se reordena al capturar
+	// resultados; cada partido solo se "enciende" en su lugar. Así coincide fila
+	// por fila con la cuadrícula de Participantes y no hay brincos confusos.
 	const rows = await db.select().from(partidos).orderBy(asc(partidos.numero));
-
-	// Orden de presentación: los ya jugados primero (más reciente arriba) y los
-	// pendientes después en orden de partido (1→72) para capturarlos en secuencia.
-	rows.sort((a, b) => {
-		const aJugado = a.fecha ? 1 : 0;
-		const bJugado = b.fecha ? 1 : 0;
-		if (aJugado !== bJugado) return bJugado - aJugado;
-		if (aJugado === 1) return (b.fecha?.getTime() ?? 0) - (a.fecha?.getTime() ?? 0);
-		return a.numero - b.numero;
-	});
 
 	return { partidos: rows, isAdmin: locals.isAdmin };
 };
