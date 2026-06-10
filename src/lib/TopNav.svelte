@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trophy, Lock, LogOut } from '@lucide/svelte';
+  import { Trophy, Users, Newspaper, Lock, LogOut } from '@lucide/svelte';
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
 
@@ -39,6 +39,29 @@
     <Trophy size={26} strokeWidth={2} aria-hidden="true" />
     <span class="brand-title">Quiniela</span>
   </a>
+
+  <nav class="topnav-nav">
+    <a href="/" class="nav-item" aria-current={page.url.pathname === '/' ? 'page' : undefined}>
+      <Users size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Participantes</span>
+    </a>
+    <a
+      href="/resultados"
+      class="nav-item"
+      aria-current={page.url.pathname === '/resultados' ? 'page' : undefined}
+    >
+      <Newspaper size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Resultados</span>
+    </a>
+    <a
+      href="/posiciones"
+      class="nav-item"
+      aria-current={page.url.pathname === '/posiciones' ? 'page' : undefined}
+    >
+      <Trophy size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Posiciones</span>
+    </a>
+  </nav>
 
   <div class="spacer"></div>
 
@@ -111,6 +134,62 @@
 
   .spacer {
     flex: 1;
+  }
+
+  /* Navegación principal (antes en la barra lateral). */
+  .topnav-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 1.25rem;
+    padding-left: 1.25rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.8rem;
+    color: rgba(255, 255, 255, 0.88);
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    text-shadow:
+      0 0 8px rgba(255, 255, 255, 0.18),
+      0 0 18px rgba(255, 255, 255, 0.08);
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    white-space: nowrap;
+  }
+
+  .nav-item:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #fff;
+  }
+
+  .nav-item[aria-current='page'] {
+    color: #fff;
+    background: rgba(37, 99, 235, 0.18);
+    border-color: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.18) inset;
+  }
+
+  /* En pantallas chicas: solo íconos (texto oculto) para que no se desborde. */
+  @media (max-width: 680px) {
+    .topnav-nav {
+      margin-left: 0.6rem;
+      padding-left: 0.6rem;
+      gap: 0.1rem;
+    }
+    .nav-item {
+      padding: 0.45rem 0.55rem;
+    }
+    .nav-item span,
+    .topnav-btn span {
+      display: none;
+    }
   }
 
   /* Chip de sesión de admin. */

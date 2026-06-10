@@ -3,29 +3,10 @@
 	import 'flag-icons/css/flag-icons.min.css';
 	import type { Snippet } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
-	import Sidebar from '$lib/Sidebar.svelte';
 	import TopNav from '$lib/TopNav.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
-	let orientation = $state<'vertical' | 'horizontal'>('vertical');
-	let collapsed = $state(false);
-
-	// Anima el colapso/expansión con la View Transition API cuando está
-	// disponible (mismo recurso visual que estudio-cine).
-	function withTransition(fn: () => void) {
-		if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-			(document as any).startViewTransition(fn);
-		} else {
-			fn();
-		}
-	}
-
-	function toggleCollapsed() {
-		withTransition(() => {
-			collapsed = !collapsed;
-		});
-	}
 </script>
 
 <svelte:head>
@@ -33,8 +14,7 @@
 </svelte:head>
 
 <TopNav isAdmin={data.isAdmin} />
-<Sidebar {orientation} {collapsed} {toggleCollapsed} />
-<main class="{orientation}{collapsed ? ' collapsed' : ''}">
+<main>
 	<div class="work-scroll">
 		{@render children()}
 	</div>
@@ -91,9 +71,11 @@
 	}
 
 	/* Panel principal glass — mismo lenguaje que las barras. */
+	/* Panel principal glass — ahora a todo el ancho (sin barra lateral). */
 	main {
 		position: fixed;
 		top: calc(2rem + var(--topnav-height));
+		left: 1rem;
 		right: 1rem;
 		bottom: 1rem;
 		box-sizing: border-box;
@@ -106,7 +88,6 @@
 			inset 0 1px 0 rgba(255, 255, 255, 0.08),
 			0 4px 16px rgba(0, 0, 0, 0.12);
 		overflow: hidden;
-		transition: left 0.22s ease-out;
 	}
 
 	.work-scroll {
@@ -117,21 +98,5 @@
 		right: 0;
 		overflow-y: auto;
 		overflow-x: hidden;
-	}
-
-	main.vertical {
-		left: calc(var(--sidebar-width, 240px) + 2rem);
-	}
-
-	main.vertical.collapsed {
-		left: 2rem;
-	}
-
-	main.horizontal {
-		left: 1rem;
-	}
-
-	main.horizontal.collapsed {
-		left: 1rem;
 	}
 </style>
