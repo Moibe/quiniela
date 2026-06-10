@@ -76,11 +76,9 @@
 				</span>
 
 				<span class="meta">
-					{#if p.enCurso}
-						<span class="encurso"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
-					{:else if jugado}
+					{#if jugado && !p.enCurso}
 						<time class="when">{fmtFecha(p.fecha as Date)}</time>
-					{:else}
+					{:else if !jugado}
 						<span class="pendiente">pendiente</span>
 					{/if}
 					{#if data.isAdmin && jugado}
@@ -90,6 +88,10 @@
 						</form>
 					{/if}
 				</span>
+
+				{#if p.enCurso}
+					<span class="encurso"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
+				{/if}
 
 				{#if actionError && actionError.partidoId === p.id}
 					<span class="row-error">{actionError.error}</span>
@@ -272,11 +274,16 @@
 		color: rgba(255, 255, 255, 0.4);
 	}
 
-	/* Leyenda "Partido en Curso" con punto pulsante (en vivo). */
+	/* Leyenda "Partido en Curso": línea propia CENTRADA debajo del partido, para
+	   no desbalancear el grid de la fila (los equipos quedan centrados como en las
+	   demás). Con punto pulsante (en vivo). */
 	.encurso {
+		grid-column: 1 / -1;
+		justify-self: center;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
+		margin-top: 0.15rem;
 		font-size: 0.72rem;
 		font-weight: 700;
 		color: #fcd34d;
