@@ -11,6 +11,10 @@
 			Pronósticos de los {data.participantes.length} participantes · {data.rows.length} partidos de fase
 			de grupos
 		</p>
+		<div class="leyenda" aria-hidden="true">
+			<span class="leg"><span class="sw sw-res"></span> Acertó resultado · 1 pt</span>
+			<span class="leg"><span class="sw sw-exa"></span> Marcador exacto · 3 pts</span>
+		</div>
 	</div>
 
 	<div class="table-wrap">
@@ -31,8 +35,12 @@
 			</thead>
 			<tbody>
 				{#each data.rows as r (r.numero)}
-					<tr>
-						<th scope="row" class="col-num">{r.numero}</th>
+					<tr class:jugado={r.jugado}>
+						<th
+							scope="row"
+							class="col-num"
+							title={r.jugado ? `Resultado real: ${r.real}` : undefined}>{r.numero}</th
+						>
 						<td class="col-team col-a">
 							<div class="ti ti-a">
 								<span class="tname" title={r.equipoA}>{r.equipoA}</span>
@@ -45,8 +53,12 @@
 								<span class="tname" title={r.equipoB}>{r.equipoB}</span>
 							</div>
 						</td>
-						{#each r.pronos as s, i (i)}
-							<td class="prono">{s}</td>
+						{#each r.pronos as cell, i (i)}
+							<td
+								class="prono"
+								class:hit-resultado={cell.hit === 1}
+								class:hit-exacto={cell.hit === 2}>{cell.s}</td
+							>
 						{/each}
 					</tr>
 				{/each}
@@ -74,10 +86,45 @@
 	}
 
 	.sub {
-		margin: 0 0 0.75rem;
+		margin: 0 0 0.4rem;
 		font-size: 0.85rem;
 		font-weight: 400;
 		color: rgba(255, 255, 255, 0.7);
+	}
+
+	/* Leyenda de colores: explica el guinda que ilumina la cuadrícula. */
+	.leyenda {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 1.1rem;
+		margin: 0 0 0.75rem;
+		font-size: 0.72rem;
+		color: rgba(255, 255, 255, 0.62);
+	}
+
+	.leg {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.sw {
+		width: 1.5rem;
+		height: 0.85rem;
+		border-radius: 4px;
+		flex-shrink: 0;
+	}
+
+	.sw-res {
+		background: rgba(159, 18, 57, 0.4);
+		border: 1px solid rgba(190, 18, 60, 0.5);
+	}
+
+	.sw-exa {
+		background: rgba(190, 18, 60, 0.88);
+		box-shadow:
+			inset 0 0 0 1px rgba(253, 164, 175, 0.6),
+			0 0 8px rgba(244, 63, 94, 0.55);
 	}
 
 	.table-wrap {
@@ -204,6 +251,35 @@
 	tbody tr:hover .col-num,
 	tbody tr:hover .col-team {
 		background: #0f3a23;
+	}
+
+	/* --- Iluminado en guinda según el acierto ---
+	   Van DESPUÉS del striping y del hover para ganar la cascada (misma
+	   especificidad → gana el último): así una celda acertada conserva su
+	   guinda aunque la fila esté en hover o sea fila par. */
+	tbody tr .prono.hit-resultado {
+		background: rgba(159, 18, 57, 0.4);
+		color: #ffe4ec;
+		font-weight: 600;
+		transition: background 0.25s ease;
+	}
+
+	tbody tr .prono.hit-exacto {
+		background: rgba(190, 18, 60, 0.88);
+		color: #fff;
+		font-weight: 700;
+		box-shadow:
+			inset 0 0 0 1px rgba(253, 164, 175, 0.55),
+			0 0 10px rgba(244, 63, 94, 0.45);
+		text-shadow: 0 0 8px rgba(253, 164, 175, 0.5);
+		transition: background 0.25s ease;
+	}
+
+	/* Partido ya jugado: barra guinda al inicio de la fila (en la columna #),
+	   para distinguir "ya hay resultado" de "aún no se juega". */
+	tbody tr.jugado .col-num {
+		box-shadow: inset 3px 0 0 rgba(190, 18, 60, 0.85);
+		color: rgba(255, 255, 255, 0.82);
 	}
 
 	/* En panel angosto (móvil) achica las columnas congeladas para que no se
