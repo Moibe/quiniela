@@ -18,19 +18,14 @@ jobs:
                   echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
                   ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
 
-            # bash -lc carga el PATH (node/npm/pm2) en la sesión SSH no-interactiva.
-            # La cadena con && aborta si algo falla, así pm2 NO reinicia con un build
-            # roto (la versión vieja sigue viva = sin downtime en deploys fallidos).
+            # Node/npm/pm2 viven en nvm; en una shell SSH no-interactiva NO están en
+            # el PATH (el .bashrc que carga nvm se salta en shells no-interactivas),
+            # así que cargamos nvm explícitamente antes de usarlos. Todo en una línea
+            # para evitar líos de comillas/continuaciones. La cadena con && aborta si
+            # algo falla, así pm2 NO reinicia con un build roto (sin downtime).
             - name: deploy on droplet
               run: |
-                  ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-                    'bash -lc "cd ~/code/quiniela \
-                      && git checkout main \
-                      && git pull origin main \
-                      && npm ci \
-                      && npm run db:migrate \
-                      && npm run build \
-                      && pm2 restart quiniela"'
+                  ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use node >/dev/null && cd ~/code/quiniela && git checkout main && git pull origin main && npm ci && npm run db:migrate && npm run build && pm2 restart quiniela'
 
             - name: cleanup
               run: rm -rf ~/.ssh
