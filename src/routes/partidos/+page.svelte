@@ -19,13 +19,14 @@
 <section class="resultados">
 	<p class="sub">
 		Resultados oficiales de los 72 partidos de fase de grupos.{#if data.isAdmin}
-			Captura o edita el marcador real de cada partido.{/if}
+			<strong>✓</strong> guarda el resultado final · <strong>⏱</strong> guarda un parcial y marca «Partido
+			en Curso» (captura en vivo).{/if}
 	</p>
 
 	<ul class="list">
 		{#each data.partidos as p (p.id)}
 			{@const jugado = p.golesA !== null && p.golesB !== null}
-			<li class="partido" class:jugado>
+			<li class="partido" class:jugado class:encurso={p.enCurso}>
 				<span class="num">#{p.numero}</span>
 				<span class="team a">
 					<span class="tname">{p.equipoA}</span>
@@ -54,7 +55,14 @@
 							placeholder="–"
 							value={p.golesB ?? ''}
 						/>
-						<button type="submit" class="save-btn" title="Guardar resultado" aria-label="Guardar">✓</button>
+						<button type="submit" class="save-btn" title="Guardar resultado FINAL" aria-label="Guardar final">✓</button>
+						<button
+							type="submit"
+							formaction="?/setPartial"
+							class="save-btn partial"
+							title="Guardar PARCIAL · marca «Partido en Curso» (captura en vivo)"
+							aria-label="Guardar parcial">⏱</button
+						>
 					</form>
 				{:else if jugado}
 					<span class="score-box">{p.golesA}<span class="sep">–</span>{p.golesB}</span>
@@ -68,16 +76,18 @@
 				</span>
 
 				<span class="meta">
-					{#if jugado}
+					{#if p.enCurso}
+						<span class="encurso"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
+					{:else if jugado}
 						<time class="when">{fmtFecha(p.fecha as Date)}</time>
-						{#if data.isAdmin}
-							<form method="POST" action="?/clearResult" use:enhance class="clear-form">
-								<input type="hidden" name="partidoId" value={p.id} />
-								<button type="submit" class="clear-btn" title="Limpiar resultado" aria-label="Limpiar">✕</button>
-							</form>
-						{/if}
 					{:else}
 						<span class="pendiente">pendiente</span>
+					{/if}
+					{#if data.isAdmin && jugado}
+						<form method="POST" action="?/clearResult" use:enhance class="clear-form">
+							<input type="hidden" name="partidoId" value={p.id} />
+							<button type="submit" class="clear-btn" title="Limpiar resultado" aria-label="Limpiar">✕</button>
+						</form>
 					{/if}
 				</span>
 
@@ -125,6 +135,12 @@
 	.partido.jugado {
 		background: rgba(34, 197, 94, 0.08);
 		border-color: rgba(34, 197, 94, 0.28);
+	}
+
+	/* Partido en curso (marcador provisional): ámbar para distinguirlo del final. */
+	.partido.encurso {
+		background: rgba(245, 158, 11, 0.1);
+		border-color: rgba(245, 158, 11, 0.45);
 	}
 
 	.num {
@@ -226,6 +242,17 @@
 		border-color: rgba(34, 197, 94, 0.7);
 	}
 
+	/* Botón de guardado PARCIAL (en curso): ámbar, para diferenciarlo del ✓ verde. */
+	.save-btn.partial {
+		background: rgba(245, 158, 11, 0.2);
+		border-color: rgba(245, 158, 11, 0.5);
+	}
+
+	.save-btn.partial:hover {
+		background: rgba(245, 158, 11, 0.34);
+		border-color: rgba(245, 158, 11, 0.72);
+	}
+
 	.meta {
 		display: inline-flex;
 		align-items: center;
@@ -243,6 +270,37 @@
 		font-size: 0.72rem;
 		font-style: italic;
 		color: rgba(255, 255, 255, 0.4);
+	}
+
+	/* Leyenda "Partido en Curso" con punto pulsante (en vivo). */
+	.encurso {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: #fcd34d;
+		white-space: nowrap;
+	}
+
+	.dot-live {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #f59e0b;
+		animation: pulso 1.6s ease-out infinite;
+	}
+
+	@keyframes pulso {
+		0% {
+			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55);
+		}
+		70% {
+			box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+		}
 	}
 
 	.clear-form {

@@ -1,0 +1,1 @@
+ALTER TABLE `partidos` ADD `en_curso` integer DEFAULT false NOT NULL;

@@ -18,7 +18,10 @@ export const partidos = sqliteTable('partidos', {
 	golesA: integer('goles_a'),
 	golesB: integer('goles_b'),
 	// Cuándo se registró/jugó el resultado real (null mientras esté pendiente).
-	fecha: integer('fecha', { mode: 'timestamp' })
+	fecha: integer('fecha', { mode: 'timestamp' }),
+	// true = marcador PROVISIONAL capturado en vivo (muestra "Partido en Curso");
+	// false = resultado final. En ambos casos el marcador cuenta para los puntos.
+	enCurso: integer('en_curso', { mode: 'boolean' }).notNull().default(false)
 });
 
 // La matriz de pronósticos: 72 partidos × 29 participantes. golesA/golesB son
