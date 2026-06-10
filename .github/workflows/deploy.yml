@@ -18,13 +18,16 @@ jobs:
                   echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
                   ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
 
-            # bash -lc carga el PATH (node/npm/pm2) en la sesión SSH no-interactiva.
+            # bash -lc carga /etc/profile y ~/.bash_profile, pero nvm suele estar solo
+            # en ~/.bashrc (shell interactivo). Por eso cargamos ~/.nvm/nvm.sh
+            # explícitamente para garantizar que npm/node/pm2 estén en el PATH.
             # La cadena con && aborta si algo falla, así pm2 NO reinicia con un build
             # roto (la versión vieja sigue viva = sin downtime en deploys fallidos).
             - name: deploy on droplet
               run: |
                   ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-                    'bash -lc "cd ~/code/quiniela \
+                    'bash -lc ". ~/.nvm/nvm.sh \
+                      && cd ~/code/quiniela \
                       && git checkout main \
                       && git pull origin main \
                       && npm ci \
