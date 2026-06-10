@@ -39,31 +39,33 @@
 		font-weight: 700;
 	}
 
-	/* Scrollbars custom — finas y claras sobre el fondo oscuro. */
+	/* Scrollbars custom — más anchos, visibles y manejables, pero elegantes:
+	   pastilla redondeada dentro de un carril sutil sobre el fondo verde. */
 	:global(*) {
-		scrollbar-width: thin;
-		scrollbar-color: rgba(255, 255, 255, 0.45) transparent;
+		scrollbar-width: auto;
+		scrollbar-color: rgba(255, 255, 255, 0.55) rgba(255, 255, 255, 0.1);
 	}
 	:global(::-webkit-scrollbar) {
-		width: 8px;
-		height: 8px;
+		width: 14px;
+		height: 14px;
 	}
 	:global(::-webkit-scrollbar-track) {
-		background: transparent;
+		background: rgba(255, 255, 255, 0.07);
+		border-radius: 999px;
 	}
 	:global(::-webkit-scrollbar-thumb) {
-		background: rgba(255, 255, 255, 0.45);
+		background: rgba(255, 255, 255, 0.55);
 		border-radius: 999px;
-		border: 2px solid transparent;
+		border: 3px solid transparent;
 		background-clip: padding-box;
 		transition: background-color 0.18s ease;
 	}
 	:global(::-webkit-scrollbar-thumb:hover) {
-		background: rgba(255, 255, 255, 0.65);
+		background: rgba(255, 255, 255, 0.78);
 		background-clip: padding-box;
 	}
 	:global(::-webkit-scrollbar-thumb:active) {
-		background: rgba(255, 255, 255, 0.85);
+		background: rgba(255, 255, 255, 0.92);
 		background-clip: padding-box;
 	}
 	:global(::-webkit-scrollbar-corner) {
