@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Bandera from '$lib/Bandera.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -33,8 +34,18 @@
 				{#each data.rows as r (r.numero)}
 					<tr>
 						<th scope="row" class="col-num">{r.numero}</th>
-						<td class="col-team col-a" title={r.equipoA}>{r.equipoA}</td>
-						<td class="col-team col-b" title={r.equipoB}>{r.equipoB}</td>
+						<td class="col-team col-a">
+							<div class="ti ti-a">
+								<span class="tname" title={r.equipoA}>{r.equipoA}</span>
+								<Bandera equipo={r.equipoA} />
+							</div>
+						</td>
+						<td class="col-team col-b">
+							<div class="ti ti-b">
+								<Bandera equipo={r.equipoB} />
+								<span class="tname" title={r.equipoB}>{r.equipoB}</span>
+							</div>
+						</td>
 						{#each r.pronos as s, i (i)}
 							<td class="prono">{s}</td>
 						{/each}
@@ -56,7 +67,7 @@
 		/* Anchos border-box (incluyen padding) para que el offset de las
 		   columnas pegadas sea exacto y no se traslapen. */
 		--w-num: 3rem;
-		--w-team: 8rem;
+		--w-team: 9.5rem;
 	}
 
 	.head {
@@ -147,9 +158,31 @@
 		min-width: var(--w-team);
 		max-width: var(--w-team);
 		overflow: hidden;
-		text-overflow: ellipsis;
 		background: #0a2a19;
 		font-weight: 400;
+	}
+
+	/* Bandera + nombre dentro de la celda del equipo. */
+	.ti {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		overflow: hidden;
+	}
+
+	.ti-a {
+		justify-content: flex-end; /* nombre + bandera, pegados a la derecha (al centro) */
+	}
+
+	.ti-b {
+		justify-content: flex-start; /* bandera + nombre, pegados a la izquierda (al centro) */
+	}
+
+	.tname {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
 	}
 
 	/* Esquinas (header + columna pegada): por encima de ambos. */
@@ -186,7 +219,7 @@
 	   coman toda la pantalla; el offset usa las mismas vars, así que sigue exacto. */
 	@media (max-width: 600px) {
 		.participantes {
-			--w-team: 5rem;
+			--w-team: 6.5rem;
 		}
 	}
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '@fontsource/roboto/700.css';
+	import 'flag-icons/css/flag-icons.min.css';
 	import type { Snippet } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import Sidebar from '$lib/Sidebar.svelte';
