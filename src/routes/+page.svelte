@@ -116,8 +116,8 @@
 	}
 
 	.sw-res {
-		background: rgba(228, 0, 124, 0.5);
-		border: 1px solid rgba(228, 0, 124, 0.75);
+		background: rgba(240, 76, 158, 0.55);
+		border: 1px solid rgba(240, 76, 158, 0.8);
 	}
 
 	.sw-exa {
@@ -257,9 +257,9 @@
 	   Van DESPUÉS del striping y del hover para ganar la cascada (misma
 	   especificidad → gana el último): así una celda acertada conserva su
 	   guinda aunque la fila esté en hover o sea fila par. */
-	/* Acertó resultado (1 pt): rosa mexicano. */
+	/* Acertó resultado (1 pt): rosa mexicano (un poco más claro). */
 	tbody tr .prono.hit-resultado {
-		background: rgba(228, 0, 124, 0.45);
+		background: rgba(240, 76, 158, 0.45);
 		color: #fff;
 		font-weight: 600;
 		transition: background 0.25s ease;
