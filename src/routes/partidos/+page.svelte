@@ -76,9 +76,11 @@
 				</span>
 
 				<span class="meta">
-					{#if jugado && !p.enCurso}
+					{#if p.enCurso}
+						<span class="encurso"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
+					{:else if jugado}
 						<time class="when">{fmtFecha(p.fecha as Date)}</time>
-					{:else if !jugado}
+					{:else}
 						<span class="pendiente">pendiente</span>
 					{/if}
 					{#if data.isAdmin && jugado}
@@ -88,10 +90,6 @@
 						</form>
 					{/if}
 				</span>
-
-				{#if p.enCurso}
-					<span class="encurso"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
-				{/if}
 
 				{#if actionError && actionError.partidoId === p.id}
 					<span class="row-error">{actionError.error}</span>
@@ -175,7 +173,9 @@
 	.score-box {
 		display: inline-flex;
 		align-items: center;
+		justify-content: center;
 		gap: 0.35rem;
+		min-width: 3rem;
 		font-size: 1.05rem;
 		padding: 0.1rem 0.65rem;
 		background: rgba(255, 255, 255, 0.06);
@@ -255,12 +255,15 @@
 		border-color: rgba(245, 158, 11, 0.72);
 	}
 
+	/* Ancho FIJO de la columna derecha: así el partido (equipos + marcador) queda
+	   en la MISMA posición en todas las filas, sin importar si a la derecha va la
+	   hora, "pendiente" o la leyenda "Partido en Curso". */
 	.meta {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 		justify-content: flex-end;
-		min-width: 6.5rem;
+		width: 10rem;
 	}
 
 	.when {
@@ -274,16 +277,12 @@
 		color: rgba(255, 255, 255, 0.4);
 	}
 
-	/* Leyenda "Partido en Curso": línea propia CENTRADA debajo del partido, para
-	   no desbalancear el grid de la fila (los equipos quedan centrados como en las
-	   demás). Con punto pulsante (en vivo). */
+	/* Leyenda "Partido en Curso" a la derecha (dentro de meta, ancho fijo), con
+	   punto pulsante (en vivo). */
 	.encurso {
-		grid-column: 1 / -1;
-		justify-self: center;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
-		margin-top: 0.15rem;
 		font-size: 0.72rem;
 		font-weight: 700;
 		color: #fcd34d;
@@ -336,5 +335,14 @@
 		grid-column: 1 / -1;
 		font-size: 0.78rem;
 		color: #fca5a5;
+	}
+
+	/* En móvil relajamos el ancho fijo de la derecha para que no se aprieten los
+	   equipos (la alineación perfecta importa más en pantallas anchas). */
+	@media (max-width: 620px) {
+		.meta {
+			width: auto;
+			min-width: 4.5rem;
+		}
 	}
 </style>
