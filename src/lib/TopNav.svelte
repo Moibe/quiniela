@@ -51,7 +51,7 @@
       aria-current={page.url.pathname === '/resultados' ? 'page' : undefined}
     >
       <Newspaper size={16} strokeWidth={2.2} aria-hidden="true" />
-      <span>Resultados</span>
+      <span>Partidos</span>
     </a>
     <a
       href="/posiciones"
@@ -59,7 +59,7 @@
       aria-current={page.url.pathname === '/posiciones' ? 'page' : undefined}
     >
       <Trophy size={16} strokeWidth={2.2} aria-hidden="true" />
-      <span>Posiciones</span>
+      <span>Lugares</span>
     </a>
   </nav>
 
