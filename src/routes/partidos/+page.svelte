@@ -28,6 +28,8 @@
 			{@const jugado = p.golesA !== null && p.golesB !== null}
 			<li class="partido" class:jugado class:encurso={p.enCurso}>
 				<span class="num">#{p.numero}</span>
+
+					<div class="cuerpo">
 				<span class="team a">
 					<span class="tname">{p.equipoA}</span>
 					<Bandera equipo={p.equipoA} />
@@ -75,7 +77,9 @@
 					<span class="tname">{p.equipoB}</span>
 				</span>
 
-				<span class="meta">
+				</div>
+
+					<span class="meta">
 					{#if p.enCurso}
 						<span class="encurso"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
 					{:else if jugado}
@@ -123,13 +127,24 @@
 
 	.partido {
 		display: grid;
-		grid-template-columns: 2.6rem minmax(0, 1fr) auto minmax(0, 1fr) auto;
+		grid-template-columns: 2.6rem 1fr 10rem; /* # | cuerpo (equipos+marcador) | meta */
 		align-items: center;
 		gap: 0.8rem;
 		padding: 0.5rem 0.9rem;
 		background: rgba(255, 255, 255, 0.03);
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 10px;
+	}
+
+	/* Cuerpo del partido (equipos + marcador): vive en la columna central (1fr),
+	   de ancho CONSTANTE e independiente de lo que tenga la derecha. Así centra
+	   equipos y marcador IGUAL en todas las filas (jugado, en curso o pendiente). */
+	.cuerpo {
+		min-width: 0;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: center;
+		gap: 0.8rem;
 	}
 
 	.partido.jugado {
@@ -258,12 +273,14 @@
 	/* Ancho FIJO de la columna derecha: así el partido (equipos + marcador) queda
 	   en la MISMA posición en todas las filas, sin importar si a la derecha va la
 	   hora, "pendiente" o la leyenda "Partido en Curso". */
+	/* Columna derecha (ancho fijo 10rem en el grid): contenido alineado a la
+	   derecha. El ancho fijo + el cuerpo central hacen que el partido quede en la
+	   misma posición en todas las filas. */
 	.meta {
+		justify-self: end;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
-		justify-content: flex-end;
-		width: 10rem;
 	}
 
 	.when {
@@ -337,12 +354,11 @@
 		color: #fca5a5;
 	}
 
-	/* En móvil relajamos el ancho fijo de la derecha para que no se aprieten los
-	   equipos (la alineación perfecta importa más en pantallas anchas). */
+	/* En móvil la columna derecha se ajusta al contenido (no fija 10rem) para que
+	   no se aprieten los equipos. */
 	@media (max-width: 620px) {
-		.meta {
-			width: auto;
-			min-width: 4.5rem;
+		.partido {
+			grid-template-columns: 2.2rem 1fr auto;
 		}
 	}
 </style>
