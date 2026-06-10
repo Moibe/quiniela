@@ -4,10 +4,34 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Columna de participante "fijada" por doble clic: se queda pegada junto a las
-	// columnas de equipo (sticky) mientras recorres las demás. null = ninguna.
+	// Interacción de columnas (clic en el nombre del participante):
+	//  • 1 clic     → resalta / quita el resalte de la columna (color, no se mueve).
+	//  • doble clic → fija / suelta la columna (sticky) para recorrer las demás.
+	// Un temporizador corto distingue el clic simple del doble.
+	let highlighted = $state<number | null>(null);
 	let pinned = $state<number | null>(null);
-	const togglePin = (i: number) => (pinned = pinned === i ? null : i);
+	let clickTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function onColClick(i: number) {
+		if (clickTimer !== null) {
+			// Es el segundo clic (lo atenderá el doble clic): cancelamos el simple.
+			clearTimeout(clickTimer);
+			clickTimer = null;
+			return;
+		}
+		clickTimer = setTimeout(() => {
+			clickTimer = null;
+			highlighted = highlighted === i ? null : i;
+		}, 250);
+	}
+
+	function onColDblClick(i: number) {
+		if (clickTimer !== null) {
+			clearTimeout(clickTimer);
+			clickTimer = null;
+		}
+		pinned = pinned === i ? null : i;
+	}
 </script>
 
 <section class="participantes">
@@ -20,7 +44,10 @@
 			<span class="leg"><span class="sw sw-res"></span> Acertó resultado · 1 pt</span>
 			<span class="leg"><span class="sw sw-exa"></span> Marcador exacto · 3 pts</span>
 		</div>
-		<p class="hint">💡 Doble clic en un participante para fijar su columna y recorrer las demás.</p>
+		<p class="hint">
+			💡 Clic en un participante para resaltar su columna · doble clic para fijarla y recorrer las
+			demás.
+		</p>
 	</div>
 
 	<div class="table-wrap">
@@ -38,9 +65,11 @@
 						<th
 							scope="col"
 							class="col-p"
+							class:highlighted={highlighted === i}
 							class:pinned={pinned === i}
-							title="Doble clic para fijar o soltar esta columna"
-							ondblclick={() => togglePin(i)}
+							title="1 clic resalta · doble clic fija/suelta"
+							onclick={() => onColClick(i)}
+							ondblclick={() => onColDblClick(i)}
 							>{#if pinned === i}<span class="pin" aria-hidden="true">📌</span>{/if}{nombre}</th
 						>
 					{/each}
@@ -69,6 +98,7 @@
 						{#each r.pronos as cell, i (i)}
 							<td
 								class="prono"
+								class:highlighted={highlighted === i}
 								class:pinned={pinned === i}
 								class:hit-resultado={cell.hit === 1}
 								class:hit-exacto={cell.hit === 2}>{cell.s}</td
@@ -344,6 +374,37 @@
 
 	.pin {
 		margin-right: 0.2rem;
+	}
+
+	/* --- Columna RESALTADA por 1 clic (spotlight): aclara la columna y le pone
+	   bordes blancos. Va por box-shadow para sobrevivir hover/striping/aciertos y
+	   combinarse con el pin. Si está fijada Y resaltada → bordes azules + aclarado. */
+	.col-p.highlighted {
+		box-shadow:
+			inset 2px 0 0 rgba(255, 255, 255, 0.6),
+			inset -2px 0 0 rgba(255, 255, 255, 0.6),
+			inset 0 0 0 100px rgba(255, 255, 255, 0.08);
+	}
+
+	tbody tr td.prono.highlighted {
+		box-shadow:
+			inset 2px 0 0 rgba(255, 255, 255, 0.55),
+			inset -2px 0 0 rgba(255, 255, 255, 0.55),
+			inset 0 0 0 100px rgba(255, 255, 255, 0.12);
+	}
+
+	.col-p.pinned.highlighted {
+		box-shadow:
+			inset 2px 0 0 rgba(96, 165, 250, 0.85),
+			inset -2px 0 0 rgba(96, 165, 250, 0.65),
+			inset 0 0 0 100px rgba(255, 255, 255, 0.08);
+	}
+
+	tbody tr td.prono.pinned.highlighted {
+		box-shadow:
+			inset 2px 0 0 rgba(96, 165, 250, 0.75),
+			inset -2px 0 0 rgba(96, 165, 250, 0.55),
+			inset 0 0 0 100px rgba(255, 255, 255, 0.12);
 	}
 
 	/* En panel angosto (móvil) achica las columnas congeladas para que no se
