@@ -189,6 +189,15 @@
 		border-radius: 7px;
 		padding: 0.3rem 0.2rem;
 		color-scheme: dark;
+		/* Sin flechitas de spinner: el número se escribe directo. */
+		appearance: textfield;
+		-moz-appearance: textfield;
+	}
+
+	.score-in::-webkit-outer-spin-button,
+	.score-in::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
 	}
 
 	.score-in:focus {
