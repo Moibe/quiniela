@@ -46,17 +46,17 @@
       <span>Participantes</span>
     </a>
     <a
-      href="/resultados"
+      href="/partidos"
       class="nav-item"
-      aria-current={page.url.pathname === '/resultados' ? 'page' : undefined}
+      aria-current={page.url.pathname === '/partidos' ? 'page' : undefined}
     >
       <Newspaper size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Partidos</span>
     </a>
     <a
-      href="/posiciones"
+      href="/lugares"
       class="nav-item"
-      aria-current={page.url.pathname === '/posiciones' ? 'page' : undefined}
+      aria-current={page.url.pathname === '/lugares' ? 'page' : undefined}
     >
       <Trophy size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Lugares</span>

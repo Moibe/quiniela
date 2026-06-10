@@ -51,7 +51,7 @@
 	{#if data.partidosJugados === 0}
 		<p class="empty">
 			Aún no hay resultados cargados. La tabla se irá llenando conforme el admin capture los
-			marcadores reales en <a href="/resultados">Partidos</a>.
+			marcadores reales en <a href="/partidos">Partidos</a>.
 		</p>
 	{/if}
 
