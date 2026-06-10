@@ -4,7 +4,41 @@
 	let { data }: { data: PageData } = $props();
 
 	const medalla = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '');
+
+	// Dos columnas: lugares 1→N/2 a la izquierda, el resto a la derecha (orden
+	// continuo: se lee la columna izquierda completa y sigue arriba en la derecha).
+	const mitad = $derived(Math.ceil(data.standings.length / 2));
+	const izquierda = $derived(data.standings.slice(0, mitad));
+	const derecha = $derived(data.standings.slice(mitad));
 </script>
+
+{#snippet tabla(filas: typeof data.standings, lado: string)}
+	<div class="table-wrap">
+		<table>
+			<caption class="sr-only">Posiciones ({lado}), ordenadas por puntos.</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="col-pos">#</th>
+					<th scope="col" class="col-name">Participante</th>
+					<th scope="col" class="col-pts">Pts</th>
+					<th scope="col" class="col-n" title="Marcadores exactos (3 pts c/u)">Exactos</th>
+					<th scope="col" class="col-n" title="Resultados correctos (1 pt c/u)">Resultado</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each filas as s (s.participanteId)}
+					<tr class:podio={s.rank <= 3 && s.puntos > 0}>
+						<td class="col-pos">{medalla(s.rank)}{s.rank}</td>
+						<th scope="row" class="col-name">{s.nombre}</th>
+						<td class="col-pts">{s.puntos}</td>
+						<td class="col-n">{s.exactos}</td>
+						<td class="col-n">{s.resultados}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{/snippet}
 
 <section class="posiciones">
 	<div class="head">
@@ -17,49 +51,21 @@
 	{#if data.partidosJugados === 0}
 		<p class="empty">
 			Aún no hay resultados cargados. La tabla se irá llenando conforme el admin capture los
-			marcadores reales en <a href="/resultados">Resultados</a>.
+			marcadores reales en <a href="/resultados">Partidos</a>.
 		</p>
 	{/if}
 
-	<div class="table-wrap">
-		<table>
-			<caption class="sr-only">Tabla de posiciones de la quiniela, ordenada por puntos.</caption>
-			<thead>
-				<tr>
-					<th scope="col" class="col-pos">#</th>
-					<th scope="col" class="col-name">Participante</th>
-					<th scope="col" class="col-pts">Pts</th>
-					<th scope="col" class="col-n" title="Marcadores exactos (3 pts c/u)">Exactos</th>
-					<th scope="col" class="col-n" title="Resultados correctos (1 pt c/u)">Resultado</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.standings as s (s.participanteId)}
-					<tr class:podio={s.rank <= 3 && s.puntos > 0}>
-						<td class="col-pos">{medalla(s.rank)}{s.rank}</td>
-						<th scope="row" class="col-name">{s.nombre}</th>
-						<td class="col-pts">{s.puntos}</td>
-						<td class="col-n">{s.exactos}</td>
-						<td class="col-n">{s.resultados}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+	<div class="cols">
+		{@render tabla(izquierda, 'columna izquierda')}
+		{@render tabla(derecha, 'columna derecha')}
 	</div>
 </section>
 
 <style>
 	.posiciones {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
 		box-sizing: border-box;
 		padding: 0.85rem 1.5rem 1rem;
 		color: rgba(255, 255, 255, 0.95);
-	}
-
-	.head {
-		flex-shrink: 0;
 	}
 
 	.sub {
@@ -80,13 +86,21 @@
 		color: #86efac;
 	}
 
+	/* Dos columnas lado a lado; en pantallas angostas se apilan (flex-wrap). */
+	.cols {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem 1.25rem;
+		align-items: flex-start;
+	}
+
 	.table-wrap {
-		flex: 1;
-		min-height: 0;
-		overflow: auto;
+		flex: 1 1 28rem;
+		min-width: 0;
+		max-width: 34rem;
+		overflow: hidden;
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 10px;
-		max-width: 40rem;
 	}
 
 	table {
@@ -106,9 +120,6 @@
 	}
 
 	thead th {
-		position: sticky;
-		top: 0;
-		z-index: 1;
 		background: #0a2a19;
 		font-weight: 700;
 		color: rgba(255, 255, 255, 0.9);
