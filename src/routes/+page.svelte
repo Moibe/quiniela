@@ -358,6 +358,13 @@
 		animation: vivo 1.3s ease-in-out infinite;
 	}
 
+	/* Cada celda de pronóstico del partido en curso también parpadea (se está
+	   modificando en vivo). El overlay azul va sobre el fondo de la celda, así el
+	   rosa/guinda del acierto sigue visible entre pulsos. Todas en sincronía. */
+	tbody tr.encurso .prono {
+		animation: vivo 1.3s ease-in-out infinite;
+	}
+
 	/* --- Columna fijada por doble clic (sticky-left junto a los equipos) ---
 	   Se pega al borde izquierdo (tras #/Equipo1/Equipo2) con el MISMO offset que
 	   usan esas columnas, así queda visible mientras recorres las demás. Lleva
