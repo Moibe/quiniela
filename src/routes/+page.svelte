@@ -77,11 +77,15 @@
 			</thead>
 			<tbody>
 				{#each data.rows as r (r.numero)}
-					<tr class:jugado={r.jugado}>
+					<tr class:jugado={r.jugado} class:encurso={r.enCurso}>
 						<th
 							scope="row"
 							class="col-num"
-							title={r.jugado ? `Resultado real: ${r.real}` : undefined}>{r.numero}</th
+							title={r.enCurso
+								? `En curso: ${r.real}`
+								: r.jugado
+									? `Resultado real: ${r.real}`
+									: undefined}>{r.numero}</th
 						>
 						<td class="col-team col-a">
 							<div class="ti ti-a">
@@ -334,6 +338,24 @@
 	tbody tr.jugado .col-num {
 		box-shadow: inset 3px 0 0 rgba(190, 18, 60, 0.85);
 		color: rgba(255, 255, 255, 0.82);
+	}
+
+	/* Partido EN CURSO: la celda # parpadea como un cuadro azul claro (en vivo).
+	   El overlay va por box-shadow (la base #0a2a19 sigue opaca → la columna fija
+	   no transparenta). La animación gana sobre la barra guinda de .jugado. */
+	@keyframes vivo {
+		0%,
+		100% {
+			box-shadow: inset 0 0 0 100px rgba(56, 189, 248, 0.1);
+		}
+		50% {
+			box-shadow: inset 0 0 0 100px rgba(56, 189, 248, 0.62);
+		}
+	}
+
+	tbody tr.encurso .col-num {
+		color: #fff;
+		animation: vivo 1.3s ease-in-out infinite;
 	}
 
 	/* --- Columna fijada por doble clic (sticky-left junto a los equipos) ---

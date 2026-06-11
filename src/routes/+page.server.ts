@@ -50,6 +50,7 @@ export const load: PageServerLoad = async () => {
 			equipoA: m.equipoA,
 			equipoB: m.equipoB,
 			jugado: real !== null,
+			enCurso: m.enCurso,
 			real: real ? `${real.golesA}-${real.golesB}` : null,
 			pronos
 		};
