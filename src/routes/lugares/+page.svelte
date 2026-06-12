@@ -28,14 +28,20 @@
 			<tbody>
 				{#each filas as s (s.participanteId)}
 					<tr class:podio={s.rank <= 3 && s.puntos > 0}>
+						<!-- Ranuras de ancho fijo: medalla | número | flecha, para que cada
+						     elemento quede alineado en su propia columna fila a fila. -->
 						<td class="col-pos"
-							>{medalla(s.rank)}{s.rank}{#if s.mov}<span
-									class="mov"
-									class:up={s.mov > 0}
-									class:down={s.mov < 0}
-									title={s.mov > 0 ? `Subió ${s.mov} lugar(es)` : `Bajó ${-s.mov} lugar(es)`}
-									>{s.mov > 0 ? '▲' : '▼'}{Math.abs(s.mov)}</span
-								>{/if}</td
+							><span class="slot medal" aria-hidden="true">{medalla(s.rank)}</span><span
+								class="slot rank">{s.rank}</span
+							><span class="slot mov-slot"
+								>{#if s.mov}<span
+										class="mov"
+										class:up={s.mov > 0}
+										class:down={s.mov < 0}
+										title={s.mov > 0 ? `Subió ${s.mov} lugar(es)` : `Bajó ${-s.mov} lugar(es)`}
+										>{s.mov > 0 ? '▲' : '▼'}{Math.abs(s.mov)}</span
+									>{/if}</span
+							></td
 						>
 						<th scope="row" class="col-name">{s.nombre}</th>
 						<td class="col-pts">{s.puntos}</td>
@@ -163,13 +169,37 @@
 	.col-pos {
 		width: 5.5rem;
 		color: rgba(255, 255, 255, 0.6);
+		white-space: nowrap;
+	}
+
+	/* Ranuras de ancho fijo dentro de la celda #: medallas con medallas, números
+	   con números y flechas con flechas, alineados verticalmente fila a fila. */
+	.slot {
+		display: inline-block;
+	}
+
+	.slot.medal {
+		width: 1.3rem;
+		text-align: right;
+	}
+
+	.slot.rank {
+		width: 1.3rem;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.slot.mov-slot {
+		width: 2rem;
+		text-align: left;
+		padding-left: 0.35rem;
+		box-sizing: border-box;
 	}
 
 	/* Flechita de movimiento vs el ranking previo al último marcador. Prende y
 	   apaga (misma lógica "en vivo" que la cuadrícula): late quien cambió con el
 	   último cambio, cada flecha en su color oficial (▲ verde / ▼ rojo). */
 	.mov {
-		margin-left: 0.35rem;
 		font-size: 0.68rem;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
