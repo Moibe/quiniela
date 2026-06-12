@@ -153,11 +153,25 @@
 	}
 
 	/* Partido en curso (marcador provisional): se distingue en ÁMBAR/dorado —
-	   fondo y borde ámbar + texto dorado en toda la fila (equipos y marcador). */
+	   fondo y borde ámbar + texto dorado en toda la fila (equipos y marcador) y un
+	   resplandor (glow) ámbar pulsante para reforzar el "en vivo". */
 	.partido.encurso {
 		background: rgba(245, 158, 11, 0.15);
 		border-color: rgba(245, 158, 11, 0.6);
 		color: #fde68a;
+		animation: glow-vivo 1.7s ease-in-out infinite;
+	}
+
+	@keyframes glow-vivo {
+		0%,
+		100% {
+			box-shadow: 0 0 5px rgba(245, 158, 11, 0.25);
+		}
+		50% {
+			box-shadow:
+				0 0 18px rgba(245, 158, 11, 0.6),
+				inset 0 0 6px rgba(245, 158, 11, 0.2);
+		}
 	}
 
 	.num {
