@@ -81,7 +81,7 @@
 
 					<span class="meta">
 					{#if p.enCurso}
-						<span class="encurso"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
+						<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
 					{:else if jugado}
 						<time class="when">{fmtFecha(p.fecha as Date)}</time>
 					{:else}
@@ -295,8 +295,9 @@
 	}
 
 	/* Leyenda "Partido en Curso" a la derecha (dentro de meta, ancho fijo), con
-	   punto pulsante (en vivo). */
-	.encurso {
+	   punto pulsante (en vivo). Clase propia (NO .encurso) para no colisionar con
+	   la fila .partido.encurso, cuyo `display: grid` se rompía con este inline-flex. */
+	.encurso-badge {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
