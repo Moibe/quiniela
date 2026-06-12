@@ -358,6 +358,37 @@
 		animation: vivo 1.3s ease-in-out infinite;
 	}
 
+	/* En partido en curso, SOLO las casillas que están ganando puntos prenden y
+	   apagan, cada una con su color oficial (rosa = resultado, guinda = exacto).
+	   Las celdas sin acierto quedan quietas para no distraer. */
+	@keyframes vivo-res {
+		0%,
+		100% {
+			background-color: rgba(240, 76, 158, 0.45);
+		}
+		50% {
+			background-color: rgba(240, 76, 158, 0.08);
+		}
+	}
+
+	@keyframes vivo-exa {
+		0%,
+		100% {
+			background-color: rgba(190, 18, 60, 0.88);
+		}
+		50% {
+			background-color: rgba(190, 18, 60, 0.15);
+		}
+	}
+
+	tbody tr.encurso .prono.hit-resultado {
+		animation: vivo-res 1.3s ease-in-out infinite;
+	}
+
+	tbody tr.encurso .prono.hit-exacto {
+		animation: vivo-exa 1.3s ease-in-out infinite;
+	}
+
 	/* --- Columna fijada por doble clic (sticky-left junto a los equipos) ---
 	   Se pega al borde izquierdo (tras #/Equipo1/Equipo2) con el MISMO offset que
 	   usan esas columnas, así queda visible mientras recorres las demás. Lleva
