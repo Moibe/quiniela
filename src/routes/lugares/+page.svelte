@@ -165,12 +165,25 @@
 		color: rgba(255, 255, 255, 0.6);
 	}
 
-	/* Flechita de movimiento vs el ranking previo al último marcador. */
+	/* Flechita de movimiento vs el ranking previo al último marcador. Prende y
+	   apaga (misma lógica "en vivo" que la cuadrícula): late quien cambió con el
+	   último cambio, cada flecha en su color oficial (▲ verde / ▼ rojo). */
 	.mov {
 		margin-left: 0.35rem;
 		font-size: 0.68rem;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+		animation: late 1.3s ease-in-out infinite;
+	}
+
+	@keyframes late {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.12;
+		}
 	}
 
 	.mov.up {
