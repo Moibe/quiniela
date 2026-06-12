@@ -1,0 +1,1 @@
+ALTER TABLE `participantes` ADD `rank_anterior` integer;

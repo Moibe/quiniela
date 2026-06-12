@@ -13,5 +13,13 @@ export const load: PageServerLoad = async () => {
 
 	const { standings, partidosJugados } = computeStandings(parts, mats, pros);
 
-	return { standings, partidosJugados, totalPartidos: mats.length };
+	// Movimiento vs el ranking previo al último marcador: mov > 0 = subió N
+	// lugares, mov < 0 = bajó, 0 = igual, null = sin dato aún.
+	const rankPrev = new Map(parts.map((p) => [p.id, p.rankAnterior]));
+	const conMov = standings.map((s) => {
+		const prev = rankPrev.get(s.participanteId);
+		return { ...s, mov: prev == null ? null : prev - s.rank };
+	});
+
+	return { standings: conMov, partidosJugados, totalPartidos: mats.length };
 };

@@ -28,7 +28,15 @@
 			<tbody>
 				{#each filas as s (s.participanteId)}
 					<tr class:podio={s.rank <= 3 && s.puntos > 0}>
-						<td class="col-pos">{medalla(s.rank)}{s.rank}</td>
+						<td class="col-pos"
+							>{medalla(s.rank)}{s.rank}{#if s.mov}<span
+									class="mov"
+									class:up={s.mov > 0}
+									class:down={s.mov < 0}
+									title={s.mov > 0 ? `Subió ${s.mov} lugar(es)` : `Bajó ${-s.mov} lugar(es)`}
+									>{s.mov > 0 ? '▲' : '▼'}{Math.abs(s.mov)}</span
+								>{/if}</td
+						>
 						<th scope="row" class="col-name">{s.nombre}</th>
 						<td class="col-pts">{s.puntos}</td>
 						<td class="col-n">{s.exactos}</td>
@@ -153,8 +161,24 @@
 	}
 
 	.col-pos {
-		width: 4rem;
+		width: 5.5rem;
 		color: rgba(255, 255, 255, 0.6);
+	}
+
+	/* Flechita de movimiento vs el ranking previo al último marcador. */
+	.mov {
+		margin-left: 0.35rem;
+		font-size: 0.68rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.mov.up {
+		color: #4ade80;
+	}
+
+	.mov.down {
+		color: #f87171;
 	}
 
 	.col-name {

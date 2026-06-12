@@ -5,7 +5,10 @@ export const participantes = sqliteTable('participantes', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	nombre: text('nombre').notNull(),
 	// Orden de columna en el Concentrado original, para mostrarlos igual.
-	posicion: integer('posicion').notNull().default(0)
+	posicion: integer('posicion').notNull().default(0),
+	// Posición en la tabla JUSTO ANTES del último marcador registrado. Se usa
+	// para las flechitas de "subió/bajó" en Lugares. null = sin movimiento aún.
+	rankAnterior: integer('rank_anterior')
 });
 
 // Los 72 partidos de la fase de grupos (filas del Concentrado). El resultado
