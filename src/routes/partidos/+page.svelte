@@ -152,10 +152,12 @@
 		border-color: rgba(34, 197, 94, 0.28);
 	}
 
-	/* Partido en curso (marcador provisional): ámbar para distinguirlo del final. */
+	/* Partido en curso (marcador provisional): se distingue en ÁMBAR/dorado —
+	   fondo y borde ámbar + texto dorado en toda la fila (equipos y marcador). */
 	.partido.encurso {
-		background: rgba(245, 158, 11, 0.1);
-		border-color: rgba(245, 158, 11, 0.45);
+		background: rgba(245, 158, 11, 0.15);
+		border-color: rgba(245, 158, 11, 0.6);
+		color: #fde68a;
 	}
 
 	.num {
