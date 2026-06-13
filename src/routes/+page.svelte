@@ -121,7 +121,7 @@
 		flex-direction: column;
 		height: 100%;
 		box-sizing: border-box;
-		padding: 0.85rem 1.25rem 1rem;
+		padding: 0.25rem 1.25rem 1rem;
 		color: rgba(255, 255, 255, 0.95);
 		/* Anchos border-box (incluyen padding) para que el offset de las
 		   columnas pegadas sea exacto y no se traslapen. */
