@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trophy, Users, Newspaper, LogOut } from '@lucide/svelte';
+  import { Trophy, Users, Newspaper, LayoutGrid, LogOut } from '@lucide/svelte';
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
 
@@ -52,6 +52,14 @@
     >
       <Newspaper size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Partidos</span>
+    </a>
+    <a
+      href="/grupos"
+      class="nav-item"
+      aria-current={page.url.pathname === '/grupos' ? 'page' : undefined}
+    >
+      <LayoutGrid size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Grupos</span>
     </a>
     <a
       href="/lugares"
