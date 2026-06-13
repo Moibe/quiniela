@@ -10,7 +10,12 @@ import type { PageServerLoad } from './$types';
 //  2 = marcador exacto (3 pts) → guinda intenso.
 type Hit = 0 | 1 | 2;
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
+	// Atar el load a la navegación: al acceder a `url`, SvelteKit re-ejecuta este
+	// load al LLEGAR a la página (datos en vivo frescos, sin tener que recargar).
+	// Sin esto, cachea el resultado y solo se actualiza con un reload completo.
+	void url.pathname;
+
 	const [parts, mats, pros] = await Promise.all([
 		db.select().from(participantes).orderBy(asc(participantes.posicion), asc(participantes.id)),
 		db.select().from(partidos).orderBy(asc(partidos.numero)),

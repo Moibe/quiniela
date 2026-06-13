@@ -5,7 +5,11 @@ import { participantes, partidos, pronosticos } from '$lib/server/db/schema';
 import { computeStandings } from '$lib/scoring';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	// Atar el load a la navegación (ver nota en la home): re-ejecuta al llegar,
+	// para ver marcadores frescos sin recargar.
+	void url.pathname;
+
 	// Orden FIJO por número de partido (#1→#72): nada se reordena al capturar
 	// resultados; cada partido solo se "enciende" en su lugar. Así coincide fila
 	// por fila con la cuadrícula de Participantes y no hay brincos confusos.

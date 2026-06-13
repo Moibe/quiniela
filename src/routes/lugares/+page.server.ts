@@ -4,7 +4,11 @@ import { participantes, partidos, pronosticos } from '$lib/server/db/schema';
 import { computeStandings } from '$lib/scoring';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
+	// Atar el load a la navegación (ver nota en la home): re-ejecuta al llegar,
+	// para que las posiciones y las flechitas refresquen sin recargar.
+	void url.pathname;
+
 	const [parts, mats, pros] = await Promise.all([
 		db.select().from(participantes).orderBy(asc(participantes.posicion), asc(participantes.id)),
 		db.select().from(partidos),
