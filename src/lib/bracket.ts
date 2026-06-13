@@ -86,9 +86,44 @@ export function computeBracket(
 		...mejoresTerceros.sort(byRank)
 	];
 
-	// Cruces: mejor sembrado vs peor sembrado (1-32, 2-31, …).
-	const cruces: Cruce[] = [];
+	// Cruces: mejor sembrado vs peor sembrado (1-32, 2-31…), PERO sin enfrentar a
+	// dos equipos del mismo grupo (ya jugaron entre sí en la fase de grupos). Se
+	// resuelve con backtracking: para cada mejor sembrado disponible se prueba al
+	// peor rival válido (de otro grupo) y se retrocede si se llega a un callejón.
 	const n = seeded.length;
+	const usado = new Array<boolean>(n).fill(false);
+	const pares: [number, number][] = [];
+
+	const emparejar = (): boolean => {
+		let a = -1;
+		for (let i = 0; i < n; i++) {
+			if (!usado[i]) {
+				a = i;
+				break;
+			}
+		}
+		if (a === -1) return true; // todos emparejados
+
+		usado[a] = true;
+		for (let b = n - 1; b > a; b--) {
+			if (usado[b]) continue;
+			if (seeded[b].grupo === seeded[a].grupo) continue; // mismo grupo: prohibido
+			usado[b] = true;
+			pares.push([a, b]);
+			if (emparejar()) return true;
+			pares.pop();
+			usado[b] = false;
+		}
+		usado[a] = false;
+		return false;
+	};
+
+	if (emparejar()) {
+		return pares.map(([a, b], i) => ({ llave: i + 1, a: seeded[a], b: seeded[b] }));
+	}
+
+	// Fallback defensivo (no debería ocurrir con 12 grupos / máx 3 por grupo).
+	const cruces: Cruce[] = [];
 	for (let i = 0; i < Math.floor(n / 2); i++) {
 		cruces.push({ llave: i + 1, a: seeded[i], b: seeded[n - 1 - i] });
 	}

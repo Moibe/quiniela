@@ -24,8 +24,8 @@
 		<p class="sub">
 			Dieciseisavos de final armados con la tabla que resultaría de los pronósticos de <strong
 				>{data.selectedNombre}</strong
-			> (1° y 2° de cada grupo + 8 mejores terceros). Es hipotético: refleja sus predicciones de grupos,
-			no resultados reales.
+			> (1° y 2° de cada grupo + 8 mejores terceros), sin cruzar a equipos del mismo grupo. Es
+			hipotético: refleja sus predicciones de grupos, no resultados reales.
 		</p>
 	</div>
 
