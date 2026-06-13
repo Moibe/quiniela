@@ -54,20 +54,20 @@
       <span>Partidos</span>
     </a>
     <a
-      href="/grupos"
-      class="nav-item"
-      aria-current={page.url.pathname === '/grupos' ? 'page' : undefined}
-    >
-      <LayoutGrid size={16} strokeWidth={2.2} aria-hidden="true" />
-      <span>Grupos</span>
-    </a>
-    <a
       href="/lugares"
       class="nav-item"
       aria-current={page.url.pathname === '/lugares' ? 'page' : undefined}
     >
       <Trophy size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Lugares</span>
+    </a>
+    <a
+      href="/grupos"
+      class="nav-item"
+      aria-current={page.url.pathname === '/grupos' ? 'page' : undefined}
+    >
+      <LayoutGrid size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Grupos</span>
     </a>
   </nav>
 
