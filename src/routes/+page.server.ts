@@ -56,5 +56,10 @@ export const load: PageServerLoad = async () => {
 		};
 	});
 
+	// Los partidos EN CURSO flotan al tope de la tabla (para que estén presentes
+	// al consultar la general), manteniendo el orden #1→#72 dentro de cada grupo.
+	// Sort estable: enCurso primero; si no hay ninguno, queda todo en orden normal.
+	rows.sort((a, b) => Number(b.enCurso) - Number(a.enCurso));
+
 	return { participantes: parts.map((p) => p.nombre), rows };
 };

@@ -76,8 +76,12 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.rows as r (r.numero)}
-					<tr class:jugado={r.jugado} class:encurso={r.enCurso}>
+				{#each data.rows as r, i (r.numero)}
+					<tr
+						class:jugado={r.jugado}
+						class:encurso={r.enCurso}
+						class:separador={r.enCurso && data.rows[i + 1] && !data.rows[i + 1].enCurso}
+					>
 						<th
 							scope="row"
 							class="col-num"
@@ -387,6 +391,13 @@
 
 	tbody tr.encurso .prono.hit-exacto {
 		animation: vivo-exa 1.3s ease-in-out infinite;
+	}
+
+	/* Línea separadora bajo el grupo de partidos en curso (que flota al tope),
+	   para distinguirlo del resto de la tabla en orden #1→#72. */
+	tbody tr.separador th,
+	tbody tr.separador td {
+		border-bottom: 2px solid rgba(56, 189, 248, 0.55);
 	}
 
 	/* --- Columna fijada por doble clic (sticky-left junto a los equipos) ---
