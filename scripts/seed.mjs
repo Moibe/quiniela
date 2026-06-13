@@ -19,6 +19,19 @@ const NORMALIZA = {
 };
 const norm = (nombre) => NORMALIZA[nombre] ?? nombre;
 
+// Correcciones de marcadores mal capturados en el PDF de origen. Mar traía
+// "9-1"/"9-2" en #8/#9 (goles imposibles; debían ser 0-1/0-2). El JSON queda
+// fiel al PDF; aquí se corrige al sembrar (igual que NORMALIZA con los nombres).
+const CORRECCIONES = [
+	{ participante: 'Mar', partido: 8, golesA: 0, golesB: 1 },
+	{ participante: 'Mar', partido: 9, golesA: 0, golesB: 2 }
+];
+for (const c of CORRECCIONES) {
+	const pi = data.participantes.indexOf(c.participante);
+	const partido = data.partidos.find((p) => p.numero === c.partido);
+	if (pi >= 0 && partido) partido.pronosticos[pi] = [c.golesA, c.golesB];
+}
+
 const db = new Database(url);
 db.pragma('foreign_keys = ON');
 
