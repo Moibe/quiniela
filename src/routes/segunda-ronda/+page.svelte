@@ -14,7 +14,7 @@
 <section class="segunda">
 	<div class="head">
 		<div class="sel-row">
-			<label class="sel-label" for="part">Fase final según los pronósticos de</label>
+			<label class="sel-label" for="part">Segunda Ronda según los pronósticos de</label>
 			<select id="part" class="sel" value={data.selectedId} onchange={elegir}>
 				{#each data.participantes as p (p.id)}
 					<option value={p.id}>{p.nombre}</option>
@@ -88,6 +88,13 @@
 		outline: none;
 		border-color: rgba(34, 197, 94, 0.6);
 		box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+	}
+
+	/* Sin esto, las opciones heredan el texto blanco del select sobre el fondo
+	   blanco del menú nativo y se ven en blanco (invisibles). Fondo oscuro. */
+	.sel option {
+		background: #0a2a19;
+		color: #fff;
 	}
 
 	.sub {
