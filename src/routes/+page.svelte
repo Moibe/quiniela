@@ -4,6 +4,9 @@
 
 	let { data }: { data: PageData } = $props();
 
+	// Partidos en curso → banner arriba de la tabla (no reordena las filas).
+	const enCursoMatches = $derived(data.rows.filter((r) => r.enCurso));
+
 	// Interacción de columnas (clic en el nombre del participante):
 	//  • 1 clic     → resalta / quita el resalte de la columna (color, no se mueve).
 	//  • doble clic → fija / suelta la columna (sticky) para recorrer las demás.
@@ -50,6 +53,22 @@
 		</p>
 	</div>
 
+	{#if enCursoMatches.length}
+		<div class="banner-vivo">
+			<span class="bv-tag"><span class="bv-dot" aria-hidden="true"></span> Partido en Curso</span>
+			{#each enCursoMatches as m (m.numero)}
+				<span class="bv-match">
+					<span class="bv-num">#{m.numero}</span>
+					<span class="bv-team">{m.equipoA}</span>
+					<Bandera equipo={m.equipoA} />
+					<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
+					<Bandera equipo={m.equipoB} />
+					<span class="bv-team">{m.equipoB}</span>
+				</span>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="table-wrap">
 		<table>
 			<caption class="sr-only">
@@ -76,12 +95,8 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.rows as r, i (r.numero)}
-					<tr
-						class:jugado={r.jugado}
-						class:encurso={r.enCurso}
-						class:separador={r.enCurso && data.rows[i + 1] && !data.rows[i + 1].enCurso}
-					>
+				{#each data.rows as r (r.numero)}
+					<tr class:jugado={r.jugado} class:encurso={r.enCurso}>
 						<th
 							scope="row"
 							class="col-num"
@@ -159,6 +174,87 @@
 		font-size: 0.72rem;
 		font-weight: 400;
 		color: rgba(255, 255, 255, 0.5);
+	}
+
+	/* Banner de partido(s) EN CURSO: arriba, AFUERA de la tabla. No reordena nada;
+	   solo anuncia el/los partido(s) en vivo con su marcador provisional. */
+	.banner-vivo {
+		flex-shrink: 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.45rem 1.1rem;
+		margin: 0 0 0.7rem;
+		padding: 0.5rem 0.9rem;
+		background: rgba(245, 158, 11, 0.13);
+		border: 1px solid rgba(245, 158, 11, 0.55);
+		border-radius: 10px;
+		color: #fde68a;
+		animation: glow-banner 1.9s ease-in-out infinite;
+	}
+
+	@keyframes glow-banner {
+		0%,
+		100% {
+			box-shadow: 0 0 6px rgba(245, 158, 11, 0.22);
+		}
+		50% {
+			box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+		}
+	}
+
+	.bv-tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		color: #fcd34d;
+		white-space: nowrap;
+	}
+
+	.bv-dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: #f59e0b;
+		animation: halo 1.6s ease-out infinite;
+	}
+
+	@keyframes halo {
+		0% {
+			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+		}
+		70% {
+			box-shadow: 0 0 0 7px rgba(245, 158, 11, 0);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+		}
+	}
+
+	.bv-match {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.9rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+
+	.bv-num {
+		font-size: 0.72rem;
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.55);
+	}
+
+	.bv-score {
+		padding: 0.05rem 0.55rem;
+		background: rgba(0, 0, 0, 0.22);
+		border-radius: 6px;
+		font-variant-numeric: tabular-nums;
+		color: #fff;
 	}
 
 	.leg {
@@ -393,12 +489,6 @@
 		animation: vivo-exa 1.3s ease-in-out infinite;
 	}
 
-	/* Línea separadora bajo el grupo de partidos en curso (que flota al tope),
-	   para distinguirlo del resto de la tabla en orden #1→#72. */
-	tbody tr.separador th,
-	tbody tr.separador td {
-		border-bottom: 2px solid rgba(56, 189, 248, 0.55);
-	}
 
 	/* --- Columna fijada por doble clic (sticky-left junto a los equipos) ---
 	   Se pega al borde izquierdo (tras #/Equipo1/Equipo2) con el MISMO offset que
