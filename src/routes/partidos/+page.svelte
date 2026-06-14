@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import Bandera from '$lib/Bandera.svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const actionError = $derived(form && 'error' in form ? form : null);
+
+	// Tras enviar, aplica el resultado e invalida (re-render con datos frescos)
+	// pero SIN resetear el <form>: si no, form.reset() vacía un input del marcador
+	// (los inputs usan value={...} reactivo) aunque en la base se guardó bien.
+	const sinReset: SubmitFunction = () => async ({ update }) => {
+		await update({ reset: false });
+	};
 
 	// Modo reordenar (SOLO admin): doble clic en una fila la activa; aparecen ▲▼
 	// para moverla y ✓ para fijarla. Se trackea por id (estable al renumerar).
@@ -53,7 +61,7 @@
 				</span>
 
 				{#if data.isAdmin}
-					<form method="POST" action="?/setResult" use:enhance class="score-form">
+					<form method="POST" action="?/setResult" use:enhance={sinReset} class="score-form">
 						<input type="hidden" name="partidoId" value={p.id} />
 						<input
 							class="score-in"
@@ -98,7 +106,7 @@
 
 					<span class="meta">
 						{#if data.isAdmin && movingId === p.id}
-							<form method="POST" action="?/mover" use:enhance class="mover-form">
+							<form method="POST" action="?/mover" use:enhance={sinReset} class="mover-form">
 								<input type="hidden" name="partidoId" value={p.id} />
 								<button type="submit" name="dir" value="up" class="mv-btn" title="Subir" aria-label="Subir">▲</button>
 								<button type="submit" name="dir" value="down" class="mv-btn" title="Bajar" aria-label="Bajar">▼</button>
@@ -113,7 +121,7 @@
 								<span class="pendiente">pendiente</span>
 							{/if}
 							{#if data.isAdmin && jugado}
-								<form method="POST" action="?/clearResult" use:enhance class="clear-form">
+								<form method="POST" action="?/clearResult" use:enhance={sinReset} class="clear-form">
 									<input type="hidden" name="partidoId" value={p.id} />
 									<button type="submit" class="clear-btn" title="Limpiar resultado" aria-label="Limpiar">✕</button>
 								</form>
