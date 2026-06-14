@@ -74,6 +74,21 @@
 
 <section class="participantes">
 	<div class="top">
+	{#if enCursoMatches.length}
+		<div class="vivo-card">
+			<span class="bv-tag"><span class="bv-dot" aria-hidden="true"></span> Partido en Curso</span>
+			{#each enCursoMatches as m (m.numero)}
+				<span class="bv-match">
+					<span class="bv-num">#{m.numero}</span>
+					<span class="bv-team">{m.equipoA}</span>
+					<Bandera equipo={m.equipoA} />
+					<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
+					<Bandera equipo={m.equipoB} />
+					<span class="bv-team">{m.equipoB}</span>
+				</span>
+			{/each}
+		</div>
+	{/if}
 	<div class="head">
 		<p class="sub">
 			Pronósticos de los {data.participantes.length} participantes · {data.rows.length} partidos de fase
@@ -122,22 +137,6 @@
 		</div>
 	{/if}
 	</div>
-
-	{#if enCursoMatches.length}
-		<div class="banner-vivo">
-			<span class="bv-tag"><span class="bv-dot" aria-hidden="true"></span> Partido en Curso</span>
-			{#each enCursoMatches as m (m.numero)}
-				<span class="bv-match">
-					<span class="bv-num">#{m.numero}</span>
-					<span class="bv-team">{m.equipoA}</span>
-					<Bandera equipo={m.equipoA} />
-					<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
-					<Bandera equipo={m.equipoB} />
-					<span class="bv-team">{m.equipoB}</span>
-				</span>
-			{/each}
-		</div>
-	{/if}
 
 	<div class="table-wrap">
 		<table>
@@ -228,13 +227,29 @@
 	.top {
 		flex-shrink: 0;
 		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 1rem 1.5rem;
+		align-items: stretch;
+		gap: 1rem 1.25rem;
 		flex-wrap: wrap;
 		margin-bottom: 0.8rem;
 		padding-bottom: 0.7rem;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+	}
+
+	/* Tarjeta de "Partido en Curso": a la izquierda, mismo tamaño que el pastel. */
+	.vivo-card {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: flex-start;
+		gap: 0.5rem;
+		min-width: 13rem;
+		padding: 0.6rem 0.9rem;
+		background: rgba(245, 158, 11, 0.13);
+		border: 1px solid rgba(245, 158, 11, 0.55);
+		border-radius: 10px;
+		color: #fde68a;
+		animation: glow-banner 1.9s ease-in-out infinite;
 	}
 
 	.head {
@@ -363,20 +378,6 @@
 
 	/* Banner de partido(s) EN CURSO: arriba, AFUERA de la tabla. No reordena nada;
 	   solo anuncia el/los partido(s) en vivo con su marcador provisional. */
-	.banner-vivo {
-		flex-shrink: 0;
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.45rem 1.1rem;
-		margin: 0 0 0.7rem;
-		padding: 0.5rem 0.9rem;
-		background: rgba(245, 158, 11, 0.13);
-		border: 1px solid rgba(245, 158, 11, 0.55);
-		border-radius: 10px;
-		color: #fde68a;
-		animation: glow-banner 1.9s ease-in-out infinite;
-	}
 
 	@keyframes glow-banner {
 		0%,
