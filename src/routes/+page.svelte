@@ -35,6 +35,10 @@
 		}
 		pinned = pinned === i ? null : i;
 	}
+
+	// Marcar/desmarcar una FILA (partido) con un clic en su identidad (# o equipos).
+	let filaMarcada = $state<number | null>(null);
+	const toggleFila = (n: number) => (filaMarcada = filaMarcada === n ? null : n);
 </script>
 
 <section class="participantes">
@@ -48,8 +52,8 @@
 			<span class="leg"><span class="sw sw-exa"></span> Marcador exacto · 3 pts</span>
 		</div>
 		<p class="hint">
-			💡 Clic en un participante para resaltar su columna · doble clic para fijarla y recorrer las
-			demás.
+			💡 Clic en un participante resalta su columna (doble clic la fija) · clic en un partido (# o
+			equipos) marca su fila.
 		</p>
 	</div>
 
@@ -96,23 +100,28 @@
 			</thead>
 			<tbody>
 				{#each data.rows as r (r.numero)}
-					<tr class:jugado={r.jugado} class:encurso={r.enCurso}>
+					<tr
+						class:jugado={r.jugado}
+						class:encurso={r.enCurso}
+						class:fila-marcada={filaMarcada === r.numero}
+					>
 						<th
 							scope="row"
-							class="col-num"
+							class="col-num fila-handle"
 							title={r.enCurso
-								? `En curso: ${r.real}`
+								? `En curso: ${r.real} · clic para marcar`
 								: r.jugado
-									? `Resultado real: ${r.real}`
-									: undefined}>{r.numero}</th
+									? `Resultado real: ${r.real} · clic para marcar`
+									: 'Clic para marcar este partido'}
+							onclick={() => toggleFila(r.numero)}>{r.numero}</th
 						>
-						<td class="col-team col-a">
+						<td class="col-team col-a fila-handle" onclick={() => toggleFila(r.numero)}>
 							<div class="ti ti-a">
 								<span class="tname" title={r.equipoA}>{r.equipoA}</span>
 								<Bandera equipo={r.equipoA} />
 							</div>
 						</td>
-						<td class="col-team col-b">
+						<td class="col-team col-b fila-handle" onclick={() => toggleFila(r.numero)}>
 							<div class="ti ti-b">
 								<Bandera equipo={r.equipoB} />
 								<span class="tname" title={r.equipoB}>{r.equipoB}</span>
@@ -559,6 +568,22 @@
 			inset 2px 0 0 rgba(96, 165, 250, 0.75),
 			inset -2px 0 0 rgba(96, 165, 250, 0.55),
 			inset 0 0 0 100px rgba(255, 255, 255, 0.12);
+	}
+
+	/* --- Fila (partido) MARCADA por 1 clic en su identidad (# o equipos) ---
+	   Igual que el resalte de columna pero horizontal: aclara la fila y le pone
+	   bordes arriba/abajo. Va por box-shadow para sobrevivir hover/striping/aciertos. */
+	tbody .fila-handle {
+		cursor: pointer;
+		user-select: none;
+	}
+
+	tbody tr.fila-marcada th,
+	tbody tr.fila-marcada td {
+		box-shadow:
+			inset 0 2px 0 rgba(255, 255, 255, 0.6),
+			inset 0 -2px 0 rgba(255, 255, 255, 0.6),
+			inset 0 0 0 100px rgba(255, 255, 255, 0.1);
 	}
 
 	/* En panel angosto (móvil) achica las columnas congeladas para que no se
