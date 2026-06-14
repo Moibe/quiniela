@@ -74,6 +74,21 @@
 
 <section class="participantes">
 	<div class="top">
+	<div class="head">
+		<p class="sub">
+			Pronósticos de los {data.participantes.length} participantes · {data.rows.length} partidos de fase
+			de grupos
+		</p>
+		<div class="leyenda" aria-hidden="true">
+			<span class="leg"><span class="sw sw-res"></span> Acertó resultado · 1 pt</span>
+			<span class="leg"><span class="sw sw-exa"></span> Marcador exacto · 3 pts</span>
+		</div>
+		<p class="hint">
+			💡 Clic en un participante resalta su columna (doble clic la fija) · clic en un partido (# o
+			equipos) marca su fila.
+		</p>
+	</div>
+
 	{#if enCursoMatches.length}
 		<div class="vivo-card">
 			<span class="bv-tag"><span class="bv-dot" aria-hidden="true"></span> Partido en Curso</span>
@@ -89,20 +104,6 @@
 			{/each}
 		</div>
 	{/if}
-	<div class="head">
-		<p class="sub">
-			Pronósticos de los {data.participantes.length} participantes · {data.rows.length} partidos de fase
-			de grupos
-		</p>
-		<div class="leyenda" aria-hidden="true">
-			<span class="leg"><span class="sw sw-res"></span> Acertó resultado · 1 pt</span>
-			<span class="leg"><span class="sw sw-exa"></span> Marcador exacto · 3 pts</span>
-		</div>
-		<p class="hint">
-			💡 Clic en un participante resalta su columna (doble clic la fija) · clic en un partido (# o
-			equipos) marca su fila.
-		</p>
-	</div>
 
 	{#if data.grafica}
 		{@const g = data.grafica}
