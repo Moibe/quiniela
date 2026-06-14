@@ -181,14 +181,18 @@
 		--w-team: 7.5rem;
 	}
 
-	/* Fila superior: textos (izquierda) + gráfica de pastel (esquina derecha). */
+	/* Fila superior: textos (izquierda) + gráfica de pastel (esquina derecha).
+	   Separada de la cuadrícula con aire + una línea divisoria. */
 	.top {
 		flex-shrink: 0;
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 1rem 1.5rem;
 		flex-wrap: wrap;
+		margin-bottom: 0.8rem;
+		padding-bottom: 0.7rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 	}
 
 	.head {
@@ -294,7 +298,7 @@
 	}
 
 	.hint {
-		margin: 0 0 0.75rem;
+		margin: 0;
 		font-size: 0.72rem;
 		font-weight: 400;
 		color: rgba(255, 255, 255, 0.5);
