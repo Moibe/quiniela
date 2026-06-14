@@ -42,6 +42,7 @@
 </script>
 
 <section class="participantes">
+	<div class="top">
 	<div class="head">
 		<p class="sub">
 			Pronósticos de los {data.participantes.length} participantes · {data.rows.length} partidos de fase
@@ -55,6 +56,29 @@
 			💡 Clic en un participante resalta su columna (doble clic la fija) · clic en un partido (# o
 			equipos) marca su fila.
 		</p>
+	</div>
+
+	{#if data.grafica}
+		{@const g = data.grafica}
+		{@const t = g.total || 1}
+		{@const lDeg = (g.local / t) * 360}
+		{@const eDeg = (g.empate / t) * 360}
+		<div class="pie-card">
+			<div class="pie-title">{g.enCurso ? '● En curso' : 'Siguiente'} · #{g.numero}</div>
+			<div class="pie-row">
+				<div
+					class="pie"
+					style="background: conic-gradient(#4ade80 0 {lDeg}deg, #fbbf24 {lDeg}deg {lDeg +
+						eDeg}deg, #38bdf8 {lDeg + eDeg}deg 360deg);"
+				></div>
+				<ul class="pie-leg">
+					<li><span class="pdot l"></span> <span class="pnm">{g.equipoA}</span> <b>{g.local}</b></li>
+					<li><span class="pdot e"></span> <span class="pnm">Empate</span> <b>{g.empate}</b></li>
+					<li><span class="pdot v"></span> <span class="pnm">{g.equipoB}</span> <b>{g.visita}</b></li>
+				</ul>
+			</div>
+		</div>
+	{/if}
 	</div>
 
 	{#if enCursoMatches.length}
@@ -157,8 +181,99 @@
 		--w-team: 7.5rem;
 	}
 
-	.head {
+	/* Fila superior: textos (izquierda) + gráfica de pastel (esquina derecha). */
+	.top {
 		flex-shrink: 0;
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.head {
+		flex: 1 1 18rem;
+		min-width: 0;
+	}
+
+	/* Gráfica de pastel: local / empate / visitante de los pronósticos. */
+	.pie-card {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		padding: 0.45rem 0.65rem;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 10px;
+	}
+
+	.pie-title {
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.pie-row {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.pie {
+		width: 64px;
+		height: 64px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+	}
+
+	.pie-leg {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-size: 0.72rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.18rem;
+	}
+
+	.pie-leg li {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		white-space: nowrap;
+	}
+
+	.pnm {
+		max-width: 6.5rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.pie-leg b {
+		margin-left: 0.1rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.pdot {
+		width: 0.7rem;
+		height: 0.7rem;
+		border-radius: 3px;
+		flex-shrink: 0;
+	}
+
+	.pdot.l {
+		background: #4ade80;
+	}
+
+	.pdot.e {
+		background: #fbbf24;
+	}
+
+	.pdot.v {
+		background: #38bdf8;
 	}
 
 	.sub {
