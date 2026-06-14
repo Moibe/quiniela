@@ -3,7 +3,20 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const medalla = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '');
+	// Medallas por NIVEL de podio (puntaje distinto), NO por rank: si el 2º lugar
+	// está empatado, el 3er mejor puntaje sigue siendo "3er lugar" (bronce) aunque
+	// su rank de competición sea 4. Los empatados comparten medalla.
+	const top3 = $derived(
+		[...new Set(data.standings.map((s) => s.puntos))]
+			.filter((p) => p > 0)
+			.sort((a, b) => b - a)
+			.slice(0, 3)
+	);
+	const esPodio = (puntos: number) => puntos > 0 && top3.includes(puntos);
+	const medalla = (puntos: number) => {
+		const i = puntos > 0 ? top3.indexOf(puntos) : -1;
+		return i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+	};
 
 	// Dos columnas: lugares 1→N/2 a la izquierda, el resto a la derecha (orden
 	// continuo: se lee la columna izquierda completa y sigue arriba en la derecha).
@@ -27,11 +40,11 @@
 			</thead>
 			<tbody>
 				{#each filas as s (s.participanteId)}
-					<tr class:podio={s.rank <= 3 && s.puntos > 0}>
+					<tr class:podio={esPodio(s.puntos)}>
 						<!-- Ranuras de ancho fijo: medalla | número | flecha, para que cada
 						     elemento quede alineado en su propia columna fila a fila. -->
 						<td class="col-pos"
-							><span class="slot medal" aria-hidden="true">{medalla(s.rank)}</span><span
+							><span class="slot medal" aria-hidden="true">{medalla(s.puntos)}</span><span
 								class="slot rank">{s.rank}</span
 							><span class="slot mov-slot"
 								>{#if s.mov}<span
