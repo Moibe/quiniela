@@ -7,6 +7,16 @@
 
 	const actionError = $derived(form && 'error' in form ? form : null);
 
+	// Modo reordenar (SOLO admin): doble clic en una fila la activa; aparecen ▲▼
+	// para moverla y ✓ para fijarla. Se trackea por id (estable al renumerar).
+	let movingId = $state<number | null>(null);
+	function onFilaDblClick(e: MouseEvent, id: number) {
+		if (!data.isAdmin) return;
+		// No activar si el doble clic fue sobre un control (inputs/botones).
+		if ((e.target as HTMLElement).closest('input, button, select')) return;
+		movingId = movingId === id ? null : id;
+	}
+
 	const fmtFecha = (d: Date) =>
 		new Intl.DateTimeFormat('es-MX', {
 			day: '2-digit',
@@ -20,13 +30,20 @@
 	<p class="sub">
 		Resultados oficiales de los 72 partidos de fase de grupos.{#if data.isAdmin}
 			<strong>✓</strong> guarda el resultado final · <strong>⏱</strong> guarda un parcial y marca «Partido
-			en Curso» (captura en vivo).{/if}
+			en Curso» (captura en vivo). Doble clic en una fila para reordenarla (▲▼).{/if}
 	</p>
 
 	<ul class="list">
 		{#each data.partidos as p (p.id)}
 			{@const jugado = p.golesA !== null && p.golesB !== null}
-			<li class="partido" class:jugado class:encurso={p.enCurso}>
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<li
+				class="partido"
+				class:jugado
+				class:encurso={p.enCurso}
+				class:moviendo={data.isAdmin && movingId === p.id}
+				ondblclick={(e) => onFilaDblClick(e, p.id)}
+			>
 				<span class="num">#{p.numero}</span>
 
 					<div class="cuerpo">
@@ -80,20 +97,29 @@
 				</div>
 
 					<span class="meta">
-					{#if p.enCurso}
-						<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
-					{:else if jugado}
-						<time class="when">{fmtFecha(p.fecha as Date)}</time>
-					{:else}
-						<span class="pendiente">pendiente</span>
-					{/if}
-					{#if data.isAdmin && jugado}
-						<form method="POST" action="?/clearResult" use:enhance class="clear-form">
-							<input type="hidden" name="partidoId" value={p.id} />
-							<button type="submit" class="clear-btn" title="Limpiar resultado" aria-label="Limpiar">✕</button>
-						</form>
-					{/if}
-				</span>
+						{#if data.isAdmin && movingId === p.id}
+							<form method="POST" action="?/mover" use:enhance class="mover-form">
+								<input type="hidden" name="partidoId" value={p.id} />
+								<button type="submit" name="dir" value="up" class="mv-btn" title="Subir" aria-label="Subir">▲</button>
+								<button type="submit" name="dir" value="down" class="mv-btn" title="Bajar" aria-label="Bajar">▼</button>
+							</form>
+							<button type="button" class="fijar-btn" onclick={() => (movingId = null)} title="Fijar en su lugar" aria-label="Fijar">✓</button>
+						{:else}
+							{#if p.enCurso}
+								<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
+							{:else if jugado}
+								<time class="when">{fmtFecha(p.fecha as Date)}</time>
+							{:else}
+								<span class="pendiente">pendiente</span>
+							{/if}
+							{#if data.isAdmin && jugado}
+								<form method="POST" action="?/clearResult" use:enhance class="clear-form">
+									<input type="hidden" name="partidoId" value={p.id} />
+									<button type="submit" class="clear-btn" title="Limpiar resultado" aria-label="Limpiar">✕</button>
+								</form>
+							{/if}
+						{/if}
+					</span>
 
 				{#if actionError && actionError.partidoId === p.id}
 					<span class="row-error">{actionError.error}</span>
@@ -369,6 +395,50 @@
 		grid-column: 1 / -1;
 		font-size: 0.78rem;
 		color: #fca5a5;
+	}
+
+	/* Modo reordenar (admin): fila activa en azul + controles ▲▼ y ✓. */
+	.partido.moviendo {
+		background: rgba(96, 165, 250, 0.13);
+		border-color: rgba(96, 165, 250, 0.65);
+	}
+
+	.mover-form {
+		display: inline-flex;
+		gap: 0.25rem;
+		margin: 0;
+	}
+
+	.mv-btn,
+	.fijar-btn {
+		font: inherit;
+		cursor: pointer;
+		padding: 0.15rem 0.45rem;
+		color: #fff;
+		border-radius: 6px;
+		transition:
+			background 0.18s ease,
+			border-color 0.18s ease;
+	}
+
+	.mv-btn {
+		background: rgba(96, 165, 250, 0.2);
+		border: 1px solid rgba(96, 165, 250, 0.5);
+	}
+
+	.mv-btn:hover {
+		background: rgba(96, 165, 250, 0.34);
+		border-color: rgba(96, 165, 250, 0.72);
+	}
+
+	.fijar-btn {
+		background: rgba(34, 197, 94, 0.22);
+		border: 1px solid rgba(34, 197, 94, 0.5);
+	}
+
+	.fijar-btn:hover {
+		background: rgba(34, 197, 94, 0.34);
+		border-color: rgba(34, 197, 94, 0.72);
 	}
 
 	/* En móvil la columna derecha se ajusta al contenido (no fija 10rem) para que
