@@ -1,8 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { participantes, partidos, pronosticos } from '$lib/server/db/schema';
-import { computeStandings } from '$lib/scoring';
+import { partidos } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -17,26 +16,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return { partidos: rows, isAdmin: locals.isAdmin };
 };
-
-// Guarda la posición ACTUAL de cada participante en rank_anterior, ANTES de
-// aplicar un cambio de marcador. Así Lugares puede comparar el ranking nuevo
-// con el previo y mostrar flechitas de subió/bajó del último movimiento.
-async function snapshotRanks() {
-	const [parts, mats, pros] = await Promise.all([
-		db.select().from(participantes),
-		db.select().from(partidos),
-		db.select().from(pronosticos)
-	]);
-	const { standings } = computeStandings(parts, mats, pros);
-	await Promise.all(
-		standings.map((s) =>
-			db
-				.update(participantes)
-				.set({ rankAnterior: s.rank })
-				.where(eq(participantes.id, s.participanteId))
-		)
-	);
-}
 
 // Captura/edita el marcador REAL de un partido — SOLO admin.
 //  • enCurso=false → resultado FINAL.
@@ -68,8 +47,6 @@ async function guardarMarcador({ request, locals }: RequestEvent, enCurso: boole
 		return fail(400, { error: 'Marcador inválido (enteros ≥ 0).', partidoId });
 	}
 
-	// Foto del ranking previo (para las flechitas), luego aplica el marcador.
-	await snapshotRanks();
 	await db
 		.update(partidos)
 		.set({ golesA, golesB, fecha: new Date(), enCurso })
@@ -96,8 +73,6 @@ export const actions: Actions = {
 			return fail(400, { error: 'Partido inválido.', partidoId });
 		}
 
-		// Foto del ranking previo (para las flechitas), luego limpia el marcador.
-		await snapshotRanks();
 		await db
 			.update(partidos)
 			.set({ golesA: null, golesB: null, fecha: null, enCurso: false })

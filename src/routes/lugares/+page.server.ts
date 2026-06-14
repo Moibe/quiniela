@@ -17,13 +17,28 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	const { standings, partidosJugados } = computeStandings(parts, mats, pros);
 
-	// Movimiento vs el ranking previo al último marcador: mov > 0 = subió N
-	// lugares, mov < 0 = bajó, 0 = igual, null = sin dato aún.
-	const rankPrev = new Map(parts.map((p) => [p.id, p.rankAnterior]));
-	const conMov = standings.map((s) => {
-		const prev = rankPrev.get(s.participanteId);
-		return { ...s, mov: prev == null ? null : prev - s.rank };
-	});
+	// Flechitas = movimiento causado por el ÚLTIMO marcador registrado. En vez de
+	// guardar una "foto" (frágil: la borra cerrar un partido o no haber capturado
+	// desde que existe la feature), lo CALCULAMOS: comparamos el ranking actual
+	// contra el ranking SIN el último partido capturado (el de `fecha` más
+	// reciente). Así siempre hay flechas con ≥1 resultado y reflejan el último gol.
+	const conFecha = mats.filter((m) => m.golesA !== null && m.golesB !== null && m.fecha);
+	const mov = new Map<number, number>();
+	if (conFecha.length) {
+		const ultima = Math.max(...conFecha.map((m) => (m.fecha as Date).getTime()));
+		// El "antes": trata el/los partido(s) recién capturado(s) como no jugados.
+		const matsPrevios = mats.map((m) =>
+			m.fecha && (m.fecha as Date).getTime() === ultima
+				? { ...m, golesA: null, golesB: null }
+				: m
+		);
+		const previo = computeStandings(parts, matsPrevios, pros).standings;
+		const rankPrevio = new Map(previo.map((s) => [s.participanteId, s.rank]));
+		for (const s of standings) {
+			mov.set(s.participanteId, (rankPrevio.get(s.participanteId) ?? s.rank) - s.rank);
+		}
+	}
+	const conMov = standings.map((s) => ({ ...s, mov: mov.get(s.participanteId) ?? 0 }));
 
 	return { standings: conMov, partidosJugados, totalPartidos: mats.length };
 };
