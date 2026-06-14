@@ -39,6 +39,37 @@
 	// Marcar/desmarcar una FILA (partido) con un clic en su identidad (# o equipos).
 	let filaMarcada = $state<number | null>(null);
 	const toggleFila = (n: number) => (filaMarcada = filaMarcada === n ? null : n);
+
+	// Segmentos del pastel (SVG) para la gráfica: local / empate / visitante. Cada
+	// uno con su lista de nombres (tooltip al pasar el mouse). Si solo hay un
+	// resultado, se dibuja un círculo completo (un arco de 360° es degenerado).
+	function arcPath(start: number, end: number) {
+		const rad = (a: number) => ((a - 90) * Math.PI) / 180;
+		const x1 = 50 + 50 * Math.cos(rad(start));
+		const y1 = 50 + 50 * Math.sin(rad(start));
+		const x2 = 50 + 50 * Math.cos(rad(end));
+		const y2 = 50 + 50 * Math.sin(rad(end));
+		const large = end - start > 180 ? 1 : 0;
+		return `M50,50 L${x1.toFixed(2)},${y1.toFixed(2)} A50,50 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`;
+	}
+
+	const segmentos = $derived.by(() => {
+		const g = data.grafica;
+		if (!g) return [];
+		const defs = [
+			{ key: 'l', label: g.equipoA, color: '#4ade80', names: g.localNames },
+			{ key: 'e', label: 'Empate', color: '#fbbf24', names: g.empateNames },
+			{ key: 'v', label: g.equipoB, color: '#38bdf8', names: g.visitaNames }
+		].filter((d) => d.names.length > 0);
+		const total = g.total || 1;
+		if (defs.length === 1) return [{ ...defs[0], full: true, path: '' }];
+		let acc = 0;
+		return defs.map((d) => {
+			const start = (acc / total) * 360;
+			acc += d.names.length;
+			return { ...d, full: false, path: arcPath(start, (acc / total) * 360) };
+		});
+	});
 </script>
 
 <section class="participantes">
@@ -60,21 +91,32 @@
 
 	{#if data.grafica}
 		{@const g = data.grafica}
-		{@const t = g.total || 1}
-		{@const lDeg = (g.local / t) * 360}
-		{@const eDeg = (g.empate / t) * 360}
 		<div class="pie-card">
 			<div class="pie-title">{g.enCurso ? '● En curso' : 'Siguiente'} · #{g.numero}</div>
 			<div class="pie-row">
-				<div
-					class="pie"
-					style="background: conic-gradient(#4ade80 0 {lDeg}deg, #fbbf24 {lDeg}deg {lDeg +
-						eDeg}deg, #38bdf8 {lDeg + eDeg}deg 360deg);"
-				></div>
+				<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="Desglose de pronósticos">
+					{#each segmentos as s (s.key)}
+						{#if s.full}
+							<circle cx="50" cy="50" r="50" fill={s.color} stroke="rgba(0,0,0,0.25)" stroke-width="0.5">
+								<title>{s.label}: {s.names.join(', ')}</title>
+							</circle>
+						{:else}
+							<path d={s.path} fill={s.color} stroke="rgba(0,0,0,0.3)" stroke-width="0.6">
+								<title>{s.label}: {s.names.join(', ')}</title>
+							</path>
+						{/if}
+					{/each}
+				</svg>
 				<ul class="pie-leg">
-					<li><span class="pdot l"></span> <span class="pnm">{g.equipoA}</span> <b>{g.local}</b></li>
-					<li><span class="pdot e"></span> <span class="pnm">Empate</span> <b>{g.empate}</b></li>
-					<li><span class="pdot v"></span> <span class="pnm">{g.equipoB}</span> <b>{g.visita}</b></li>
+					<li title="{g.equipoA}: {g.localNames.join(', ')}">
+						<span class="pdot l"></span> <span class="pnm">{g.equipoA}</span> <b>{g.local}</b>
+					</li>
+					<li title="Empate: {g.empateNames.join(', ')}">
+						<span class="pdot e"></span> <span class="pnm">Empate</span> <b>{g.empate}</b>
+					</li>
+					<li title="{g.equipoB}: {g.visitaNames.join(', ')}">
+						<span class="pdot v"></span> <span class="pnm">{g.equipoB}</span> <b>{g.visita}</b>
+					</li>
 				</ul>
 			</div>
 		</div>
@@ -205,8 +247,8 @@
 		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
-		padding: 0.45rem 0.65rem;
+		gap: 0.4rem;
+		padding: 0.6rem 0.9rem;
 		background: rgba(255, 255, 255, 0.04);
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 10px;
@@ -222,15 +264,30 @@
 	.pie-row {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
+		gap: 0.85rem;
 	}
 
 	.pie {
-		width: 64px;
-		height: 64px;
-		border-radius: 50%;
+		width: 92px;
+		height: 92px;
 		flex-shrink: 0;
-		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+		filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
+	}
+
+	.pie path,
+	.pie circle {
+		cursor: default;
+		transition: opacity 0.15s ease;
+	}
+
+	.pie:hover path,
+	.pie:hover circle {
+		opacity: 0.6;
+	}
+
+	.pie path:hover,
+	.pie circle:hover {
+		opacity: 1;
 	}
 
 	.pie-leg {
@@ -251,7 +308,7 @@
 	}
 
 	.pnm {
-		max-width: 6.5rem;
+		max-width: 8rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}

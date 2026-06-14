@@ -67,24 +67,33 @@ export const load: PageServerLoad = async ({ url }) => {
 	const objetivo = mats.find((m) => m.enCurso) ?? mats.find((m) => m.golesA === null);
 	let grafica = null;
 	if (objetivo) {
-		let local = 0;
-		let empate = 0;
-		let visita = 0;
+		const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
+		const localNames: string[] = [];
+		const empateNames: string[] = [];
+		const visitaNames: string[] = [];
 		for (const pr of pros) {
 			if (pr.partidoId !== objetivo.id) continue;
-			if (pr.golesA > pr.golesB) local++;
-			else if (pr.golesA < pr.golesB) visita++;
-			else empate++;
+			const nombre = nombrePorId.get(pr.participanteId) ?? '';
+			if (pr.golesA > pr.golesB) localNames.push(nombre);
+			else if (pr.golesA < pr.golesB) visitaNames.push(nombre);
+			else empateNames.push(nombre);
 		}
+		const orden = (a: string, b: string) => a.localeCompare(b, 'es');
+		localNames.sort(orden);
+		empateNames.sort(orden);
+		visitaNames.sort(orden);
 		grafica = {
 			numero: objetivo.numero,
 			equipoA: objetivo.equipoA,
 			equipoB: objetivo.equipoB,
 			enCurso: objetivo.enCurso,
-			local,
-			empate,
-			visita,
-			total: local + empate + visita
+			local: localNames.length,
+			empate: empateNames.length,
+			visita: visitaNames.length,
+			total: localNames.length + empateNames.length + visitaNames.length,
+			localNames,
+			empateNames,
+			visitaNames
 		};
 	}
 
