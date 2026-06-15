@@ -95,7 +95,9 @@
 			<span class="gan-title">{titulo}</span>
 			<span class="gan-score">{gn.real.replace('-', ' – ')}</span>
 		</div>
-		<div class="gan-sub">{sub}</div>
+		{#if sub}
+			<div class="gan-sub">{sub}</div>
+		{/if}
 		{#if gn.lista.length}
 			<ul class="gan-list">
 				{#each gn.lista as g, i (i)}
@@ -200,8 +202,8 @@
 				)}
 				{#if data.golLocal}
 					{@render ganadores(
-						'Con gol de Local',
-						`Si anota ${data.golLocal.equipoA} (local)`,
+						`Si anota ${data.golLocal.equipoA}`,
+						'',
 						data.golLocal,
 						'loc',
 						'Nadie ganaría puntos con ese marcador.'
@@ -209,8 +211,8 @@
 				{/if}
 				{#if data.golVisita}
 					{@render ganadores(
-						'Con gol de visita',
-						`Si anota ${data.golVisita.equipoB} (visita)`,
+						`Si anota ${data.golVisita.equipoB}`,
+						'',
 						data.golVisita,
 						'vis',
 						'Nadie ganaría puntos con ese marcador.'
