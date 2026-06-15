@@ -203,7 +203,7 @@
 					data.pendiente ? 'Ganando puntos si va así:' : 'Ganando puntos con resultado actual:',
 					'',
 					data.ganando,
-					'',
+					'vig',
 					'Nadie va ganando puntos con este marcador.',
 					''
 				)}
@@ -474,6 +474,13 @@
 
 	.gan-card.vis {
 		border-top: 2px solid rgba(56, 189, 248, 0.7);
+	}
+
+	/* Tarjeta del marcador vigente: marco ámbar + halo pulsante, igual que la
+	   tarjeta de "Partido en Curso" (reusa la animación glow-banner). */
+	.gan-card.vig {
+		border-color: rgba(245, 158, 11, 0.55);
+		animation: glow-banner 1.9s ease-in-out infinite;
 	}
 
 	.gan-head {
