@@ -96,8 +96,8 @@
 			{#if equipo}
 				<span class="gan-anota">
 					<span class="gan-ball" aria-hidden="true">⚽</span>
-					<Bandera {equipo} />
 					{titulo}
+					<Bandera {equipo} />
 				</span>
 			{:else}
 				<span class="gan-title">{titulo}</span>
