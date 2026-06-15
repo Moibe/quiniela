@@ -19,7 +19,7 @@
 					? 'Segunda Ronda según los resultados reales hasta ahora'
 					: 'Segunda Ronda según los pronósticos de'}
 			</label>
-			<select id="part" class="sel" value={data.selectedKey} onchange={elegir} translate="no">
+			<select id="part" class="sel notranslate" value={data.selectedKey} onchange={elegir} translate="no">
 				<option value="real">⚽ Real</option>
 				{#each data.participantes as p (p.id)}
 					<option value={p.id}>{p.nombre}</option>
@@ -39,7 +39,7 @@
 			<p class="sub">
 				Dieciseisavos de final (partidos 73–88) con el <strong>cuadro oficial fijo</strong> de la
 				FIFA aplicado a la tabla que resultaría de los pronósticos de
-				<strong translate="no">{data.selectedNombre}</strong> (1° y 2° de cada grupo + 8 mejores terceros). Los
+				<strong class="notranslate" translate="no">{data.selectedNombre}</strong> (1° y 2° de cada grupo + 8 mejores terceros). Los
 				terceros se ubican según la tabla oficial de 495 combinaciones (Annex C). Es hipotético:
 				refleja sus predicciones de grupos, no resultados reales.
 			</p>
@@ -53,13 +53,13 @@
 				<div class="enfrent">
 					<span class="lado a">
 						<span class="org">{c.a.origen}</span>
-						<span class="nm" translate="no" title={c.a.equipo}>{c.a.equipo}</span>
+						<span class="nm notranslate" translate="no" title={c.a.equipo}>{c.a.equipo}</span>
 						<Bandera equipo={c.a.equipo} />
 					</span>
 					<span class="vs">vs</span>
 					<span class="lado b">
 						<Bandera equipo={c.b.equipo} />
-						<span class="nm" translate="no" title={c.b.equipo}>{c.b.equipo}</span>
+						<span class="nm notranslate" translate="no" title={c.b.equipo}>{c.b.equipo}</span>
 						<span class="org">{c.b.origen}</span>
 					</span>
 				</div>

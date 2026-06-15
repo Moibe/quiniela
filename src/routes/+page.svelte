@@ -64,11 +64,11 @@
 			{#each enCursoMatches as m (m.numero)}
 				<span class="bv-match">
 					<span class="bv-num">#{m.numero}</span>
-					<span class="bv-team" translate="no">{m.equipoA}</span>
+					<span class="bv-team notranslate" translate="no">{m.equipoA}</span>
 					<Bandera equipo={m.equipoA} />
 					<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
 					<Bandera equipo={m.equipoB} />
-					<span class="bv-team" translate="no">{m.equipoB}</span>
+					<span class="bv-team notranslate" translate="no">{m.equipoB}</span>
 				</span>
 			{/each}
 		</div>
@@ -90,7 +90,7 @@
 					{#each data.participantes as nombre, i (i)}
 						<th
 							scope="col"
-							class="col-p"
+							class="col-p notranslate"
 							translate="no"
 							class:highlighted={highlighted === i}
 							class:pinned={pinned === i}
@@ -121,14 +121,14 @@
 						>
 						<td class="col-team col-a fila-handle" onclick={() => toggleFila(r.numero)}>
 							<div class="ti ti-a">
-								<span class="tname" translate="no" title={r.equipoA}>{r.equipoA}</span>
+								<span class="tname notranslate" translate="no" title={r.equipoA}>{r.equipoA}</span>
 								<Bandera equipo={r.equipoA} />
 							</div>
 						</td>
 						<td class="col-team col-b fila-handle" onclick={() => toggleFila(r.numero)}>
 							<div class="ti ti-b">
 								<Bandera equipo={r.equipoB} />
-								<span class="tname" translate="no" title={r.equipoB}>{r.equipoB}</span>
+								<span class="tname notranslate" translate="no" title={r.equipoB}>{r.equipoB}</span>
 							</div>
 						</td>
 						{#each r.pronos as cell, i (i)}

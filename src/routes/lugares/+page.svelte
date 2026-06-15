@@ -56,7 +56,7 @@
 									>{/if}</span
 							></td
 						>
-						<th scope="row" class="col-name" translate="no">{s.nombre}</th>
+						<th scope="row" class="col-name notranslate" translate="no">{s.nombre}</th>
 						<td class="col-pts">{s.puntos}</td>
 						<td class="col-n">{s.exactos}</td>
 						<td class="col-n">{s.resultados}</td>

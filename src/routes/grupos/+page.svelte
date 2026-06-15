@@ -45,7 +45,7 @@
 									<td class="c-pos">{t.pos}</td>
 									<th scope="row" class="c-eq">
 										<Bandera equipo={t.equipo} />
-										<span class="eq-name" translate="no" title={t.equipo}>{t.equipo}</span>
+										<span class="eq-name notranslate" translate="no" title={t.equipo}>{t.equipo}</span>
 										{#if t.enVivo}<span class="vivo-dot" title="En vivo" aria-hidden="true"></span>{/if}
 									</th>
 									<td>{t.pj}</td>
