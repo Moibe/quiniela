@@ -35,6 +35,36 @@
 	});
 </script>
 
+<!-- Tarjeta reutilizable de "ganadores": vigente y escenarios (+1 local / +1 visita). -->
+{#snippet ganadores(
+	titulo: string,
+	sub: string,
+	gn: NonNullable<typeof data.ganando>,
+	tono: string,
+	vacio: string
+)}
+	<div class="gan-card {tono}">
+		<div class="gan-head">
+			<span class="gan-title">{titulo}</span>
+			<span class="gan-score">{gn.real.replace('-', ' – ')}</span>
+		</div>
+		<div class="gan-sub">{sub}</div>
+		{#if gn.lista.length}
+			<ul class="gan-list">
+				{#each gn.lista as g, i (i)}
+					<li class:exa={g.exacto}>
+						<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
+						<span class="gan-nombre">{g.nombre}</span>
+						<span class="gan-prono">{g.pronostico}</span>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="gan-vacio">{vacio}</p>
+		{/if}
+	</div>
+{/snippet}
+
 <section class="estadisticas">
 	<p class="sub">
 		Distribución de pronósticos del partido en curso (o el siguiente pendiente) y los partidos en
@@ -62,27 +92,31 @@
 			{/if}
 
 			{#if data.ganando}
-				{@const gn = data.ganando}
-				<div class="gan-card">
-					<div class="gan-head">
-						<span class="gan-title">Ganando puntos · #{gn.numero}</span>
-						<span class="gan-score">{gn.real.replace('-', ' – ')}</span>
-					</div>
-					<div class="gan-sub">{gn.equipoA} vs {gn.equipoB} · con el marcador vigente</div>
-					{#if gn.lista.length}
-						<ul class="gan-list">
-							{#each gn.lista as g, i (i)}
-								<li class:exa={g.exacto}>
-									<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
-									<span class="gan-nombre">{g.nombre}</span>
-									<span class="gan-prono">{g.pronostico}</span>
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="gan-vacio">Nadie va ganando puntos con este marcador.</p>
-					{/if}
-				</div>
+				{@render ganadores(
+					`Ganando puntos · #${data.ganando.numero}`,
+					`${data.ganando.equipoA} vs ${data.ganando.equipoB} · marcador vigente`,
+					data.ganando,
+					'',
+					'Nadie va ganando puntos con este marcador.'
+				)}
+			{/if}
+			{#if data.golLocal}
+				{@render ganadores(
+					'Con gol de Local',
+					`Si anota ${data.golLocal.equipoA} (local)`,
+					data.golLocal,
+					'loc',
+					'Nadie ganaría puntos con ese marcador.'
+				)}
+			{/if}
+			{#if data.golVisita}
+				{@render ganadores(
+					'Con gol de visita',
+					`Si anota ${data.golVisita.equipoB} (visita)`,
+					data.golVisita,
+					'vis',
+					'Nadie ganaría puntos con ese marcador.'
+				)}
 			{/if}
 
 			{#if data.grafica}
@@ -357,6 +391,16 @@
 		background: rgba(255, 255, 255, 0.04);
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 10px;
+	}
+
+	/* Escenarios "+1 gol": franja superior con el color del lado (local verde /
+	   visita azul, igual que el pastel) para distinguirlos del marcador vigente. */
+	.gan-card.loc {
+		border-top: 2px solid rgba(74, 222, 128, 0.7);
+	}
+
+	.gan-card.vis {
+		border-top: 2px solid rgba(56, 189, 248, 0.7);
 	}
 
 	.gan-head {

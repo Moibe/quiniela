@@ -59,39 +59,49 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	}
 
-	// Quién va GANANDO puntos con el marcador VIGENTE del partido en curso (el
-	// primero, si hay varios). Marcador exacto (3 pts) hasta arriba, luego acierto
-	// de resultado (1 pt). Los que fallan (0 pts) no se listan.
+	// Para el partido EN CURSO (el primero, si hay varios): quién GANARÍA puntos con
+	// un marcador dado. Marcador exacto (3 pts) hasta arriba, luego acierto de
+	// resultado (1 pt); los que fallan (0 pts) no se listan. Se calcula con el
+	// marcador VIGENTE y con los escenarios "+1 gol local" / "+1 gol visita".
 	const vivo = mats.find((m) => m.enCurso && m.golesA !== null && m.golesB !== null);
 	let ganando = null;
+	let golLocal = null;
+	let golVisita = null;
 	if (vivo) {
-		const real = { golesA: vivo.golesA as number, golesB: vivo.golesB as number };
 		const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
-		const lista: { nombre: string; pronostico: string; puntos: number; exacto: boolean }[] = [];
-		for (const pr of pros) {
-			if (pr.partidoId !== vivo.id) continue;
-			const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, real);
-			if (pts > 0) {
-				lista.push({
-					nombre: nombrePorId.get(pr.participanteId) ?? '',
-					pronostico: `${pr.golesA}-${pr.golesB}`,
-					puntos: pts,
-					exacto: pts === PUNTOS_EXACTO
-				});
+		const prosVivo = pros.filter((pr) => pr.partidoId === vivo.id);
+		const ga = vivo.golesA as number;
+		const gb = vivo.golesB as number;
+
+		const tarjeta = (golesA: number, golesB: number) => {
+			const lista: { nombre: string; pronostico: string; puntos: number; exacto: boolean }[] = [];
+			for (const pr of prosVivo) {
+				const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, { golesA, golesB });
+				if (pts > 0) {
+					lista.push({
+						nombre: nombrePorId.get(pr.participanteId) ?? '',
+						pronostico: `${pr.golesA}-${pr.golesB}`,
+						puntos: pts,
+						exacto: pts === PUNTOS_EXACTO
+					});
+				}
 			}
-		}
-		// Exactos primero (puntos desc), luego por nombre.
-		lista.sort((a, b) => b.puntos - a.puntos || a.nombre.localeCompare(b.nombre, 'es'));
-		ganando = {
-			numero: vivo.numero,
-			equipoA: vivo.equipoA,
-			equipoB: vivo.equipoB,
-			real: `${real.golesA}-${real.golesB}`,
-			lista,
-			exactos: lista.filter((x) => x.exacto).length,
-			resultados: lista.filter((x) => !x.exacto).length
+			lista.sort((a, b) => b.puntos - a.puntos || a.nombre.localeCompare(b.nombre, 'es'));
+			return {
+				numero: vivo.numero,
+				equipoA: vivo.equipoA,
+				equipoB: vivo.equipoB,
+				real: `${golesA}-${golesB}`,
+				lista,
+				exactos: lista.filter((x) => x.exacto).length,
+				resultados: lista.filter((x) => !x.exacto).length
+			};
 		};
+
+		ganando = tarjeta(ga, gb); // marcador vigente
+		golLocal = tarjeta(ga + 1, gb); // si anota el local
+		golVisita = tarjeta(ga, gb + 1); // si anota la visita
 	}
 
-	return { grafica, enCurso, ganando };
+	return { grafica, enCurso, ganando, golLocal, golVisita };
 };
