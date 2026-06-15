@@ -94,7 +94,22 @@ export function computeBracket(
 		return { ...p, golesA: v ? v.golesA : null, golesB: v ? v.golesB : null };
 	});
 
-	const grupos = computeGrupos(virtual);
+	return armarCruces(virtual);
+}
+
+// Igual que computeBracket pero con los RESULTADOS REALES capturados: arma el
+// cuadro tal como va "hasta ahora". Los partidos sin marcador no aportan puntos;
+// los equipos aún empatados (incluidos los que no han jugado) se ordenan por los
+// criterios oficiales y, a falta de juego, por nombre —igual que las tablas de
+// grupos—, así que el cuadro es provisional y cambia con cada resultado.
+export function computeBracketReal(partidos: PartidoIn[]): Cruce[] {
+	return armarCruces(partidos);
+}
+
+// Núcleo compartido: dada una lista de partidos con (o sin) marcador, calcula los
+// grupos y arma los 16 cruces oficiales (plantilla fija 73–88 + Annex C).
+function armarCruces(partidosConResultado: PartidoIn[]): Cruce[] {
+	const grupos = computeGrupos(partidosConResultado);
 	const byLabel = new Map(grupos.map((g) => [g.label, g]));
 
 	// 8 mejores terceros (de 12) y de qué grupos vienen.

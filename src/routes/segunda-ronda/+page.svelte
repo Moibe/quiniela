@@ -6,28 +6,44 @@
 	let { data }: { data: PageData } = $props();
 
 	function elegir(e: Event) {
-		const id = (e.currentTarget as HTMLSelectElement).value;
-		goto(`?p=${id}`, { keepFocus: true, noScroll: true });
+		const v = (e.currentTarget as HTMLSelectElement).value;
+		goto(`?p=${v}`, { keepFocus: true, noScroll: true });
 	}
 </script>
 
 <section class="segunda">
 	<div class="head">
 		<div class="sel-row">
-			<label class="sel-label" for="part">Segunda Ronda según los pronósticos de</label>
-			<select id="part" class="sel" value={data.selectedId} onchange={elegir}>
+			<label class="sel-label" for="part">
+				{data.esReal
+					? 'Segunda Ronda según los resultados reales hasta ahora'
+					: 'Segunda Ronda según los pronósticos de'}
+			</label>
+			<select id="part" class="sel" value={data.selectedKey} onchange={elegir}>
+				<option value="real">⚽ Real</option>
 				{#each data.participantes as p (p.id)}
 					<option value={p.id}>{p.nombre}</option>
 				{/each}
 			</select>
 		</div>
-		<p class="sub">
-			Dieciseisavos de final (partidos 73–88) con el <strong>cuadro oficial fijo</strong> de la FIFA
-			aplicado a la tabla que resultaría de los pronósticos de <strong>{data.selectedNombre}</strong>
-			(1° y 2° de cada grupo + 8 mejores terceros). Los terceros se ubican según la tabla oficial de
-			495 combinaciones (Annex C). Es hipotético: refleja sus predicciones de grupos, no resultados
-			reales.
-		</p>
+		{#if data.esReal}
+			<p class="sub">
+				Dieciseisavos de final (partidos 73–88) con el <strong>cuadro oficial fijo</strong> de la
+				FIFA aplicado a la tabla <strong>real hasta ahora</strong> ({data.jugados} de {data.totalPartidos}
+				partidos con resultado). Los terceros se ubican según la tabla oficial de 495 combinaciones
+				(Annex C). Es <strong>provisional</strong>: cambia con cada partido; los equipos aún
+				empatados (incluidos los que no han jugado) se ordenan por los criterios oficiales y, a falta
+				de juego, por nombre.
+			</p>
+		{:else}
+			<p class="sub">
+				Dieciseisavos de final (partidos 73–88) con el <strong>cuadro oficial fijo</strong> de la
+				FIFA aplicado a la tabla que resultaría de los pronósticos de
+				<strong>{data.selectedNombre}</strong> (1° y 2° de cada grupo + 8 mejores terceros). Los
+				terceros se ubican según la tabla oficial de 495 combinaciones (Annex C). Es hipotético:
+				refleja sus predicciones de grupos, no resultados reales.
+			</p>
+		{/if}
 	</div>
 
 	<div class="cruces">
