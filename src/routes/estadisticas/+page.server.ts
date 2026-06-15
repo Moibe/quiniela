@@ -1,7 +1,7 @@
 import { asc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { participantes, partidos, pronosticos } from '$lib/server/db/schema';
-import { puntosDe, PUNTOS_EXACTO } from '$lib/scoring';
+import { puntosDe, PUNTOS_EXACTO, computeStandings } from '$lib/scoring';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -73,16 +73,42 @@ export const load: PageServerLoad = async ({ url }) => {
 		const ga = vivo.golesA as number;
 		const gb = vivo.golesB as number;
 
+		// Tabla BASE: cómo estaría la clasificación SIN contar el partido en curso.
+		// Sirve de referencia para medir cuántos lugares subiría/bajaría cada quien
+		// si el partido terminara con un marcador dado (mismo ranking que Lugares).
+		const matsSinVivo = mats.map((m) =>
+			m.id === vivo.id ? { ...m, golesA: null, golesB: null } : m
+		);
+		const baseRank = new Map(
+			computeStandings(parts, matsSinVivo, pros).standings.map((s) => [s.participanteId, s.rank])
+		);
+
 		const tarjeta = (golesA: number, golesB: number) => {
-			const lista: { nombre: string; pronostico: string; puntos: number; exacto: boolean }[] = [];
+			// Ranking si el partido en curso terminara con ESTE marcador.
+			const matsCon = matsSinVivo.map((m) => (m.id === vivo.id ? { ...m, golesA, golesB } : m));
+			const escenRank = new Map(
+				computeStandings(parts, matsCon, pros).standings.map((s) => [s.participanteId, s.rank])
+			);
+
+			const lista: {
+				nombre: string;
+				pronostico: string;
+				puntos: number;
+				exacto: boolean;
+				mov: number;
+			}[] = [];
 			for (const pr of prosVivo) {
 				const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, { golesA, golesB });
 				if (pts > 0) {
+					// + = sube lugares (su rank baja de número) respecto a la tabla base.
+					const mov =
+						(baseRank.get(pr.participanteId) ?? 0) - (escenRank.get(pr.participanteId) ?? 0);
 					lista.push({
 						nombre: nombrePorId.get(pr.participanteId) ?? '',
 						pronostico: `${pr.golesA}-${pr.golesB}`,
 						puntos: pts,
-						exacto: pts === PUNTOS_EXACTO
+						exacto: pts === PUNTOS_EXACTO,
+						mov
 					});
 				}
 			}

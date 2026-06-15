@@ -55,6 +55,9 @@
 					<li class:exa={g.exacto}>
 						<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
 						<span class="gan-nombre">{g.nombre}</span>
+						{#if g.mov > 0}
+							<span class="gan-mov" title="Subiría {g.mov} lugar(es) en la tabla">▲{g.mov}</span>
+						{/if}
 						<span class="gan-prono">{g.pronostico}</span>
 					</li>
 				{/each}
@@ -493,6 +496,16 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-weight: 700;
+	}
+
+	/* Flechita: cuántos lugares SUBIRÍA en la tabla si el partido terminara con
+	   este marcador (vs la tabla sin contarlo). Solo se muestra si sube (▲ verde). */
+	.gan-mov {
+		flex-shrink: 0;
+		font-size: 0.68rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		color: #4ade80;
 	}
 
 	.gan-prono {
