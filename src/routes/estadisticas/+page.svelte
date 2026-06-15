@@ -94,7 +94,6 @@
 	<div class="gan-card {tono}">
 		<div class="gan-head">
 			<span class="gan-anota">
-				<span class="gan-ball" aria-hidden="true">⚽</span>
 				{titulo}
 				{#if equipo}
 					<Bandera {equipo} />
@@ -458,7 +457,7 @@
 		flex-direction: column;
 		gap: 0.35rem;
 		min-width: 14rem;
-		max-width: 20rem;
+		max-width: 28rem;
 		padding: 0.6rem 0.9rem;
 		background: rgba(255, 255, 255, 0.04);
 		border: 1px solid rgba(255, 255, 255, 0.12);
@@ -482,7 +481,7 @@
 		gap: 0.6rem;
 	}
 
-	/* Encabezado de las 3 tarjetas: ⚽ + título + (bandera opcional), grande y
+	/* Encabezado de las 3 tarjetas: título + (bandera opcional), grande y
 	   blanco e igual en todas. La bandera escala con el font-size del contenedor. */
 	.gan-anota {
 		display: inline-flex;
@@ -493,11 +492,6 @@
 		font-size: 1rem;
 		font-weight: 700;
 		color: #fff;
-	}
-
-	.gan-ball {
-		flex-shrink: 0;
-		line-height: 1;
 	}
 
 	.gan-score {
