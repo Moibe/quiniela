@@ -61,43 +61,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	});
 
-	// Gráfica de pastel: desglose local/empate/visitante de los pronósticos para el
-	// partido EN CURSO; si no hay, el SIGUIENTE pendiente (primero por número).
-	// null si ya se jugaron todos. (mats viene ordenado por número.)
-	const objetivo = mats.find((m) => m.enCurso) ?? mats.find((m) => m.golesA === null);
-	let grafica = null;
-	if (objetivo) {
-		const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
-		const localNames: string[] = [];
-		const empateNames: string[] = [];
-		const visitaNames: string[] = [];
-		for (const pr of pros) {
-			if (pr.partidoId !== objetivo.id) continue;
-			const nombre = nombrePorId.get(pr.participanteId) ?? '';
-			if (pr.golesA > pr.golesB) localNames.push(nombre);
-			else if (pr.golesA < pr.golesB) visitaNames.push(nombre);
-			else empateNames.push(nombre);
-		}
-		const orden = (a: string, b: string) => a.localeCompare(b, 'es');
-		localNames.sort(orden);
-		empateNames.sort(orden);
-		visitaNames.sort(orden);
-		grafica = {
-			numero: objetivo.numero,
-			equipoA: objetivo.equipoA,
-			equipoB: objetivo.equipoB,
-			enCurso: objetivo.enCurso,
-			local: localNames.length,
-			empate: empateNames.length,
-			visita: visitaNames.length,
-			total: localNames.length + empateNames.length + visitaNames.length,
-			localNames,
-			empateNames,
-			visitaNames
-		};
-	}
-
 	// Orden FIJO por número (#1→#72): las filas NO se mueven. Los partidos en
 	// curso se anuncian con un banner arriba de la tabla, no reordenando.
-	return { participantes: parts.map((p) => p.nombre), rows, grafica };
+	return { participantes: parts.map((p) => p.nombre), rows };
 };

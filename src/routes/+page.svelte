@@ -1,18 +1,8 @@
 <script lang="ts">
 	import Bandera from '$lib/Bandera.svelte';
-	import { browser } from '$app/environment';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-
-	// La gráfica de pastel es ocultable SOLO en móvil (en pantallas anchas siempre
-	// se muestra; los controles ✕/"mostrar" están ocultos por CSS). La preferencia
-	// del usuario se recuerda entre visitas vía localStorage.
-	const PIE_KEY = 'quiniela:mostrarPie';
-	let mostrarPie = $state(browser ? localStorage.getItem(PIE_KEY) !== '0' : true);
-	$effect(() => {
-		if (browser) localStorage.setItem(PIE_KEY, mostrarPie ? '1' : '0');
-	});
 
 	// Partidos en curso → banner arriba de la tabla (no reordena las filas).
 	const enCursoMatches = $derived(data.rows.filter((r) => r.enCurso));
@@ -49,37 +39,6 @@
 	// Marcar/desmarcar una FILA (partido) con un clic en su identidad (# o equipos).
 	let filaMarcada = $state<number | null>(null);
 	const toggleFila = (n: number) => (filaMarcada = filaMarcada === n ? null : n);
-
-	// Segmentos del pastel (SVG) para la gráfica: local / empate / visitante. Cada
-	// uno con su lista de nombres (tooltip al pasar el mouse). Si solo hay un
-	// resultado, se dibuja un círculo completo (un arco de 360° es degenerado).
-	function arcPath(start: number, end: number) {
-		const rad = (a: number) => ((a - 90) * Math.PI) / 180;
-		const x1 = 50 + 50 * Math.cos(rad(start));
-		const y1 = 50 + 50 * Math.sin(rad(start));
-		const x2 = 50 + 50 * Math.cos(rad(end));
-		const y2 = 50 + 50 * Math.sin(rad(end));
-		const large = end - start > 180 ? 1 : 0;
-		return `M50,50 L${x1.toFixed(2)},${y1.toFixed(2)} A50,50 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`;
-	}
-
-	const segmentos = $derived.by(() => {
-		const g = data.grafica;
-		if (!g) return [];
-		const defs = [
-			{ key: 'l', label: g.equipoA, color: '#4ade80', names: g.localNames },
-			{ key: 'e', label: 'Empate', color: '#fbbf24', names: g.empateNames },
-			{ key: 'v', label: g.equipoB, color: '#38bdf8', names: g.visitaNames }
-		].filter((d) => d.names.length > 0);
-		const total = g.total || 1;
-		if (defs.length === 1) return [{ ...defs[0], full: true, path: '' }];
-		let acc = 0;
-		return defs.map((d) => {
-			const start = (acc / total) * 360;
-			acc += d.names.length;
-			return { ...d, full: false, path: arcPath(start, (acc / total) * 360) };
-		});
-	});
 </script>
 
 <section class="participantes">
@@ -97,14 +56,6 @@
 			💡 Clic en un participante resalta su columna (doble clic la fija) · clic en un partido (# o
 			equipos) marca su fila.
 		</p>
-		{#if data.grafica}
-			<button
-				class="pie-show"
-				class:visible={!mostrarPie}
-				type="button"
-				onclick={() => (mostrarPie = true)}>📊 Mostrar gráfica</button
-			>
-		{/if}
 	</div>
 
 	{#if enCursoMatches.length}
@@ -123,45 +74,6 @@
 		</div>
 	{/if}
 
-	{#if data.grafica}
-		{@const g = data.grafica}
-		<div class="pie-card" class:oculta={!mostrarPie}>
-			<button
-				class="pie-hide"
-				type="button"
-				title="Ocultar gráfica"
-				aria-label="Ocultar gráfica"
-				onclick={() => (mostrarPie = false)}>✕</button
-			>
-			<div class="pie-title">{g.enCurso ? '● En curso' : 'Siguiente'} · #{g.numero}</div>
-			<div class="pie-row">
-				<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="Desglose de pronósticos">
-					{#each segmentos as s (s.key)}
-						{#if s.full}
-							<circle cx="50" cy="50" r="50" fill={s.color} stroke="rgba(0,0,0,0.25)" stroke-width="0.5">
-								<title>{s.label}: {s.names.join(', ')}</title>
-							</circle>
-						{:else}
-							<path d={s.path} fill={s.color} stroke="rgba(0,0,0,0.3)" stroke-width="0.6">
-								<title>{s.label}: {s.names.join(', ')}</title>
-							</path>
-						{/if}
-					{/each}
-				</svg>
-				<ul class="pie-leg">
-					<li title="{g.equipoA}: {g.localNames.join(', ')}">
-						<span class="pdot l"></span> <span class="pnm">{g.equipoA}</span> <b>{g.local}</b>
-					</li>
-					<li title="Empate: {g.empateNames.join(', ')}">
-						<span class="pdot e"></span> <span class="pnm">Empate</span> <b>{g.empate}</b>
-					</li>
-					<li title="{g.equipoB}: {g.visitaNames.join(', ')}">
-						<span class="pdot v"></span> <span class="pnm">{g.equipoB}</span> <b>{g.visita}</b>
-					</li>
-				</ul>
-			</div>
-		</div>
-	{/if}
 	</div>
 
 	<div class="table-wrap">
@@ -281,110 +193,6 @@
 	.head {
 		flex: 1 1 18rem;
 		min-width: 0;
-	}
-
-	/* Gráfica de pastel: local / empate / visitante de los pronósticos. */
-	.pie-card {
-		position: relative;
-		flex-shrink: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-		padding: 0.6rem 0.9rem;
-		background: rgba(255, 255, 255, 0.04);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		border-radius: 10px;
-	}
-
-	/* Botones para ocultar (✕) / volver a mostrar la gráfica. Ocultos por defecto:
-	   en pantallas anchas la gráfica NO es quitable. Solo se activan en móvil (ver
-	   media query al final). */
-	.pie-hide,
-	.pie-show {
-		display: none;
-	}
-
-	.pie-title {
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-		color: rgba(255, 255, 255, 0.7);
-	}
-
-	.pie-row {
-		display: flex;
-		align-items: center;
-		gap: 0.85rem;
-	}
-
-	.pie {
-		width: 92px;
-		height: 92px;
-		flex-shrink: 0;
-		filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
-	}
-
-	.pie path,
-	.pie circle {
-		cursor: default;
-		transition: opacity 0.15s ease;
-	}
-
-	.pie:hover path,
-	.pie:hover circle {
-		opacity: 0.6;
-	}
-
-	.pie path:hover,
-	.pie circle:hover {
-		opacity: 1;
-	}
-
-	.pie-leg {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		font-size: 0.72rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.18rem;
-	}
-
-	.pie-leg li {
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		white-space: nowrap;
-	}
-
-	.pnm {
-		max-width: 8rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.pie-leg b {
-		margin-left: 0.1rem;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.pdot {
-		width: 0.7rem;
-		height: 0.7rem;
-		border-radius: 3px;
-		flex-shrink: 0;
-	}
-
-	.pdot.l {
-		background: #4ade80;
-	}
-
-	.pdot.e {
-		background: #fbbf24;
-	}
-
-	.pdot.v {
-		background: #38bdf8;
 	}
 
 	.sub {
@@ -803,62 +611,6 @@
 	@media (max-width: 600px) {
 		.participantes {
 			--w-team: 6.5rem;
-		}
-	}
-
-	/* Solo en móvil: la gráfica de pastel se puede quitar (✕) y volver a poner. */
-	@media (max-width: 48rem) {
-		.pie-card.oculta {
-			display: none;
-		}
-
-		.pie-hide {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			position: absolute;
-			top: 0.3rem;
-			right: 0.3rem;
-			width: 1.5rem;
-			height: 1.5rem;
-			padding: 0;
-			font-size: 0.8rem;
-			line-height: 1;
-			color: rgba(255, 255, 255, 0.6);
-			background: rgba(255, 255, 255, 0.07);
-			border: 1px solid rgba(255, 255, 255, 0.18);
-			border-radius: 6px;
-			cursor: pointer;
-		}
-
-		.pie-hide:hover {
-			color: #fff;
-			background: rgba(255, 255, 255, 0.14);
-		}
-
-		/* El título no se mete bajo el botón ✕. */
-		.pie-title {
-			padding-right: 1.4rem;
-		}
-
-		.pie-show.visible {
-			display: inline-flex;
-			align-items: center;
-			gap: 0.35rem;
-			margin-top: 0.6rem;
-			padding: 0.4rem 0.7rem;
-			font: inherit;
-			font-size: 0.8rem;
-			font-weight: 700;
-			color: #bbf7d0;
-			background: rgba(255, 255, 255, 0.06);
-			border: 1px solid rgba(255, 255, 255, 0.18);
-			border-radius: 8px;
-			cursor: pointer;
-		}
-
-		.pie-show.visible:hover {
-			background: rgba(255, 255, 255, 0.11);
 		}
 	}
 
