@@ -62,6 +62,14 @@
       <span>Lugares</span>
     </a>
     <a
+      href="/estadisticas"
+      class="nav-item"
+      aria-current={page.url.pathname === '/estadisticas' ? 'page' : undefined}
+    >
+      <ChartPie size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Estadísticas</span>
+    </a>
+    <a
       href="/grupos"
       class="nav-item"
       aria-current={page.url.pathname === '/grupos' ? 'page' : undefined}
@@ -76,14 +84,6 @@
     >
       <Swords size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Segunda Ronda</span>
-    </a>
-    <a
-      href="/estadisticas"
-      class="nav-item"
-      aria-current={page.url.pathname === '/estadisticas' ? 'page' : undefined}
-    >
-      <ChartPie size={16} strokeWidth={2.2} aria-hidden="true" />
-      <span>Estadísticas</span>
     </a>
   </nav>
 
