@@ -1,8 +1,55 @@
 <script lang="ts">
 	import Bandera from '$lib/Bandera.svelte';
+	import { browser } from '$app/environment';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	// Alto dinámico de las listas de los 3 cuadros de "ganadores": crecen para
+	// llenar el espacio vertical disponible (sin que la página haga scroll) y, como
+	// comparten el mismo tope y el contenedor usa align-items: stretch, los tres
+	// quedan parejos de altura. En móvil (apilados) se usa el tope por defecto.
+	let listMax = $state(0); // px; 0 = usar el max-height por defecto (CSS)
+
+	$effect(() => {
+		if (!browser) return;
+		void data.ganando; // re-medir si cambian las tarjetas (nuevo marcador en vivo)
+
+		const medir = () => {
+			const fila = document.querySelector('.cards-gan');
+			const lista = fila?.querySelector('.gan-list');
+			// El scroll vive en .work-scroll (panel fijo del layout), no en la ventana:
+			// medimos su borde inferior visible para no provocar su scroll interno.
+			const cont = document.querySelector('.work-scroll');
+			if (!fila || !lista || !cont) {
+				listMax = 0;
+				return;
+			}
+			// Si las tarjetas NO están en una sola fila (móvil, apiladas), usar el
+			// tope por defecto para que cada una quede compacta.
+			const cards = [...fila.querySelectorAll('.gan-card')];
+			const top0 = cards[0].getBoundingClientRect().top;
+			const enFila =
+				cards.length > 1 && cards.every((c) => Math.abs(c.getBoundingClientRect().top - top0) < 4);
+			if (!enFila) {
+				listMax = 0;
+				return;
+			}
+			// Alto disponible: del inicio de la lista al fondo visible del área de
+			// scroll, menos el padding inferior de la tarjeta (~10) + de la sección
+			// (~24) + holgura, para que quepa sin generar scroll.
+			const top = lista.getBoundingClientRect().top;
+			const fondo = cont.getBoundingClientRect().bottom;
+			listMax = Math.max(Math.round(fondo - top - 44), 150);
+		};
+
+		const raf = requestAnimationFrame(medir);
+		window.addEventListener('resize', medir);
+		return () => {
+			cancelAnimationFrame(raf);
+			window.removeEventListener('resize', medir);
+		};
+	});
 
 	// Segmentos del pastel (SVG): local / empate / visitante. Cada uno con su lista
 	// de nombres (tooltip). Si solo hay un resultado, se dibuja un círculo completo.
@@ -143,7 +190,7 @@
 
 		<!-- Fila 2 (aparte, abajo): tarjetas de "ganadores", más altas por sus listas. -->
 		{#if data.ganando}
-			<div class="cards cards-gan">
+			<div class="cards cards-gan" style={listMax ? `--gan-list-max: ${listMax}px` : ''}>
 				{@render ganadores(
 					`Ganando puntos · #${data.ganando.numero}`,
 					`${data.ganando.equipoA} vs ${data.ganando.equipoB} · marcador vigente`,
@@ -452,7 +499,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
-		max-height: 16rem;
+		/* Tope dinámico (lo fija el JS para llenar el viewport); 16rem por defecto
+		   (SSR / móvil apilado). El mismo tope en los 3 + stretch = altura pareja. */
+		max-height: var(--gan-list-max, 16rem);
 		overflow-y: auto;
 	}
 
