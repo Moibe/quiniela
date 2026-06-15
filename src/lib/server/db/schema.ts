@@ -24,7 +24,11 @@ export const partidos = sqliteTable('partidos', {
 	fecha: integer('fecha', { mode: 'timestamp' }),
 	// true = marcador PROVISIONAL capturado en vivo (muestra "Partido en Curso");
 	// false = resultado final. En ambos casos el marcador cuenta para los puntos.
-	enCurso: integer('en_curso', { mode: 'boolean' }).notNull().default(false)
+	enCurso: integer('en_curso', { mode: 'boolean' }).notNull().default(false),
+	// URL del partido en Cloudbet, para que el monitor externo (Plan A) lea su marcador.
+	urlCloudbet: text('url_cloudbet'),
+	// true = el admin encendió la vigilancia de este partido; el monitor externo lo toma.
+	monitorear: integer('monitorear', { mode: 'boolean' }).notNull().default(false)
 });
 
 // La matriz de pronósticos: 72 partidos × 29 participantes. golesA/golesB son

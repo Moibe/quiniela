@@ -25,7 +25,7 @@ jobs:
             # algo falla, así pm2 NO reinicia con un build roto (sin downtime).
             - name: deploy on droplet
               run: |
-                  ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use node >/dev/null && cd ~/code/quiniela && git checkout main && git pull origin main && npm ci && npm run db:migrate && npm run build && pm2 restart quiniela'
+                  ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use node >/dev/null && { [ -d ~/code/partido-nucleo ] || git clone git@github.com:Moibe/partido-nucleo.git ~/code/partido-nucleo; } && cd ~/code/partido-nucleo && git checkout main && git pull origin main && npm ci && npm run build && cd ~/code/quiniela && git checkout main && git pull origin main && npm ci && npm run db:migrate && npm run build && pm2 restart quiniela'
 
             - name: cleanup
               run: rm -rf ~/.ssh
