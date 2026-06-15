@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trophy, Users, Newspaper, LayoutGrid, Swords, LogOut } from '@lucide/svelte';
+  import { Trophy, Users, Newspaper, LayoutGrid, Swords, ChartPie, LogOut } from '@lucide/svelte';
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
 
@@ -76,6 +76,14 @@
     >
       <Swords size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Segunda Ronda</span>
+    </a>
+    <a
+      href="/estadisticas"
+      class="nav-item"
+      aria-current={page.url.pathname === '/estadisticas' ? 'page' : undefined}
+    >
+      <ChartPie size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Estadísticas</span>
     </a>
   </nav>
 
