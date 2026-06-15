@@ -88,11 +88,20 @@
 	sub: string,
 	gn: NonNullable<typeof data.ganando>,
 	tono: string,
-	vacio: string
+	vacio: string,
+	equipo: string
 )}
 	<div class="gan-card {tono}">
 		<div class="gan-head">
-			<span class="gan-title">{titulo}</span>
+			{#if equipo}
+				<span class="gan-anota">
+					<span class="gan-ball" aria-hidden="true">⚽</span>
+					<Bandera {equipo} />
+					{titulo}
+				</span>
+			{:else}
+				<span class="gan-title">{titulo}</span>
+			{/if}
 			<span class="gan-score">{gn.real.replace('-', ' – ')}</span>
 		</div>
 		{#if sub}
@@ -198,7 +207,8 @@
 					`${data.ganando.equipoA} vs ${data.ganando.equipoB} · marcador vigente`,
 					data.ganando,
 					'',
-					'Nadie va ganando puntos con este marcador.'
+					'Nadie va ganando puntos con este marcador.',
+					''
 				)}
 				{#if data.golLocal}
 					{@render ganadores(
@@ -206,7 +216,8 @@
 						'',
 						data.golLocal,
 						'loc',
-						'Nadie ganaría puntos con ese marcador.'
+						'Nadie ganaría puntos con ese marcador.',
+						data.golLocal.equipoA
 					)}
 				{/if}
 				{#if data.golVisita}
@@ -215,7 +226,8 @@
 						'',
 						data.golVisita,
 						'vis',
-						'Nadie ganaría puntos con ese marcador.'
+						'Nadie ganaría puntos con ese marcador.',
+						data.golVisita.equipoB
 					)}
 				{/if}
 			</div>
@@ -477,6 +489,23 @@
 		font-weight: 700;
 		letter-spacing: 0.01em;
 		color: rgba(255, 255, 255, 0.7);
+	}
+
+	/* Encabezado de los cuadros "Si anota …": balón + bandera + texto, más grande
+	   y blanco. La bandera escala con el font-size del contenedor. */
+	.gan-anota {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-width: 0;
+		font-size: 1rem;
+		font-weight: 700;
+		color: #fff;
+	}
+
+	.gan-ball {
+		flex-shrink: 0;
+		line-height: 1;
 	}
 
 	.gan-score {
