@@ -200,7 +200,7 @@
 		{#if data.ganando}
 			<div class="cards cards-gan" style={listMax ? `--gan-list-max: ${listMax}px` : ''}>
 				{@render ganadores(
-					'Ganando puntos con resultado actual:',
+					data.pendiente ? 'Ganando puntos si va 0-0:' : 'Ganando puntos con resultado actual:',
 					'',
 					data.ganando,
 					'',
@@ -231,7 +231,9 @@
 		{/if}
 
 		{#if !data.enCurso.length}
-			<p class="nota">No hay ningún partido en curso ahora mismo.</p>
+			<p class="nota">
+				No hay ningún partido en curso: las tarjetas asumen el siguiente partido en 0-0 de salida.
+			</p>
 		{/if}
 	{:else}
 		<p class="empty">Ya se jugaron todos los partidos: no hay nada en curso ni pendiente.</p>

@@ -59,33 +59,38 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	}
 
-	// Para el partido EN CURSO (el primero, si hay varios): quién GANARÍA puntos con
-	// un marcador dado. Marcador exacto (3 pts) hasta arriba, luego acierto de
-	// resultado (1 pt); los que fallan (0 pts) no se listan. Se calcula con el
-	// marcador VIGENTE y con los escenarios "+1 gol local" / "+1 gol visita".
-	const vivo = mats.find((m) => m.enCurso && m.golesA !== null && m.golesB !== null);
+	// Tarjetas de "ganadores" para el OBJETIVO (el partido en curso o, si no hay, el
+	// siguiente pendiente): quién GANARÍA puntos con un marcador dado. Exacto (3 pts)
+	// hasta arriba, luego acierto de resultado (1 pt); los que fallan no se listan.
+	// Si el partido aún no empieza, se asume 0-0 de salida para tener estadísticas
+	// desde antes. Se calculan con el marcador del objetivo y los escenarios
+	// "+1 gol local" / "+1 gol visita".
 	let ganando = null;
 	let golLocal = null;
 	let golVisita = null;
-	if (vivo) {
+	let pendiente = false; // true = el objetivo aún no empieza (tarjetas asumen 0-0)
+	if (objetivo) {
 		const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
-		const prosVivo = pros.filter((pr) => pr.partidoId === vivo.id);
-		const ga = vivo.golesA as number;
-		const gb = vivo.golesB as number;
+		const prosObj = pros.filter((pr) => pr.partidoId === objetivo.id);
+		const ga = objetivo.golesA ?? 0; // 0-0 por defecto si todavía no hay marcador
+		const gb = objetivo.golesB ?? 0;
+		pendiente = !objetivo.enCurso;
 
-		// Tabla BASE: cómo estaría la clasificación SIN contar el partido en curso.
-		// Sirve de referencia para medir cuántos lugares subiría/bajaría cada quien
-		// si el partido terminara con un marcador dado (mismo ranking que Lugares).
-		const matsSinVivo = mats.map((m) =>
-			m.id === vivo.id ? { ...m, golesA: null, golesB: null } : m
+		// Tabla BASE: cómo estaría la clasificación SIN contar este partido. Sirve de
+		// referencia para medir cuántos lugares subiría cada quien si terminara con un
+		// marcador dado (mismo ranking que Lugares).
+		const matsSinObj = mats.map((m) =>
+			m.id === objetivo.id ? { ...m, golesA: null, golesB: null } : m
 		);
 		const baseRank = new Map(
-			computeStandings(parts, matsSinVivo, pros).standings.map((s) => [s.participanteId, s.rank])
+			computeStandings(parts, matsSinObj, pros).standings.map((s) => [s.participanteId, s.rank])
 		);
 
 		const tarjeta = (golesA: number, golesB: number) => {
-			// Ranking si el partido en curso terminara con ESTE marcador.
-			const matsCon = matsSinVivo.map((m) => (m.id === vivo.id ? { ...m, golesA, golesB } : m));
+			// Ranking si el partido terminara con ESTE marcador.
+			const matsCon = matsSinObj.map((m) =>
+				m.id === objetivo.id ? { ...m, golesA, golesB } : m
+			);
 			const escenRank = new Map(
 				computeStandings(parts, matsCon, pros).standings.map((s) => [s.participanteId, s.rank])
 			);
@@ -97,7 +102,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				exacto: boolean;
 				mov: number;
 			}[] = [];
-			for (const pr of prosVivo) {
+			for (const pr of prosObj) {
 				const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, { golesA, golesB });
 				if (pts > 0) {
 					// + = sube lugares (su rank baja de número) respecto a la tabla base.
@@ -114,9 +119,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			}
 			lista.sort((a, b) => b.puntos - a.puntos || a.nombre.localeCompare(b.nombre, 'es'));
 			return {
-				numero: vivo.numero,
-				equipoA: vivo.equipoA,
-				equipoB: vivo.equipoB,
+				numero: objetivo.numero,
+				equipoA: objetivo.equipoA,
+				equipoB: objetivo.equipoB,
 				real: `${golesA}-${golesB}`,
 				lista,
 				exactos: lista.filter((x) => x.exacto).length,
@@ -124,10 +129,10 @@ export const load: PageServerLoad = async ({ url }) => {
 			};
 		};
 
-		ganando = tarjeta(ga, gb); // marcador vigente
+		ganando = tarjeta(ga, gb); // marcador actual (o 0-0 si aún no empieza)
 		golLocal = tarjeta(ga + 1, gb); // si anota el local
 		golVisita = tarjeta(ga, gb + 1); // si anota la visita
 	}
 
-	return { grafica, enCurso, ganando, golLocal, golVisita };
+	return { grafica, enCurso, ganando, golLocal, golVisita, pendiente };
 };
