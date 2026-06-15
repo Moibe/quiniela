@@ -22,17 +22,18 @@
 			</select>
 		</div>
 		<p class="sub">
-			Dieciseisavos de final armados con la tabla que resultaría de los pronósticos de <strong
-				>{data.selectedNombre}</strong
-			> (1° y 2° de cada grupo + 8 mejores terceros), sin cruzar a equipos del mismo grupo. Es
-			hipotético: refleja sus predicciones de grupos, no resultados reales.
+			Dieciseisavos de final (partidos 73–88) con el <strong>cuadro oficial fijo</strong> de la FIFA
+			aplicado a la tabla que resultaría de los pronósticos de <strong>{data.selectedNombre}</strong>
+			(1° y 2° de cada grupo + 8 mejores terceros). Los terceros se ubican según la tabla oficial de
+			495 combinaciones (Annex C). Es hipotético: refleja sus predicciones de grupos, no resultados
+			reales.
 		</p>
 	</div>
 
 	<div class="cruces">
-		{#each data.cruces as c (c.llave)}
+		{#each data.cruces as c (c.numero)}
 			<div class="cruce">
-				<span class="llave">Llave {c.llave}</span>
+				<span class="llave">Partido {c.numero}</span>
 				<div class="enfrent">
 					<span class="lado a">
 						<span class="org">{c.a.origen}</span>

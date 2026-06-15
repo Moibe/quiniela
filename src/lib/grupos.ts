@@ -35,6 +35,26 @@ export type Grupo = {
 	partidosJugados: number; // de 6
 };
 
+// Letra OFICIAL de grupo del Mundial 2026 por el equipo sembrado (Pot 1) que
+// cada grupo contiene. Cada uno de los 12 grupos tiene exactamente un equipo de
+// Pot 1 (los 3 anfitriones + los 9 mejores del ranking), así que ese equipo
+// identifica el grupo sin ambigüedad y fija la letra real (no la del orden en
+// que se capturaron los partidos). Verificado contra el sorteo oficial.
+const GRUPO_OFICIAL: Record<string, string> = {
+	'México': 'A',
+	'Canadá': 'B',
+	'Brasil': 'C',
+	'E. Unidos': 'D',
+	'Alemania': 'E',
+	'P. Bajos': 'F',
+	'España': 'G',
+	'Bélgica': 'H',
+	'Francia': 'I',
+	'Argentina': 'J',
+	'Portugal': 'K',
+	'Inglaterra': 'L'
+};
+
 export function computeGrupos(partidos: PartidoIn[]): Grupo[] {
 	// 1) Componentes conexas (cada grupo = K4) del grafo de enfrentamientos.
 	const adj = new Map<string, Set<string>>();
@@ -63,7 +83,11 @@ export function computeGrupos(partidos: PartidoIn[]): Grupo[] {
 		comps.push(comp);
 	}
 
-	// 2) Etiqueta A..L por el partido más bajo de cada grupo (orden estable).
+	// 2) Etiqueta cada grupo. Preferimos la letra OFICIAL (por el equipo sembrado
+	//    de Pot 1 que contiene), de modo que el orden cronológico de captura no
+	//    altere las letras (el grupo de Brasil siempre es C, etc.). Si no se
+	//    reconocen los 12 sembrados (datos atípicos), caemos a etiquetar A..L por
+	//    el número de partido más bajo de cada grupo (orden estable).
 	const minNumero = (teams: string[]) => {
 		let min = Infinity;
 		for (const p of partidos) {
@@ -71,10 +95,23 @@ export function computeGrupos(partidos: PartidoIn[]): Grupo[] {
 		}
 		return min;
 	};
-	comps.sort((a, b) => minNumero(a) - minNumero(b));
+
+	const oficiales = comps.map((teams) => {
+		const sembrado = teams.find((t) => GRUPO_OFICIAL[t]);
+		return sembrado ? GRUPO_OFICIAL[sembrado] : null;
+	});
+	const usarOficial =
+		oficiales.every((l) => l !== null) && new Set(oficiales).size === comps.length;
+
+	const etiquetados = usarOficial
+		? comps.map((teams, i) => ({ teams, label: oficiales[i] as string }))
+		: [...comps]
+				.sort((a, b) => minNumero(a) - minNumero(b))
+				.map((teams, i) => ({ teams, label: String.fromCharCode(65 + i) }));
+	etiquetados.sort((a, b) => a.label.localeCompare(b.label));
 
 	// 3) Tabla de cada grupo con los marcadores ya capturados.
-	return comps.map((teams, gi) => {
+	return etiquetados.map(({ teams, label }) => {
 		const acc = new Map<string, EquipoStanding>();
 		for (const t of teams) {
 			acc.set(t, { equipo: t, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, pos: 0, enVivo: false });
@@ -121,6 +158,6 @@ export function computeGrupos(partidos: PartidoIn[]): Grupo[] {
 		);
 		equipos.forEach((s, i) => (s.pos = i + 1));
 
-		return { label: String.fromCharCode(65 + gi), equipos, partidosJugados: jugados };
+		return { label, equipos, partidosJugados: jugados };
 	});
 }

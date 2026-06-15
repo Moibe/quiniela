@@ -1,8 +1,18 @@
-// Arma el cuadro de cruces de la fase final (Round of 32) SEGÚN los pronósticos
-// de un participante. No hay pronósticos de eliminatoria en la base: usamos los
-// 72 marcadores que predijo esa persona como si fueran los resultados de grupos,
-// calculamos las tablas, sacamos los 32 clasificados y los sembramos en 16 llaves.
+// Arma el cuadro OFICIAL de dieciseisavos (Round of 32, partidos 73–88) del
+// Mundial 2026 SEGÚN los pronósticos de un participante. No hay pronósticos de
+// eliminatoria en la base: usamos los 72 marcadores que predijo esa persona como
+// si fueran los resultados de la fase de grupos, calculamos las tablas y de ahí
+// aplicamos el cuadro FIJO predeterminado por FIFA — NO un sorteo ni una siembra.
+//
+// Reglas oficiales (Reglamento FIFA Mundial 2026):
+//   • 12 grupos (A–L) de 4. Avanzan los 2 primeros de cada grupo (24) + los 8
+//     mejores terceros de 12 (criterio: pts, dif. de goles, goles a favor…).
+//   • El cuadro de dieciseisavos es FIJO por posición. Patrón: 4 cruces 1º-vs-2º,
+//     8 cruces 1º-vs-mejor 3º, 4 cruces 2º-vs-2º (ver PLANTILLA abajo).
+//   • A qué llave va cada uno de los 8 terceros lo define la tabla "Annex C"
+//     (495 combinaciones) según DE QUÉ grupos salieron esos terceros: ANNEX_C.
 import { computeGrupos, type EquipoStanding } from './grupos';
+import { ANNEX_C, TERCEROS_SLOTS } from './terceros-annexC';
 
 type PartidoIn = {
 	id: number;
@@ -27,15 +37,41 @@ export type Clasificado = {
 	pts: number;
 	dg: number;
 	gf: number;
-	tercero: boolean; // clasificó como mejor tercero
+	tercero: boolean; // clasificó como uno de los 8 mejores terceros
 };
 
 export type Cruce = {
-	llave: number;
+	numero: number; // partido oficial 73–88
+	llave: number; // 1–16 (orden de presentación)
 	a: Clasificado;
 	b: Clasificado;
 };
 
+// Plantilla FIJA oficial de los 16 dieciseisavos (partidos 73–88). Cada lado es
+// una posición predeterminada: "1X"=ganador del grupo X, "2X"=segundo del grupo X,
+// "3@X"=el mejor tercero que la tabla Annex C asigna al ganador del grupo X.
+const PLANTILLA: { numero: number; a: string; b: string }[] = [
+	{ numero: 73, a: '2A', b: '2B' },
+	{ numero: 74, a: '1E', b: '3@E' },
+	{ numero: 75, a: '1F', b: '2C' },
+	{ numero: 76, a: '1C', b: '2F' },
+	{ numero: 77, a: '1I', b: '3@I' },
+	{ numero: 78, a: '2E', b: '2I' },
+	{ numero: 79, a: '1A', b: '3@A' },
+	{ numero: 80, a: '1L', b: '3@L' },
+	{ numero: 81, a: '1D', b: '3@D' },
+	{ numero: 82, a: '1G', b: '3@G' },
+	{ numero: 83, a: '2K', b: '2L' },
+	{ numero: 84, a: '1H', b: '2J' },
+	{ numero: 85, a: '1B', b: '3@B' },
+	{ numero: 86, a: '1J', b: '2H' },
+	{ numero: 87, a: '1K', b: '3@K' },
+	{ numero: 88, a: '2D', b: '2G' }
+];
+
+// Comparador de terceros (mejor primero): pts, dif. de goles, goles a favor; el
+// nombre solo desempata para que el orden sea determinista (no hay fair-play ni
+// ranking FIFA en la base).
 const rank = (x: EquipoStanding, y: EquipoStanding) =>
 	y.pts - x.pts || y.dg - x.dg || y.gf - x.gf || x.equipo.localeCompare(y.equipo, 'es');
 
@@ -59,75 +95,51 @@ export function computeBracket(
 	});
 
 	const grupos = computeGrupos(virtual);
+	const byLabel = new Map(grupos.map((g) => [g.label, g]));
 
-	const primeros: Clasificado[] = [];
-	const segundos: Clasificado[] = [];
-	const terceros: (Clasificado & { _st: EquipoStanding })[] = [];
-
-	for (const g of grupos) {
-		const [p1, p2, p3] = g.equipos;
-		if (p1) primeros.push(toClas(p1, `1° ${g.label}`, g.label, false));
-		if (p2) segundos.push(toClas(p2, `2° ${g.label}`, g.label, false));
-		if (p3) terceros.push({ ...toClas(p3, `3° ${g.label}`, g.label, true), _st: p3 });
-	}
-
-	// Mejores 8 terceros (de 12) por desempeño.
-	const mejoresTerceros = terceros
-		.sort((a, b) => rank(a._st, b._st))
+	// 8 mejores terceros (de 12) y de qué grupos vienen.
+	const terceros = grupos
+		.map((g) => ({ label: g.label, st: g.equipos[2] }))
+		.filter((t): t is { label: string; st: EquipoStanding } => !!t.st);
+	const mejoresLabels = terceros
+		.slice()
+		.sort((a, b) => rank(a.st, b.st))
 		.slice(0, 8)
-		.map(({ _st, ...c }) => c);
+		.map((t) => t.label);
 
-	// Siembra: 1os (por desempeño), luego 2os, luego mejores 3os.
-	const byRank = (a: Clasificado, b: Clasificado) =>
-		b.pts - a.pts || b.dg - a.dg || b.gf - a.gf || a.equipo.localeCompare(b.equipo, 'es');
-	const seeded = [
-		...primeros.sort(byRank),
-		...segundos.sort(byRank),
-		...mejoresTerceros.sort(byRank)
-	];
+	// Clave Annex C: las 8 letras (ordenadas) cuyos terceros clasifican.
+	const key = mejoresLabels.slice().sort().join('');
+	const asignacion = ANNEX_C[key];
 
-	// Cruces: mejor sembrado vs peor sembrado (1-32, 2-31…), PERO sin enfrentar a
-	// dos equipos del mismo grupo (ya jugaron entre sí en la fase de grupos). Se
-	// resuelve con backtracking: para cada mejor sembrado disponible se prueba al
-	// peor rival válido (de otro grupo) y se retrocede si se llega a un callejón.
-	const n = seeded.length;
-	const usado = new Array<boolean>(n).fill(false);
-	const pares: [number, number][] = [];
+	// Camino oficial: requiere los 12 grupos y una entrada válida en Annex C
+	// (siempre se cumple con la estructura de 72 partidos / 12 grupos).
+	if (grupos.length === 12 && mejoresLabels.length === 8 && asignacion) {
+		// Para cada ganador-de-grupo que enfrenta a un tercero: el grupo de ese tercero.
+		const terceroDe = new Map<string, string>();
+		TERCEROS_SLOTS.forEach((w, i) => terceroDe.set(w, asignacion[i]));
 
-	const emparejar = (): boolean => {
-		let a = -1;
-		for (let i = 0; i < n; i++) {
-			if (!usado[i]) {
-				a = i;
-				break;
+		const resolver = (ref: string): Clasificado => {
+			if (ref.startsWith('3@')) {
+				const w = ref.slice(2); // ganador de grupo (A, B, D, …)
+				const gl = terceroDe.get(w)!; // grupo del tercero asignado
+				return toClas(byLabel.get(gl)!.equipos[2], `3° ${gl}`, gl, true);
 			}
-		}
-		if (a === -1) return true; // todos emparejados
+			const pos = Number(ref[0]); // 1 o 2
+			const gl = ref.slice(1);
+			return toClas(byLabel.get(gl)!.equipos[pos - 1], `${pos}° ${gl}`, gl, false);
+		};
 
-		usado[a] = true;
-		for (let b = n - 1; b > a; b--) {
-			if (usado[b]) continue;
-			if (seeded[b].grupo === seeded[a].grupo) continue; // mismo grupo: prohibido
-			usado[b] = true;
-			pares.push([a, b]);
-			if (emparejar()) return true;
-			pares.pop();
-			usado[b] = false;
-		}
-		usado[a] = false;
-		return false;
-	};
-
-	if (emparejar()) {
-		return pares.map(([a, b], i) => ({ llave: i + 1, a: seeded[a], b: seeded[b] }));
+		return PLANTILLA.map((m, i) => ({
+			numero: m.numero,
+			llave: i + 1,
+			a: resolver(m.a),
+			b: resolver(m.b)
+		}));
 	}
 
-	// Fallback defensivo (no debería ocurrir con 12 grupos / máx 3 por grupo).
-	const cruces: Cruce[] = [];
-	for (let i = 0; i < Math.floor(n / 2); i++) {
-		cruces.push({ llave: i + 1, a: seeded[i], b: seeded[n - 1 - i] });
-	}
-	return cruces;
+	// Fallback defensivo (datos incompletos / grupos != 12): cuadro vacío en vez
+	// de inventar cruces. Con la quiniela completa nunca debería llegar aquí.
+	return [];
 }
 
 function toClas(s: EquipoStanding, origen: string, grupo: string, tercero: boolean): Clasificado {
