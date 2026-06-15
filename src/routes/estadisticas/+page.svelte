@@ -61,6 +61,30 @@
 				</div>
 			{/if}
 
+			{#if data.ganando}
+				{@const gn = data.ganando}
+				<div class="gan-card">
+					<div class="gan-head">
+						<span class="gan-title">Ganando puntos · #{gn.numero}</span>
+						<span class="gan-score">{gn.real.replace('-', ' – ')}</span>
+					</div>
+					<div class="gan-sub">{gn.equipoA} vs {gn.equipoB} · con el marcador vigente</div>
+					{#if gn.lista.length}
+						<ul class="gan-list">
+							{#each gn.lista as g, i (i)}
+								<li class:exa={g.exacto}>
+									<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
+									<span class="gan-nombre">{g.nombre}</span>
+									<span class="gan-prono">{g.pronostico}</span>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="gan-vacio">Nadie va ganando puntos con este marcador.</p>
+					{/if}
+				</div>
+			{/if}
+
 			{#if data.grafica}
 				{@const g = data.grafica}
 				<div class="pie-card">
@@ -319,5 +343,114 @@
 
 	.pdot.v {
 		background: #38bdf8;
+	}
+
+	/* ── Tarjeta "Ganando puntos" (con el marcador vigente del partido en curso) ── */
+	.gan-card {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		min-width: 14rem;
+		max-width: 20rem;
+		padding: 0.6rem 0.9rem;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 10px;
+	}
+
+	.gan-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+	}
+
+	.gan-title {
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.gan-score {
+		padding: 0.05rem 0.5rem;
+		background: rgba(0, 0, 0, 0.22);
+		border-radius: 6px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		color: #fff;
+	}
+
+	.gan-sub {
+		font-size: 0.66rem;
+		color: rgba(255, 255, 255, 0.5);
+	}
+
+	.gan-list {
+		list-style: none;
+		margin: 0.1rem 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		max-height: 16rem;
+		overflow-y: auto;
+	}
+
+	/* Acierto de resultado (1 pt): rosa mexicano (igual que la cuadrícula). */
+	.gan-list li {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.25rem 0.45rem;
+		border-radius: 6px;
+		font-size: 0.8rem;
+		background: rgba(240, 76, 158, 0.14);
+		border-left: 3px solid rgba(240, 76, 158, 0.7);
+	}
+
+	/* Marcador exacto (3 pts): guinda intenso, hasta arriba. */
+	.gan-list li.exa {
+		background: rgba(190, 18, 60, 0.22);
+		border-left-color: rgba(190, 18, 60, 0.95);
+	}
+
+	.gan-badge {
+		flex-shrink: 0;
+		font-size: 0.6rem;
+		font-weight: 700;
+		padding: 0.05rem 0.32rem;
+		border-radius: 5px;
+		white-space: nowrap;
+		background: rgba(255, 255, 255, 0.12);
+		color: #fff;
+	}
+
+	.gan-list li.exa .gan-badge {
+		background: rgba(190, 18, 60, 0.55);
+	}
+
+	.gan-nombre {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-weight: 700;
+	}
+
+	.gan-prono {
+		flex-shrink: 0;
+		font-size: 0.75rem;
+		font-variant-numeric: tabular-nums;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.gan-vacio {
+		margin: 0.2rem 0 0;
+		font-size: 0.78rem;
+		color: rgba(255, 255, 255, 0.6);
 	}
 </style>

@@ -1,6 +1,7 @@
 import { asc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { participantes, partidos, pronosticos } from '$lib/server/db/schema';
+import { puntosDe, PUNTOS_EXACTO } from '$lib/scoring';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -58,5 +59,39 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	}
 
-	return { grafica, enCurso };
+	// Quién va GANANDO puntos con el marcador VIGENTE del partido en curso (el
+	// primero, si hay varios). Marcador exacto (3 pts) hasta arriba, luego acierto
+	// de resultado (1 pt). Los que fallan (0 pts) no se listan.
+	const vivo = mats.find((m) => m.enCurso && m.golesA !== null && m.golesB !== null);
+	let ganando = null;
+	if (vivo) {
+		const real = { golesA: vivo.golesA as number, golesB: vivo.golesB as number };
+		const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
+		const lista: { nombre: string; pronostico: string; puntos: number; exacto: boolean }[] = [];
+		for (const pr of pros) {
+			if (pr.partidoId !== vivo.id) continue;
+			const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, real);
+			if (pts > 0) {
+				lista.push({
+					nombre: nombrePorId.get(pr.participanteId) ?? '',
+					pronostico: `${pr.golesA}-${pr.golesB}`,
+					puntos: pts,
+					exacto: pts === PUNTOS_EXACTO
+				});
+			}
+		}
+		// Exactos primero (puntos desc), luego por nombre.
+		lista.sort((a, b) => b.puntos - a.puntos || a.nombre.localeCompare(b.nombre, 'es'));
+		ganando = {
+			numero: vivo.numero,
+			equipoA: vivo.equipoA,
+			equipoB: vivo.equipoB,
+			real: `${real.golesA}-${real.golesB}`,
+			lista,
+			exactos: lista.filter((x) => x.exacto).length,
+			resultados: lista.filter((x) => !x.exacto).length
+		};
+	}
+
+	return { grafica, enCurso, ganando };
 };
