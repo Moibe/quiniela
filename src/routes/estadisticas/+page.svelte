@@ -200,7 +200,7 @@
 		{#if data.ganando}
 			<div class="cards cards-gan" style={listMax ? `--gan-list-max: ${listMax}px` : ''}>
 				{@render ganadores(
-					data.pendiente ? 'Ganando puntos si va 0-0:' : 'Ganando puntos con resultado actual:',
+					data.pendiente ? 'Ganando puntos si va así:' : 'Ganando puntos con resultado actual:',
 					'',
 					data.ganando,
 					'',
