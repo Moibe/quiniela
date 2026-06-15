@@ -96,6 +96,7 @@
 			<span class="gan-anota">
 				{titulo}
 				{#if equipo}
+					<span translate="no">{equipo}</span>
 					<Bandera {equipo} />
 				{/if}
 			</span>
@@ -109,7 +110,7 @@
 				{#each gn.lista as g, i (i)}
 					<li class:exa={g.exacto}>
 						<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
-						<span class="gan-nombre">{g.nombre}</span>
+						<span class="gan-nombre" translate="no">{g.nombre}</span>
 						{#if g.mov > 0}
 							<span class="gan-mov" title="Subiría {g.mov} lugar(es) en la tabla">▲{g.mov}</span>
 						{/if}
@@ -140,11 +141,11 @@
 					{#each data.enCurso as m (m.numero)}
 						<span class="bv-match">
 							<span class="bv-num">#{m.numero}</span>
-							<span class="bv-team">{m.equipoA}</span>
+							<span class="bv-team" translate="no">{m.equipoA}</span>
 							<Bandera equipo={m.equipoA} />
 							<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
 							<Bandera equipo={m.equipoB} />
-							<span class="bv-team">{m.equipoB}</span>
+							<span class="bv-team" translate="no">{m.equipoB}</span>
 						</span>
 					{/each}
 				</div>
@@ -182,13 +183,13 @@
 						</svg>
 						<ul class="pie-leg">
 							<li title="{g.equipoA}: {g.localNames.join(', ')}">
-								<span class="pdot l"></span> <span class="pnm">{g.equipoA}</span> <b>{g.local}</b>
+								<span class="pdot l"></span> <span class="pnm" translate="no">{g.equipoA}</span> <b>{g.local}</b>
 							</li>
 							<li title="Empate: {g.empateNames.join(', ')}">
 								<span class="pdot e"></span> <span class="pnm">Empate</span> <b>{g.empate}</b>
 							</li>
 							<li title="{g.equipoB}: {g.visitaNames.join(', ')}">
-								<span class="pdot v"></span> <span class="pnm">{g.equipoB}</span> <b>{g.visita}</b>
+								<span class="pdot v"></span> <span class="pnm" translate="no">{g.equipoB}</span> <b>{g.visita}</b>
 							</li>
 						</ul>
 					</div>
@@ -209,7 +210,7 @@
 				)}
 				{#if data.golLocal}
 					{@render ganadores(
-						`Si anota ${data.golLocal.equipoA}`,
+						'Si anota',
 						'',
 						data.golLocal,
 						'loc',
@@ -219,7 +220,7 @@
 				{/if}
 				{#if data.golVisita}
 					{@render ganadores(
-						`Si anota ${data.golVisita.equipoB}`,
+						'Si anota',
 						'',
 						data.golVisita,
 						'vis',

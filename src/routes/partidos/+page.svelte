@@ -56,7 +56,7 @@
 
 					<div class="cuerpo">
 				<span class="team a">
-					<span class="tname">{p.equipoA}</span>
+					<span class="tname" translate="no">{p.equipoA}</span>
 					<Bandera equipo={p.equipoA} />
 				</span>
 
@@ -99,7 +99,7 @@
 
 				<span class="team b">
 					<Bandera equipo={p.equipoB} />
-					<span class="tname">{p.equipoB}</span>
+					<span class="tname" translate="no">{p.equipoB}</span>
 				</span>
 
 				</div>
