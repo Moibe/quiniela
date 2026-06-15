@@ -72,6 +72,7 @@
 	</p>
 
 	{#if data.enCurso.length || data.grafica}
+		<!-- Fila 1: las dos tarjetas "cortas" (partido en curso + pastel). -->
 		<div class="cards">
 			{#if data.enCurso.length}
 				<div class="vivo-card">
@@ -89,34 +90,6 @@
 						</span>
 					{/each}
 				</div>
-			{/if}
-
-			{#if data.ganando}
-				{@render ganadores(
-					`Ganando puntos · #${data.ganando.numero}`,
-					`${data.ganando.equipoA} vs ${data.ganando.equipoB} · marcador vigente`,
-					data.ganando,
-					'',
-					'Nadie va ganando puntos con este marcador.'
-				)}
-			{/if}
-			{#if data.golLocal}
-				{@render ganadores(
-					'Con gol de Local',
-					`Si anota ${data.golLocal.equipoA} (local)`,
-					data.golLocal,
-					'loc',
-					'Nadie ganaría puntos con ese marcador.'
-				)}
-			{/if}
-			{#if data.golVisita}
-				{@render ganadores(
-					'Con gol de visita',
-					`Si anota ${data.golVisita.equipoB} (visita)`,
-					data.golVisita,
-					'vis',
-					'Nadie ganaría puntos con ese marcador.'
-				)}
 			{/if}
 
 			{#if data.grafica}
@@ -165,6 +138,37 @@
 			{/if}
 		</div>
 
+		<!-- Fila 2 (aparte, abajo): tarjetas de "ganadores", más altas por sus listas. -->
+		{#if data.ganando}
+			<div class="cards cards-gan">
+				{@render ganadores(
+					`Ganando puntos · #${data.ganando.numero}`,
+					`${data.ganando.equipoA} vs ${data.ganando.equipoB} · marcador vigente`,
+					data.ganando,
+					'',
+					'Nadie va ganando puntos con este marcador.'
+				)}
+				{#if data.golLocal}
+					{@render ganadores(
+						'Con gol de Local',
+						`Si anota ${data.golLocal.equipoA} (local)`,
+						data.golLocal,
+						'loc',
+						'Nadie ganaría puntos con ese marcador.'
+					)}
+				{/if}
+				{#if data.golVisita}
+					{@render ganadores(
+						'Con gol de visita',
+						`Si anota ${data.golVisita.equipoB} (visita)`,
+						data.golVisita,
+						'vis',
+						'Nadie ganaría puntos con ese marcador.'
+					)}
+				{/if}
+			</div>
+		{/if}
+
 		{#if !data.enCurso.length}
 			<p class="nota">No hay ningún partido en curso ahora mismo.</p>
 		{/if}
@@ -194,6 +198,12 @@
 		flex-wrap: wrap;
 		align-items: stretch;
 		gap: 1rem 1.25rem;
+	}
+
+	/* Segunda fila: las tarjetas de "ganadores" (más altas por sus listas), en su
+	   propia línea para no descuadrar a las dos cortas de arriba. */
+	.cards-gan {
+		margin-top: 1.1rem;
 	}
 
 	.nota,
