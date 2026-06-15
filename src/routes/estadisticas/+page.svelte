@@ -526,8 +526,7 @@
 		overflow-y: auto;
 	}
 
-	/* Acierto de resultado (1 pt): ámbar (resalta sobre el verde; el rosa a baja
-	   opacidad se perdía). */
+	/* Acierto de resultado (1 pt): rosa mexicano (igual que la cuadrícula). */
 	.gan-list li {
 		display: flex;
 		align-items: center;
@@ -535,14 +534,14 @@
 		padding: 0.25rem 0.45rem;
 		border-radius: 6px;
 		font-size: 0.8rem;
-		background: rgba(245, 158, 11, 0.18);
-		border-left: 3px solid rgba(245, 158, 11, 0.9);
+		background: rgba(240, 76, 158, 0.14);
+		border-left: 3px solid rgba(240, 76, 158, 0.7);
 	}
 
-	/* Marcador exacto (3 pts): guinda intenso, hasta arriba. */
+	/* Marcador exacto (3 pts): ámbar (resalta sobre el verde), hasta arriba. */
 	.gan-list li.exa {
-		background: rgba(190, 18, 60, 0.22);
-		border-left-color: rgba(190, 18, 60, 0.95);
+		background: rgba(245, 158, 11, 0.22);
+		border-left-color: rgba(245, 158, 11, 0.95);
 	}
 
 	.gan-badge {
@@ -556,12 +555,8 @@
 		color: #fff;
 	}
 
+	/* Badge del "3 pts" (exacto): ámbar sólido con texto oscuro (alto contraste). */
 	.gan-list li.exa .gan-badge {
-		background: rgba(190, 18, 60, 0.55);
-	}
-
-	/* Badge del "1 pt": ámbar sólido con texto oscuro (alto contraste). */
-	.gan-list li:not(.exa) .gan-badge {
 		background: rgba(245, 158, 11, 0.9);
 		color: #422006;
 	}
