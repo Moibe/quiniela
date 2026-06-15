@@ -93,15 +93,13 @@
 )}
 	<div class="gan-card {tono}">
 		<div class="gan-head">
-			{#if equipo}
-				<span class="gan-anota">
-					<span class="gan-ball" aria-hidden="true">⚽</span>
-					{titulo}
+			<span class="gan-anota">
+				<span class="gan-ball" aria-hidden="true">⚽</span>
+				{titulo}
+				{#if equipo}
 					<Bandera {equipo} />
-				</span>
-			{:else}
-				<span class="gan-title">{titulo}</span>
-			{/if}
+				{/if}
+			</span>
 			<span class="gan-score">{gn.real.replace('-', ' – ')}</span>
 		</div>
 		{#if sub}
@@ -203,8 +201,8 @@
 		{#if data.ganando}
 			<div class="cards cards-gan" style={listMax ? `--gan-list-max: ${listMax}px` : ''}>
 				{@render ganadores(
-					`Ganando puntos · #${data.ganando.numero}`,
-					`${data.ganando.equipoA} vs ${data.ganando.equipoB} · marcador vigente`,
+					'Ganando puntos con resultado actual:',
+					'',
 					data.ganando,
 					'',
 					'Nadie va ganando puntos con este marcador.',
@@ -484,19 +482,13 @@
 		gap: 0.6rem;
 	}
 
-	.gan-title {
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-		color: rgba(255, 255, 255, 0.7);
-	}
-
-	/* Encabezado de los cuadros "Si anota …": balón + bandera + texto, más grande
-	   y blanco. La bandera escala con el font-size del contenedor. */
+	/* Encabezado de las 3 tarjetas: ⚽ + título + (bandera opcional), grande y
+	   blanco e igual en todas. La bandera escala con el font-size del contenedor. */
 	.gan-anota {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		flex-wrap: wrap;
+		gap: 0.2rem 0.4rem;
 		min-width: 0;
 		font-size: 1rem;
 		font-weight: 700;
@@ -509,6 +501,8 @@
 	}
 
 	.gan-score {
+		flex-shrink: 0;
+		white-space: nowrap;
 		padding: 0.05rem 0.5rem;
 		background: rgba(0, 0, 0, 0.22);
 		border-radius: 6px;
