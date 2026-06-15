@@ -1,8 +1,18 @@
 <script lang="ts">
 	import Bandera from '$lib/Bandera.svelte';
+	import { browser } from '$app/environment';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	// La gráfica de pastel es ocultable SOLO en móvil (en pantallas anchas siempre
+	// se muestra; los controles ✕/"mostrar" están ocultos por CSS). La preferencia
+	// del usuario se recuerda entre visitas vía localStorage.
+	const PIE_KEY = 'quiniela:mostrarPie';
+	let mostrarPie = $state(browser ? localStorage.getItem(PIE_KEY) !== '0' : true);
+	$effect(() => {
+		if (browser) localStorage.setItem(PIE_KEY, mostrarPie ? '1' : '0');
+	});
 
 	// Partidos en curso → banner arriba de la tabla (no reordena las filas).
 	const enCursoMatches = $derived(data.rows.filter((r) => r.enCurso));
@@ -87,6 +97,14 @@
 			💡 Clic en un participante resalta su columna (doble clic la fija) · clic en un partido (# o
 			equipos) marca su fila.
 		</p>
+		{#if data.grafica}
+			<button
+				class="pie-show"
+				class:visible={!mostrarPie}
+				type="button"
+				onclick={() => (mostrarPie = true)}>📊 Mostrar gráfica</button
+			>
+		{/if}
 	</div>
 
 	{#if enCursoMatches.length}
@@ -107,7 +125,14 @@
 
 	{#if data.grafica}
 		{@const g = data.grafica}
-		<div class="pie-card">
+		<div class="pie-card" class:oculta={!mostrarPie}>
+			<button
+				class="pie-hide"
+				type="button"
+				title="Ocultar gráfica"
+				aria-label="Ocultar gráfica"
+				onclick={() => (mostrarPie = false)}>✕</button
+			>
 			<div class="pie-title">{g.enCurso ? '● En curso' : 'Siguiente'} · #{g.numero}</div>
 			<div class="pie-row">
 				<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="Desglose de pronósticos">
@@ -260,6 +285,7 @@
 
 	/* Gráfica de pastel: local / empate / visitante de los pronósticos. */
 	.pie-card {
+		position: relative;
 		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
@@ -268,6 +294,14 @@
 		background: rgba(255, 255, 255, 0.04);
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 10px;
+	}
+
+	/* Botones para ocultar (✕) / volver a mostrar la gráfica. Ocultos por defecto:
+	   en pantallas anchas la gráfica NO es quitable. Solo se activan en móvil (ver
+	   media query al final). */
+	.pie-hide,
+	.pie-show {
+		display: none;
 	}
 
 	.pie-title {
@@ -769,6 +803,62 @@
 	@media (max-width: 600px) {
 		.participantes {
 			--w-team: 6.5rem;
+		}
+	}
+
+	/* Solo en móvil: la gráfica de pastel se puede quitar (✕) y volver a poner. */
+	@media (max-width: 48rem) {
+		.pie-card.oculta {
+			display: none;
+		}
+
+		.pie-hide {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			position: absolute;
+			top: 0.3rem;
+			right: 0.3rem;
+			width: 1.5rem;
+			height: 1.5rem;
+			padding: 0;
+			font-size: 0.8rem;
+			line-height: 1;
+			color: rgba(255, 255, 255, 0.6);
+			background: rgba(255, 255, 255, 0.07);
+			border: 1px solid rgba(255, 255, 255, 0.18);
+			border-radius: 6px;
+			cursor: pointer;
+		}
+
+		.pie-hide:hover {
+			color: #fff;
+			background: rgba(255, 255, 255, 0.14);
+		}
+
+		/* El título no se mete bajo el botón ✕. */
+		.pie-title {
+			padding-right: 1.4rem;
+		}
+
+		.pie-show.visible {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.35rem;
+			margin-top: 0.6rem;
+			padding: 0.4rem 0.7rem;
+			font: inherit;
+			font-size: 0.8rem;
+			font-weight: 700;
+			color: #bbf7d0;
+			background: rgba(255, 255, 255, 0.06);
+			border: 1px solid rgba(255, 255, 255, 0.18);
+			border-radius: 8px;
+			cursor: pointer;
+		}
+
+		.pie-show.visible:hover {
+			background: rgba(255, 255, 255, 0.11);
 		}
 	}
 
