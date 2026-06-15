@@ -19,6 +19,14 @@ const NORMALIZA = {
 };
 const norm = (nombre) => NORMALIZA[nombre] ?? nombre;
 
+// Acentos correctos en nombres de participante (el PDF venía sin tilde). Mismo
+// criterio: el JSON queda fiel al PDF; aquí se corrige al sembrar.
+const ACENTOS = {
+	Moises: 'Moisés',
+	Ruben: 'Rubén'
+};
+const acento = (nombre) => ACENTOS[nombre] ?? nombre;
+
 // Correcciones de marcadores mal capturados en el PDF de origen. Mar traía
 // "9-1"/"9-2" en #8/#9 (goles imposibles; debían ser 0-1/0-2). El JSON queda
 // fiel al PDF; aquí se corrige al sembrar (igual que NORMALIZA con los nombres).
@@ -49,7 +57,7 @@ const seed = db.transaction(() => {
 	db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('pronosticos','partidos','participantes')").run();
 
 	const participanteIds = data.participantes.map(
-		(nombre, i) => insertParticipante.run(nombre, i).lastInsertRowid
+		(nombre, i) => insertParticipante.run(acento(nombre), i).lastInsertRowid
 	);
 
 	for (const p of data.partidos) {
