@@ -14,6 +14,9 @@
 				numero: p.numero,
 				equipoA: p.equipoA,
 				equipoB: p.equipoB,
+				golesA: p.golesA,
+				golesB: p.golesB,
+				enCurso: p.enCurso,
 				url: p.urlCloudbet ?? '',
 				urlBase: p.urlCloudbet ?? '',
 				monitorear: p.monitorear,
@@ -63,6 +66,43 @@
 	);
 	let conexion = $state(true);
 
+	// ── Probador de URL (sandbox aislado): pega una URL y mira el marcador que lee el lector
+	// local (npm run probar). NO toca `partidos` — solo prueba. Sembrado del load.
+	let probe = $state(untrack(() => data.probe));
+	let probeUrl = $state(untrack(() => data.probe?.url ?? ''));
+	let probeBusy = $state(false);
+
+	async function refrescarProbe() {
+		try {
+			const res = await fetch('/api/monitor/probe');
+			if (res.ok) probe = await res.json();
+		} catch {
+			/* el poll del display ya refleja la conexión */
+		}
+	}
+
+	async function fijarProbe(url: string) {
+		probeBusy = true;
+		try {
+			await fetch('/api/monitor/probe', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ url })
+			});
+			await refrescarProbe();
+		} catch {
+			/* noop */
+		} finally {
+			probeBusy = false;
+		}
+	}
+
+	const probar = () => fijarProbe(probeUrl.trim());
+	const limpiarProbe = () => {
+		probeUrl = '';
+		return fijarProbe('');
+	};
+
 	async function refrescarVivo() {
 		try {
 			const res = await fetch('/api/monitor/estado');
@@ -79,7 +119,11 @@
 
 	onMount(() => {
 		refrescarVivo();
-		const id = setInterval(refrescarVivo, 7000); // el runner empuja goles; aquí solo leemos
+		refrescarProbe();
+		const id = setInterval(() => {
+			refrescarVivo();
+			refrescarProbe();
+		}, 7000); // el runner/lector empujan; aquí solo leemos
 		return () => clearInterval(id);
 	});
 
@@ -107,6 +151,31 @@
 		} finally {
 			f.guardando = false;
 		}
+	}
+
+	// ¿El partido ya tiene marcador guardado? (monitorearlo dejaría que el runner lo pise)
+	function tieneResultado(f: (typeof filas)[number]) {
+		return f.golesA != null && f.golesB != null;
+	}
+
+	// Salvaguarda al prender monitoreo sobre un partido que YA tiene marcador. Mensaje según
+	// estado: si es FINAL el server igual lo protege (no se sobreescribe); si va en curso, el
+	// runner sí lo actualizará. Si se cancela, revierte el toggle.
+	function onToggle(f: (typeof filas)[number]) {
+		if (f.monitorear && tieneResultado(f)) {
+			const msg = !f.enCurso
+				? `"${f.equipoA} vs ${f.equipoB}" ya tiene resultado FINAL ${f.golesA}:${f.golesB}. ` +
+					`El monitor NO sobreescribe resultados finales (queda protegido en el servidor), así que ` +
+					`activarlo no cambiará su marcador. ¿Activar de todas formas?`
+				: `"${f.equipoA} vs ${f.equipoB}" ya va ${f.golesA}:${f.golesB} (en curso). Monitorear dejará ` +
+					`que el runner lo SOBREESCRIBA con lo que lea de la URL de Cloudbet (cuenta para puntos). ` +
+					`Verifica que la URL sea de ESTE partido. ¿Continuar?`;
+			if (!confirm('⚠ ' + msg)) {
+				f.monitorear = false; // revierte el check
+				return;
+			}
+		}
+		guardar(f);
 	}
 
 	function onUrlBlur(f: (typeof filas)[number]) {
@@ -199,6 +268,54 @@
 		</p>
 	</div>
 
+	<!-- ── Probador de URL (sandbox aislado: NO toca la quiniela) ────────── -->
+	<div class="bloque">
+		<div class="bloque-head"><h2>Probador de URL</h2></div>
+		<p class="runner-txt">
+			Pega una URL de Cloudbet y mira el marcador que se lee, <strong>sin tocar la quiniela</strong>
+			(es un sandbox en memoria: no escribe en ningún partido ni en resultados). Necesita el lector
+			local: corre <code translate="no">npm run probar</code> en tu máquina.
+		</p>
+		<div class="probe-row">
+			<input
+				class="url"
+				type="url"
+				placeholder="https://www.cloudbet.com/…"
+				bind:value={probeUrl}
+				onkeydown={(e) => e.key === 'Enter' && probar()}
+			/>
+			<button type="button" class="probe-btn" onclick={probar} disabled={probeBusy}>Probar</button>
+			<button
+				type="button"
+				class="probe-btn ghost"
+				onclick={limpiarProbe}
+				disabled={probeBusy || !probe?.url}
+			>
+				Limpiar
+			</button>
+		</div>
+		<div class="probe-out">
+			{#if !probe?.url}
+				<span class="vacio">Sin URL de prueba.</span>
+			{:else if probe.error}
+				<span class="probe-err">✗ {probe.error}</span>
+			{:else if probe.marcador}
+				<span class="probe-marc">
+					<span translate="no">{probe.marcador.local ?? '—'}</span>
+					<strong>{probe.marcador.golesA ?? '–'} : {probe.marcador.golesB ?? '–'}</strong>
+					<span translate="no">{probe.marcador.visita ?? '—'}</span>
+					{#if probe.marcador.reloj}
+						<span class="probe-reloj">{probe.marcador.periodo ?? ''} {probe.marcador.reloj}</span>
+					{/if}
+				</span>
+			{:else}
+				<span class="vacio">
+					Esperando lectura… (¿está corriendo <code translate="no">npm run probar</code>?)
+				</span>
+			{/if}
+		</div>
+	</div>
+
 	<!-- ── Configuración por partido ───────────────────────────────────── -->
 	<div class="bloque">
 		<div class="bloque-head">
@@ -245,7 +362,7 @@
 									class="chk"
 									type="checkbox"
 									bind:checked={f.monitorear}
-									onchange={() => guardar(f)}
+									onchange={() => onToggle(f)}
 									aria-label="Monitorear partido #{f.numero}"
 								/>
 							</td>
@@ -258,6 +375,11 @@
 									<span class="st err" title={f.err}>!</span>
 								{:else if f.monitorear && !f.url.trim()}
 									<span class="st warn" title="Activo pero sin URL: el runner aún no lo vigila">⚠</span>
+								{:else if f.monitorear && tieneResultado(f)}
+									<span
+										class="st warn"
+										title="Ya tiene marcador {f.golesA}:{f.golesB}: el runner puede sobrescribirlo (los finales están protegidos en el servidor)"
+									>⚠</span>
 								{/if}
 							</td>
 						</tr>
@@ -314,6 +436,64 @@
 		border: 1px solid rgba(245, 158, 11, 0.4);
 		border-radius: 8px;
 		padding: 0.15rem 0.55rem;
+	}
+
+	/* ── Probador de URL ── */
+	.probe-row {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		flex-wrap: wrap;
+		margin-bottom: 0.6rem;
+	}
+	.probe-row .url {
+		flex: 1;
+		min-width: 16rem;
+	}
+	.probe-btn {
+		flex-shrink: 0;
+		padding: 0.42rem 0.95rem;
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		background: rgba(255, 255, 255, 0.12);
+		color: rgba(255, 255, 255, 0.95);
+		font-size: 0.82rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.probe-btn:hover:not(:disabled) {
+		background: rgba(255, 255, 255, 0.2);
+	}
+	.probe-btn.ghost {
+		background: transparent;
+	}
+	.probe-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+	.probe-out {
+		min-height: 1.9rem;
+		display: flex;
+		align-items: center;
+		font-size: 0.95rem;
+	}
+	.probe-marc {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+	}
+	.probe-marc strong {
+		font-size: 1.15rem;
+		font-weight: 800;
+	}
+	.probe-reloj {
+		font-size: 0.78rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.probe-err {
+		color: #fca5a5;
+		font-size: 0.85rem;
 	}
 
 	/* ── Display en vivo ── */

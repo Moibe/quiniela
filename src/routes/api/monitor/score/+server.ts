@@ -27,9 +27,20 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	const existe = (
-		await db.select({ id: partidos.id }).from(partidos).where(eq(partidos.id, partidoId))
+		await db
+			.select({ id: partidos.id, golesA: partidos.golesA, enCurso: partidos.enCurso })
+			.from(partidos)
+			.where(eq(partidos.id, partidoId))
 	)[0];
 	if (!existe) error(404, 'Partido no encontrado.');
+
+	// Salvaguarda: el monitor NO pisa un partido ya finalizado con resultado. enCurso=false
+	// + goles guardados = resultado final; un push aquí casi siempre es una URL mal asignada
+	// al partido, y ese marcador cuenta para puntos. Para re-monitorearlo, corrige antes su
+	// marcador desde el panel normal. (Partidos por jugar o en curso no se ven afectados.)
+	if (existe.golesA != null && existe.enCurso === false) {
+		error(409, 'Partido ya finalizado con resultado; el monitor no lo sobreescribe.');
+	}
 
 	// Mismo efecto que el guardado del admin: enCurso=true → "Partido en Curso".
 	await db

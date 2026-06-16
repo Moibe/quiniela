@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { asc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
+import { getProbe } from '$lib/server/probe';
 import type { PageServerLoad } from './$types';
 
 // Labs es SOLO para administración: sin sesión de admin la página "no existe"
@@ -27,5 +28,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.from(partidos)
 		.orderBy(asc(partidos.numero));
 
-	return { partidos: lista };
+	// `probe`: estado del sandbox del Probador (en memoria, NO toca `partidos`).
+	return { partidos: lista, probe: getProbe() };
 };
