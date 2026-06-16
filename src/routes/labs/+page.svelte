@@ -274,7 +274,7 @@
 		<p class="runner-txt">
 			Pega una URL de Cloudbet y mira el marcador que se lee, <strong>sin tocar la quiniela</strong>
 			(es un sandbox en memoria: no escribe en ningún partido ni en resultados). Necesita el lector
-			local: corre <code translate="no">npm run probar</code> en tu máquina.
+			local corriendo (el mismo del monitor): <code translate="no">npm run monitor</code>.
 		</p>
 		<div class="probe-row">
 			<input
@@ -310,7 +310,7 @@
 				</span>
 			{:else}
 				<span class="vacio">
-					Esperando lectura… (¿está corriendo <code translate="no">npm run probar</code>?)
+					Esperando lectura… (¿está corriendo <code translate="no">npm run monitor</code>?)
 				</span>
 			{/if}
 		</div>
