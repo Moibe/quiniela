@@ -118,6 +118,20 @@
 		return v.enCurso ? 'vivo' : 'final';
 	}
 	const etiqueta = { vivo: '● en vivo', final: 'final', espera: 'esperando' } as const;
+
+	// Recuadro estático: el runner corre en la máquina local del usuario (la página
+	// no puede lanzarlo). Solo mostramos el comando para copiarlo.
+	const comandoRunner = 'cd C:\\Moibe\\code\\partido-tiempo-real ; node scripts/monitor-runner.mjs';
+	let copiado = $state(false);
+	async function copiarComando() {
+		try {
+			await navigator.clipboard.writeText(comandoRunner);
+			copiado = true;
+			setTimeout(() => (copiado = false), 1500);
+		} catch {
+			copiado = false;
+		}
+	}
 </script>
 
 <section class="labs">
@@ -162,6 +176,27 @@
 				interruptor).
 			</p>
 		{/if}
+	</div>
+
+	<!-- ── Cómo correr el runner (estático: la página NO lo lanza) ───────── -->
+	<div class="bloque">
+		<div class="bloque-head"><h2>Correr el monitor (en tu máquina)</h2></div>
+		<p class="runner-txt">
+			La captura corre <strong>fuera de este servidor</strong>, en tu máquina local (el droplet
+			está geo-bloqueado por Cloudbet). Arráncalo una vez y se queda empujando los goles a esta app:
+		</p>
+		<div class="cmd">
+			<code translate="no">{comandoRunner}</code>
+			<button type="button" class="copiar" onclick={copiarComando}>
+				{copiado ? '✓ copiado' : 'copiar'}
+			</button>
+		</div>
+		<p class="runner-nota">
+			Requiere estas variables persistidas una vez en tu máquina:
+			<code translate="no">MONITOR_SECRET</code> (el mismo de este servidor),
+			<code translate="no">PARTIDO_NAVEGADOR_MODO=lanzar</code> y
+			<code translate="no">PARTIDO_CHROME_PATH</code>.
+		</p>
 	</div>
 
 	<!-- ── Configuración por partido ───────────────────────────────────── -->
@@ -392,6 +427,71 @@
 		border-radius: 10px;
 		padding: 0.8rem 1rem;
 		max-width: 46rem;
+	}
+
+	/* ── Recuadro del runner ── */
+	.runner-txt {
+		margin: 0 0 0.7rem;
+		font-size: 0.85rem;
+		color: rgba(255, 255, 255, 0.72);
+		max-width: 64ch;
+	}
+
+	.cmd {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+		max-width: 46rem;
+	}
+
+	.cmd code {
+		flex: 1 1 22rem;
+		min-width: 0;
+		overflow-x: auto;
+		white-space: nowrap;
+		padding: 0.5rem 0.7rem;
+		font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+		font-size: 0.82rem;
+		color: #bbf7d0;
+		background: rgba(0, 0, 0, 0.3);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+		border-radius: 8px;
+	}
+
+	.copiar {
+		flex-shrink: 0;
+		padding: 0.45rem 0.9rem;
+		font: inherit;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.9);
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.18);
+		border-radius: 8px;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.copiar:hover {
+		background: rgba(34, 197, 94, 0.16);
+		border-color: rgba(34, 197, 94, 0.45);
+		color: #fff;
+	}
+
+	.runner-nota {
+		margin: 0.7rem 0 0;
+		font-size: 0.78rem;
+		color: rgba(255, 255, 255, 0.55);
+		max-width: 64ch;
+	}
+
+	.runner-nota code {
+		font-size: 0.92em;
+		padding: 0.05rem 0.3rem;
+		background: rgba(255, 255, 255, 0.08);
+		border-radius: 4px;
+		color: rgba(255, 255, 255, 0.85);
 	}
 
 	/* ── Configuración ── */
