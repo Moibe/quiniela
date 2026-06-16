@@ -121,7 +121,7 @@
 
 	// Recuadro estático: el runner corre en la máquina local del usuario (la página
 	// no puede lanzarlo). Solo mostramos el comando para copiarlo.
-	const comandoRunner = 'cd C:\\Moibe\\code\\partido-tiempo-real ; node scripts/monitor-runner.mjs';
+	const comandoRunner = 'cd C:\\Moibe\\code\\quiniela ; npm run monitor';
 	let copiado = $state(false);
 	async function copiarComando() {
 		try {
