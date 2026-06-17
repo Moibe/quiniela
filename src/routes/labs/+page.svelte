@@ -29,15 +29,20 @@
 
 	let filtro = $state('');
 	let soloMon = $state(false);
+	let ocultarJugados = $state(false);
+	// Un partido "ya pasó" = tiene marcador final y no está en curso.
+	const jugado = (f: (typeof filas)[number]) => f.golesA != null && f.golesB != null && !f.enCurso;
 	const filasVista = $derived(
 		filas.filter((f) => {
 			if (soloMon && !f.monitorear) return false;
+			if (ocultarJugados && jugado(f)) return false;
 			const q = filtro.trim().toLowerCase();
 			if (!q) return true;
 			return String(f.numero) === q || `${f.equipoA} ${f.equipoB}`.toLowerCase().includes(q);
 		})
 	);
 	const totalMon = $derived(filas.filter((f) => f.monitorear).length);
+	const totalJugados = $derived(filas.filter((f) => jugado(f)).length);
 
 	// ── Display en vivo: parte de los monitoreados del load y se refresca por poll.
 	type Vivo = {
@@ -320,12 +325,17 @@
 	<div class="bloque">
 		<div class="bloque-head">
 			<h2>Configurar monitoreo</h2>
-			<span class="conteo">{totalMon} en monitoreo · {filas.length} partidos</span>
+			<span class="conteo"
+				>{totalMon} en monitoreo · {totalJugados} jugados · {filas.length} partidos</span
+			>
 		</div>
 
 		<div class="filtros">
 			<input class="buscar" type="search" placeholder="Buscar (# o equipo)…" bind:value={filtro} />
 			<label class="solo"><input type="checkbox" bind:checked={soloMon} /> Solo monitoreados</label>
+			<label class="solo">
+				<input type="checkbox" bind:checked={ocultarJugados} /> Ocultar jugados
+			</label>
 		</div>
 
 		<div class="tabla-wrap">
@@ -341,12 +351,17 @@
 				</thead>
 				<tbody>
 					{#each filasVista as f (f.id)}
-						<tr class:mon={f.monitorear}>
+						<tr class:mon={f.monitorear} class:jugado={jugado(f)}>
 							<td class="c-num">{f.numero}</td>
 							<td class="c-part">
 								<span translate="no">{f.equipoA}</span>
 								<span class="vs">vs</span>
 								<span translate="no">{f.equipoB}</span>
+								{#if jugado(f)}
+									<span class="jugado-chip" title="Ya se jugó ({f.golesA}-{f.golesB})"
+										>✓ {f.golesA}-{f.golesB}</span
+									>
+								{/if}
 							</td>
 							<td class="c-url">
 								<input
@@ -427,6 +442,24 @@
 	.conteo {
 		font-size: 0.78rem;
 		color: rgba(255, 255, 255, 0.55);
+	}
+
+	/* Partido ya jugado: tinte verde leve + palomita con el marcador final. */
+	.cfg tr.jugado {
+		background: rgba(74, 222, 128, 0.06);
+	}
+
+	.jugado-chip {
+		margin-left: 0.5rem;
+		font-size: 0.7rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		color: #6ee7a8;
+		background: rgba(74, 222, 128, 0.16);
+		border: 1px solid rgba(74, 222, 128, 0.4);
+		border-radius: 5px;
+		padding: 0.02rem 0.34rem;
 	}
 
 	.aviso {
