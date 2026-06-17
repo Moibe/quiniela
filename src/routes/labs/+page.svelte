@@ -54,21 +54,8 @@
 		golesB: number | null;
 		enCurso: boolean;
 	};
-	let vivo = $state<Vivo[]>(
-		untrack(() =>
-			data.partidos
-				.filter((p) => p.monitorear)
-				.map((p) => ({
-					id: p.id,
-					numero: p.numero,
-					equipoA: p.equipoA,
-					equipoB: p.equipoB,
-					golesA: p.golesA,
-					golesB: p.golesB,
-					enCurso: p.enCurso
-				}))
-		)
-	);
+	// Marcadores del SANDBOX del monitor (en memoria del server), NO de producción.
+	let vivo = $state<Vivo[]>(untrack(() => data.vivo));
 	let conexion = $state(true);
 
 	// ── Probador de URL (sandbox aislado): pega una URL y mira el marcador que lee el lector
@@ -156,31 +143,6 @@
 		} finally {
 			f.guardando = false;
 		}
-	}
-
-	// ¿El partido ya tiene marcador guardado? (monitorearlo dejaría que el runner lo pise)
-	function tieneResultado(f: (typeof filas)[number]) {
-		return f.golesA != null && f.golesB != null;
-	}
-
-	// Salvaguarda al prender monitoreo sobre un partido que YA tiene marcador. Mensaje según
-	// estado: si es FINAL el server igual lo protege (no se sobreescribe); si va en curso, el
-	// runner sí lo actualizará. Si se cancela, revierte el toggle.
-	function onToggle(f: (typeof filas)[number]) {
-		if (f.monitorear && tieneResultado(f)) {
-			const msg = !f.enCurso
-				? `"${f.equipoA} vs ${f.equipoB}" ya tiene resultado FINAL ${f.golesA}:${f.golesB}. ` +
-					`El monitor NO sobreescribe resultados finales (queda protegido en el servidor), así que ` +
-					`activarlo no cambiará su marcador. ¿Activar de todas formas?`
-				: `"${f.equipoA} vs ${f.equipoB}" ya va ${f.golesA}:${f.golesB} (en curso). Monitorear dejará ` +
-					`que el runner lo SOBREESCRIBA con lo que lea de la URL de Cloudbet (cuenta para puntos). ` +
-					`Verifica que la URL sea de ESTE partido. ¿Continuar?`;
-			if (!confirm('⚠ ' + msg)) {
-				f.monitorear = false; // revierte el check
-				return;
-			}
-		}
-		guardar(f);
 	}
 
 	function onUrlBlur(f: (typeof filas)[number]) {
@@ -378,7 +340,7 @@
 									class="chk"
 									type="checkbox"
 									bind:checked={f.monitorear}
-									onchange={() => onToggle(f)}
+									onchange={() => guardar(f)}
 									disabled={jugado(f)}
 									title={jugado(f) ? 'Ya se jugó: no se monitorea' : ''}
 									aria-label="Monitorear partido #{f.numero}"
@@ -393,11 +355,6 @@
 									<span class="st err" title={f.err}>!</span>
 								{:else if f.monitorear && !f.url.trim()}
 									<span class="st warn" title="Activo pero sin URL: el runner aún no lo vigila">⚠</span>
-								{:else if f.monitorear && tieneResultado(f)}
-									<span
-										class="st warn"
-										title="Ya tiene marcador {f.golesA}:{f.golesB}: el runner puede sobrescribirlo (los finales están protegidos en el servidor)"
-									>⚠</span>
 								{/if}
 							</td>
 						</tr>

@@ -1,10 +1,12 @@
-// GET /api/monitor/estado — para el display en vivo de /labs: los partidos con
-// monitoreo activo y su marcador ACTUAL en la BD (lo escribe el runner externo vía
-// POST /api/monitor/score). Admin (locals.isAdmin). Solo LEE; quiniela no captura.
+// GET /api/monitor/estado — display en vivo de /labs: los partidos con monitoreo activo y su
+// marcador del SANDBOX del monitor (en memoria; lo empuja el runner vía POST /api/monitor/score).
+// NO lee los marcadores de producción de `partidos` — Labs no toca producción. De `partidos` solo
+// salen los nombres/numero/URL. Admin (locals.isAdmin).
 import { error, json } from '@sveltejs/kit';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
+import { getMonitorScore } from '$lib/server/monitorScores';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {
@@ -16,15 +18,27 @@ export const GET: RequestHandler = async ({ locals }) => {
 			numero: partidos.numero,
 			equipoA: partidos.equipoA,
 			equipoB: partidos.equipoB,
-			golesA: partidos.golesA,
-			golesB: partidos.golesB,
-			enCurso: partidos.enCurso,
-			fecha: partidos.fecha,
 			url: partidos.urlCloudbet
 		})
 		.from(partidos)
 		.where(eq(partidos.monitorear, true))
 		.orderBy(asc(partidos.numero));
 
-	return json(rows);
+	// El marcador sale del SANDBOX (no de `partidos`): null si el runner aún no empuja.
+	return json(
+		rows.map((r) => {
+			const s = getMonitorScore(r.id);
+			return {
+				id: r.id,
+				numero: r.numero,
+				equipoA: r.equipoA,
+				equipoB: r.equipoB,
+				golesA: s?.golesA ?? null,
+				golesB: s?.golesB ?? null,
+				enCurso: s?.enCurso ?? false,
+				fecha: s ? new Date(s.ts) : null,
+				url: r.url
+			};
+		})
+	);
 };

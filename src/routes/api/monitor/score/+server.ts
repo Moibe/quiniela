@@ -1,11 +1,12 @@
-// POST /api/monitor/score — ingest del marcador en vivo desde el monitor externo.
-// Body: { partidoId, golesA, golesB, final? }. Escribe el marcador igual que el
-// admin (enCurso=true mientras esté vivo; final=true lo deja como resultado final).
-// Autenticado con MONITOR_SECRET (header x-monitor-secret).
+// POST /api/monitor/score — ingest del marcador en vivo desde el monitor externo. Body:
+// { partidoId, golesA, golesB, final? }. Escribe en el SANDBOX en memoria (ver
+// $lib/server/monitorScores), NO en `partidos`: Labs es para probar y NO debe tocar los datos de
+// producción (que cuentan para puntos). Autenticado con MONITOR_SECRET (header x-monitor-secret).
 import { error, json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
+import { setMonitorScore } from '$lib/server/monitorScores';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 
@@ -27,26 +28,13 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	const existe = (
-		await db
-			.select({ id: partidos.id, golesA: partidos.golesA, enCurso: partidos.enCurso })
-			.from(partidos)
-			.where(eq(partidos.id, partidoId))
+		await db.select({ id: partidos.id }).from(partidos).where(eq(partidos.id, partidoId))
 	)[0];
 	if (!existe) error(404, 'Partido no encontrado.');
 
-	// Salvaguarda: el monitor NO pisa un partido ya finalizado con resultado. enCurso=false
-	// + goles guardados = resultado final; un push aquí casi siempre es una URL mal asignada
-	// al partido, y ese marcador cuenta para puntos. Para re-monitorearlo, corrige antes su
-	// marcador desde el panel normal. (Partidos por jugar o en curso no se ven afectados.)
-	if (existe.golesA != null && existe.enCurso === false) {
-		error(409, 'Partido ya finalizado con resultado; el monitor no lo sobreescribe.');
-	}
-
-	// Mismo efecto que el guardado del admin: enCurso=true → "Partido en Curso".
-	await db
-		.update(partidos)
-		.set({ golesA, golesB, fecha: new Date(), enCurso: !final })
-		.where(eq(partidos.id, partidoId));
+	// Sandbox en memoria — NO toca `partidos`. enCurso=true mientras está vivo; final=true lo
+	// marca terminado en el sandbox (sigue sin afectar producción ni los puntos).
+	setMonitorScore(partidoId, golesA, golesB, !final, Date.now());
 
 	return json({ ok: true, partidoId, golesA, golesB, enCurso: !final });
 };

@@ -3,6 +3,7 @@ import { asc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { getProbe } from '$lib/server/probe';
+import { getMonitorScore } from '$lib/server/monitorScores';
 import type { PageServerLoad } from './$types';
 
 // Labs es SOLO para administración: sin sesión de admin la página "no existe"
@@ -28,6 +29,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.from(partidos)
 		.orderBy(asc(partidos.numero));
 
+	// Display en vivo: marcadores del SANDBOX del monitor (en memoria), NO de producción.
+	const vivo = lista
+		.filter((p) => p.monitorear)
+		.map((p) => {
+			const s = getMonitorScore(p.id);
+			return {
+				id: p.id,
+				numero: p.numero,
+				equipoA: p.equipoA,
+				equipoB: p.equipoB,
+				golesA: s?.golesA ?? null,
+				golesB: s?.golesB ?? null,
+				enCurso: s?.enCurso ?? false
+			};
+		});
+
 	// `probe`: estado del sandbox del Probador (en memoria, NO toca `partidos`).
-	return { partidos: lista, probe: getProbe() };
+	return { partidos: lista, probe: getProbe(), vivo };
 };
