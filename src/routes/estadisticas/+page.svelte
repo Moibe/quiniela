@@ -5,6 +5,10 @@
 
 	let { data }: { data: PageData } = $props();
 
+	// Medalla del podio para el lugar al que llega/llegaría cada quien; vacío fuera del top 3.
+	const medalla = (lugar: number) =>
+		lugar === 1 ? '🥇' : lugar === 2 ? '🥈' : lugar === 3 ? '🥉' : '';
+
 	// Alto dinámico de las listas de los 3 cuadros de "ganadores": crecen para
 	// llenar el espacio vertical disponible (sin que la página haga scroll) y, como
 	// comparten el mismo tope y el contenedor usa align-items: stretch, los tres
@@ -109,6 +113,11 @@
 			<ul class="gan-list">
 				{#each gn.lista as g, i (i)}
 					<li class:exa={g.exacto}>
+						<span class="gan-lugar" title="Lugar {g.lugar}">
+							{#if medalla(g.lugar)}<span class="gan-medalla" aria-hidden="true"
+									>{medalla(g.lugar)}</span
+								>{/if}<span class="gan-num">{g.lugar}°</span>
+						</span>
 						<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
 						<span class="gan-nombre notranslate" translate="no">{g.nombre}</span>
 						{#if g.mov > 0}
@@ -550,6 +559,30 @@
 	.gan-list li.exa {
 		background: rgba(245, 158, 11, 0.22);
 		border-left-color: rgba(245, 158, 11, 0.95);
+	}
+
+	/* Lugar al que llega/llegaría: medalla (podio) + número, pegado a la izquierda.
+	   Caja de ancho fijo y alineada a la derecha para que los badges de pts queden parejos. */
+	.gan-lugar {
+		flex-shrink: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.1rem;
+		min-width: 2.6rem;
+		font-size: 0.8rem;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+		color: #fff;
+	}
+
+	.gan-medalla {
+		font-size: 0.85rem;
+		line-height: 1;
+	}
+
+	.gan-num {
+		color: rgba(255, 255, 255, 0.92);
 	}
 
 	.gan-badge {

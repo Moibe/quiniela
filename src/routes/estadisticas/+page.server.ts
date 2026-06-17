@@ -101,6 +101,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				puntos: number;
 				exacto: boolean;
 				mov: number;
+				lugar: number; // a qué lugar llega/llegaría en la tabla con este marcador
 			}[] = [];
 			for (const pr of prosObj) {
 				const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, { golesA, golesB });
@@ -113,7 +114,8 @@ export const load: PageServerLoad = async ({ url }) => {
 						pronostico: `${pr.golesA}-${pr.golesB}`,
 						puntos: pts,
 						exacto: pts === PUNTOS_EXACTO,
-						mov
+						mov,
+						lugar: escenRank.get(pr.participanteId) ?? 0
 					});
 				}
 			}
