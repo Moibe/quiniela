@@ -6,6 +6,7 @@ import { and, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { env } from '$env/dynamic/private';
+import { marcarLatido } from '$lib/server/monitorHeartbeat';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ request }) => {
@@ -13,6 +14,7 @@ export const GET: RequestHandler = async ({ request }) => {
 	if (!secret || request.headers.get('x-monitor-secret') !== secret) {
 		error(401, 'No autorizado.');
 	}
+	marcarLatido(Date.now()); // latido: el runner está vivo
 
 	const rows = await db
 		.select({

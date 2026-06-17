@@ -5,11 +5,13 @@
 import { error, json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { getProbe, setProbeLectura } from '$lib/server/probe';
+import { marcarLatido } from '$lib/server/monitorHeartbeat';
 import type { RequestHandler } from './$types';
 
 function autorizar(request: Request): void {
 	const secret = env.MONITOR_SECRET;
 	if (!secret || request.headers.get('x-monitor-secret') !== secret) error(401, 'No autorizado.');
+	marcarLatido(Date.now()); // latido: el runner está vivo (toca esto cada ~5s)
 }
 
 export const GET: RequestHandler = async ({ request }) => {

@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { setMonitorScore } from '$lib/server/monitorScores';
+import { marcarLatido } from '$lib/server/monitorHeartbeat';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 
@@ -15,6 +16,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (!secret || request.headers.get('x-monitor-secret') !== secret) {
 		error(401, 'No autorizado.');
 	}
+	marcarLatido(Date.now()); // latido: el runner está vivo
 
 	const body = await request.json().catch(() => ({}));
 	const partidoId = Number(body.partidoId);

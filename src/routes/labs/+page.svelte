@@ -95,6 +95,18 @@
 		return fijarProbe('');
 	};
 
+	// Latido del runner local (¿está arriba?). Sembrado del load, refrescado por poll.
+	let runner = $state(untrack(() => data.runner));
+
+	async function refrescarRunner() {
+		try {
+			const res = await fetch('/api/monitor/runner');
+			if (res.ok) runner = await res.json();
+		} catch {
+			/* noop */
+		}
+	}
+
 	async function refrescarVivo() {
 		try {
 			const res = await fetch('/api/monitor/estado');
@@ -112,9 +124,11 @@
 	onMount(() => {
 		refrescarVivo();
 		refrescarProbe();
+		refrescarRunner();
 		const id = setInterval(() => {
 			refrescarVivo();
 			refrescarProbe();
+			refrescarRunner();
 		}, 7000); // el runner/lector empujan; aquí solo leemos
 		return () => clearInterval(id);
 	});
@@ -182,6 +196,15 @@
 	<div class="bloque">
 		<div class="bloque-head">
 			<h2>Marcadores en vivo</h2>
+			{#if runner?.up}
+				<span class="run-chip up" title="El runner local está empujando datos al servidor"
+					>● monitor activo</span
+				>
+			{:else}
+				<span class="run-chip down" title="No llegan datos del runner. En tu máquina: npm run monitor"
+					>○ monitor inactivo</span
+				>
+			{/if}
 			{#if !conexion}
 				<span class="aviso">Sin conexión con el servidor — datos quizá no actuales.</span>
 			{/if}
@@ -435,6 +458,25 @@
 		border: 1px solid rgba(245, 158, 11, 0.4);
 		border-radius: 8px;
 		padding: 0.15rem 0.55rem;
+	}
+
+	/* Estado del runner local (latido): activo (verde) / inactivo (gris). */
+	.run-chip {
+		font-size: 0.74rem;
+		font-weight: 700;
+		border-radius: 999px;
+		padding: 0.1rem 0.6rem;
+		white-space: nowrap;
+	}
+	.run-chip.up {
+		color: #6ee7a8;
+		background: rgba(74, 222, 128, 0.16);
+		border: 1px solid rgba(74, 222, 128, 0.45);
+	}
+	.run-chip.down {
+		color: rgba(255, 255, 255, 0.6);
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.18);
 	}
 
 	/* ── Probador de URL ── */

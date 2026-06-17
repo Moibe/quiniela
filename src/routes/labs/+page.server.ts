@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { getProbe } from '$lib/server/probe';
 import { getMonitorScore } from '$lib/server/monitorScores';
+import { latidoRunner } from '$lib/server/monitorHeartbeat';
 import type { PageServerLoad } from './$types';
 
 // Labs es SOLO para administración: sin sesión de admin la página "no existe"
@@ -45,6 +46,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 			};
 		});
 
-	// `probe`: estado del sandbox del Probador (en memoria, NO toca `partidos`).
-	return { partidos: lista, probe: getProbe(), vivo };
+	// `probe`: sandbox del Probador; `runner`: si el runner local está vivo (latido). Ambos en memoria.
+	return { partidos: lista, probe: getProbe(), vivo, runner: latidoRunner(Date.now()) };
 };
