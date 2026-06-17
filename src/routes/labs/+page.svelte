@@ -370,6 +370,7 @@
 									placeholder="https://www.cloudbet.com/…"
 									bind:value={f.url}
 									onblur={() => onUrlBlur(f)}
+									disabled={jugado(f)}
 								/>
 							</td>
 							<td class="c-tog">
@@ -378,6 +379,8 @@
 									type="checkbox"
 									bind:checked={f.monitorear}
 									onchange={() => onToggle(f)}
+									disabled={jugado(f)}
+									title={jugado(f) ? 'Ya se jugó: no se monitorea' : ''}
 									aria-label="Monitorear partido #{f.numero}"
 								/>
 							</td>
@@ -460,6 +463,12 @@
 		border: 1px solid rgba(74, 222, 128, 0.4);
 		border-radius: 5px;
 		padding: 0.02rem 0.34rem;
+	}
+
+	/* Partido ya jugado: su URL y su toggle de monitoreo quedan inhabilitados. */
+	.cfg input:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
 	}
 
 	.aviso {
