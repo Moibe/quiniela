@@ -3,7 +3,7 @@ import { asc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { getProbe } from '$lib/server/probe';
-import { getMonitorScore } from '$lib/server/monitorScores';
+import { getAllMonitorScores } from '$lib/server/monitorScores';
 import { latidoRunner } from '$lib/server/monitorHeartbeat';
 import type { PageServerLoad } from './$types';
 
@@ -30,11 +30,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.from(partidos)
 		.orderBy(asc(partidos.numero));
 
-	// Display en vivo: marcadores del SANDBOX del monitor (en memoria), NO de producción.
+	// Display en vivo: los partidos que ya tienen marcador en el SANDBOX (auto-emparejados desde el
+	// catálogo del listado). NO de producción.
+	const scores = getAllMonitorScores();
 	const vivo = lista
-		.filter((p) => p.monitorear)
+		.filter((p) => scores.has(p.id))
 		.map((p) => {
-			const s = getMonitorScore(p.id);
+			const s = scores.get(p.id);
 			return {
 				id: p.id,
 				numero: p.numero,

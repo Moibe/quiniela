@@ -27,3 +27,8 @@ export function setMonitorScore(
 export function getMonitorScore(partidoId: number): MarcadorMonitor | null {
 	return scores.get(partidoId) ?? null;
 }
+
+/** Todos los marcadores del sandbox (partidoId → marcador). Lo usan /estado y el load de /labs. */
+export function getAllMonitorScores(): Map<number, MarcadorMonitor> {
+	return scores;
+}
