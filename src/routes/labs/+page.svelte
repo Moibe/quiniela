@@ -230,8 +230,11 @@
 	</div>
 
 	<!-- ── Probador de URL (sandbox aislado: NO toca la quiniela) ────────── -->
-	<div class="bloque">
-		<div class="bloque-head"><h2>Probador de URL</h2></div>
+	<details class="bloque">
+		<summary class="bloque-head">
+			<span class="chevron" aria-hidden="true">▸</span>
+			<h2>Probador de URL</h2>
+		</summary>
 		<p class="runner-txt">
 			Pega una URL de Cloudbet y mira el marcador que se lee, <strong>sin tocar la quiniela</strong>
 			(es un sandbox en memoria: no escribe en ningún partido ni en resultados). Necesita el lector
@@ -275,16 +278,17 @@
 				</span>
 			{/if}
 		</div>
-	</div>
+	</details>
 
 	<!-- ── Configuración por partido ───────────────────────────────────── -->
-	<div class="bloque">
-		<div class="bloque-head">
+	<details class="bloque">
+		<summary class="bloque-head">
+			<span class="chevron" aria-hidden="true">▸</span>
 			<h2>Cobertura del monitor</h2>
 			<span class="conteo"
 				>{totalVivo} en vivo · {totalJugados} jugados · {filas.length} partidos</span
 			>
-		</div>
+		</summary>
 		<p class="cfg-nota">
 			El emparejado es <strong>automático</strong> por nombre. La URL es solo un
 			<strong>override</strong> por si algún partido en vivo no aparece solo.
@@ -348,7 +352,7 @@
 				</tbody>
 			</table>
 		</div>
-	</div>
+	</details>
 </section>
 
 <style>
@@ -383,6 +387,29 @@
 		font-size: 1rem;
 		font-weight: 700;
 		color: rgba(255, 255, 255, 0.92);
+	}
+
+	/* Encabezados plegables (Probador / Cobertura) con <details>/<summary>. */
+	summary.bloque-head {
+		cursor: pointer;
+		gap: 0.5rem;
+		list-style: none;
+	}
+
+	summary.bloque-head::-webkit-details-marker {
+		display: none;
+	}
+
+	.chevron {
+		display: inline-block;
+		flex-shrink: 0;
+		color: rgba(255, 255, 255, 0.5);
+		font-size: 0.75rem;
+		transition: transform 0.15s ease;
+	}
+
+	details[open] > summary .chevron {
+		transform: rotate(90deg);
 	}
 
 	.conteo {
