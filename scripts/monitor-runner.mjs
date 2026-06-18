@@ -24,6 +24,7 @@ const LISTADO_URL =
 const MUESTREO_MS = Number(process.env.MONITOR_MUESTREO_MS ?? 20_000); // leer el listado y empujar
 const PROBE_POLL_MS = Number(process.env.MONITOR_PROBE_POLL_MS ?? 5_000); // re-leer la URL del probador
 const RECARGA_MS = Number(process.env.CLOUDBET_RECARGA_MS ?? 600_000); // recargar la página (anti-stale)
+const CICLOS_RECARGA = Math.max(1, Math.round(RECARGA_MS / MUESTREO_MS)); // recarga cada N ciclos (serializada)
 if (!SECRET) {
 	console.error('Falta MONITOR_SECRET (el mismo del .env de quiniela).');
 	process.exit(1);
@@ -39,6 +40,8 @@ const idDe = (url) => {
 let probeUrl = null; // url cruda del probador (de /labs)
 let browser = null;
 let page = null;
+let ocupado = false; // un ciclo en vuelo no dispara otro encima (evita choque de page.evaluate)
+let ciclosDesdeRecarga = 0;
 
 async function abrirListado() {
 	browser = await chromium.launch({
@@ -110,32 +113,45 @@ async function refrescarProbe() {
 
 // Lee el listado y empuja TODO el catálogo (el server empareja). Más el probador.
 async function ciclo() {
-	if (!page) return;
-	let filas;
+	if (!page || ocupado) return; // no encimar ciclos (un agregar/recarga lento no dispara otro)
+	ocupado = true;
 	try {
-		filas = await leerListado();
-	} catch (e) {
-		console.error('Lectura del listado falló, recargo…:', e.message.split('\n')[0]);
-		await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 }).catch(() => {});
-		return;
-	}
+		// Recarga periódica SERIALIZADA con la lectura (mismo flujo) para no chocar con un
+		// page.evaluate en vuelo ("Execution context was destroyed"). Cada CICLOS_RECARGA ciclos.
+		if (++ciclosDesdeRecarga >= CICLOS_RECARGA) {
+			ciclosDesdeRecarga = 0;
+			await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 }).catch(() => {});
+			await page.waitForTimeout(4000);
+		}
 
-	const r = await empujar('/api/monitor/catalogo', { matches: filas });
-	if (r && r.ok) {
-		const d = await r.json().catch(() => ({}));
-		const faltan = (d.sinEmparejar ?? []).map((m) => `${m.nombreA} vs ${m.nombreB}`);
-		console.log(
-			`📤 ${filas.length} con marcador · ${d.emparejados ?? 0} emparejados${faltan.length ? ` · sin emparejar: ${faltan.join(', ')}` : ''}`
-		);
-	} else {
-		console.error(`catálogo HTTP ${r ? r.status : 'sin respuesta'}`);
-	}
+		let filas;
+		try {
+			filas = await leerListado();
+		} catch (e) {
+			console.error('Lectura del listado falló, recargo…:', e.message.split('\n')[0]);
+			await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 }).catch(() => {});
+			return;
+		}
 
-	const pid = idDe(probeUrl);
-	if (pid) {
-		const d = filas.find((f) => f.id === pid);
-		if (d) await empujar('/api/monitor/probe/feed', { golesA: d.gA, golesB: d.gB, local: d.nombreA, visita: d.nombreB, reloj: d.minuto });
-		else await empujar('/api/monitor/probe/feed', { error: 'No aparece en el listado (¿es del Mundial y en vivo?).' });
+		const r = await empujar('/api/monitor/catalogo', { matches: filas });
+		if (r && r.ok) {
+			const d = await r.json().catch(() => ({}));
+			const faltan = (d.sinEmparejar ?? []).map((m) => `${m.nombreA} vs ${m.nombreB}`);
+			console.log(
+				`📤 ${filas.length} con marcador · ${d.emparejados ?? 0} emparejados${faltan.length ? ` · sin emparejar: ${faltan.join(', ')}` : ''}`
+			);
+		} else {
+			console.error(`catálogo HTTP ${r ? r.status : 'sin respuesta'}`);
+		}
+
+		const pid = idDe(probeUrl);
+		if (pid) {
+			const d = filas.find((f) => f.id === pid);
+			if (d) await empujar('/api/monitor/probe/feed', { golesA: d.gA, golesB: d.gB, local: d.nombreA, visita: d.nombreB, reloj: d.minuto });
+			else await empujar('/api/monitor/probe/feed', { error: 'No aparece en el listado (¿es del Mundial y en vivo?).' });
+		}
+	} finally {
+		ocupado = false;
 	}
 }
 
@@ -161,4 +177,4 @@ await refrescarProbe();
 await ciclo();
 setInterval(() => void ciclo(), MUESTREO_MS);
 setInterval(() => void refrescarProbe(), PROBE_POLL_MS);
-setInterval(() => void page?.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 }).catch(() => {}), RECARGA_MS);
+// (La recarga anti-stale ya va dentro de ciclo(), serializada, para no chocar con la lectura.)

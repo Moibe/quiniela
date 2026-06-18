@@ -28,21 +28,12 @@
 	);
 
 	let filtro = $state('');
-	let soloMon = $state(false);
+	let soloVivo = $state(false);
 	let ocultarJugados = $state(false);
 	// Un partido "ya pasó" = tiene marcador final y no está en curso.
 	const jugado = (f: (typeof filas)[number]) => f.golesA != null && f.golesB != null && !f.enCurso;
-	const filasVista = $derived(
-		filas.filter((f) => {
-			if (soloMon && !f.monitorear) return false;
-			if (ocultarJugados && jugado(f)) return false;
-			const q = filtro.trim().toLowerCase();
-			if (!q) return true;
-			return String(f.numero) === q || `${f.equipoA} ${f.equipoB}`.toLowerCase().includes(q);
-		})
-	);
-	const totalMon = $derived(filas.filter((f) => f.monitorear).length);
 	const totalJugados = $derived(filas.filter((f) => jugado(f)).length);
+	// filasVista / enVivo / totalVivo se definen más abajo (necesitan `vivo`).
 
 	// ── Display en vivo: parte de los monitoreados del load y se refresca por poll.
 	type Vivo = {
@@ -57,6 +48,20 @@
 	// Marcadores del SANDBOX del monitor (en memoria del server), NO de producción.
 	let vivo = $state<Vivo[]>(untrack(() => data.vivo));
 	let conexion = $state(true);
+
+	// "En vivo" = el monitor ya empujó su marcador (auto-emparejado por nombre desde el listado).
+	const idsVivo = $derived(new Set(vivo.map((v) => v.id)));
+	const enVivo = (f: (typeof filas)[number]) => idsVivo.has(f.id);
+	const totalVivo = $derived(idsVivo.size);
+	const filasVista = $derived(
+		filas.filter((f) => {
+			if (soloVivo && !enVivo(f)) return false;
+			if (ocultarJugados && jugado(f)) return false;
+			const q = filtro.trim().toLowerCase();
+			if (!q) return true;
+			return String(f.numero) === q || `${f.equipoA} ${f.equipoB}`.toLowerCase().includes(q);
+		})
+	);
 
 	// ── Probador de URL (sandbox aislado): pega una URL y mira el marcador que lee el lector
 	// local (npm run probar). NO toca `partidos` — solo prueba. Sembrado del load.
@@ -309,15 +314,19 @@
 	<!-- ── Configuración por partido ───────────────────────────────────── -->
 	<div class="bloque">
 		<div class="bloque-head">
-			<h2>Configurar monitoreo</h2>
+			<h2>Cobertura del monitor</h2>
 			<span class="conteo"
-				>{totalMon} en monitoreo · {totalJugados} jugados · {filas.length} partidos</span
+				>{totalVivo} en vivo · {totalJugados} jugados · {filas.length} partidos</span
 			>
 		</div>
+		<p class="cfg-nota">
+			El emparejado es <strong>automático</strong> por nombre. La URL es solo un
+			<strong>override</strong> por si algún partido en vivo no aparece solo.
+		</p>
 
 		<div class="filtros">
 			<input class="buscar" type="search" placeholder="Buscar (# o equipo)…" bind:value={filtro} />
-			<label class="solo"><input type="checkbox" bind:checked={soloMon} /> Solo monitoreados</label>
+			<label class="solo"><input type="checkbox" bind:checked={soloVivo} /> Solo en vivo</label>
 			<label class="solo">
 				<input type="checkbox" bind:checked={ocultarJugados} /> Ocultar jugados
 			</label>
@@ -329,20 +338,21 @@
 					<tr>
 						<th class="c-num">#</th>
 						<th class="c-part">Partido</th>
-						<th class="c-url">URL de Cloudbet</th>
-						<th class="c-tog">Monitorear</th>
-						<th class="c-st" aria-label="Estado de guardado"></th>
+						<th class="c-url">Override (URL) · opcional</th>
+						<th class="c-st" aria-label="Estado"></th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each filasVista as f (f.id)}
-						<tr class:mon={f.monitorear} class:jugado={jugado(f)}>
+						<tr class:vivo={enVivo(f)} class:jugado={jugado(f)}>
 							<td class="c-num">{f.numero}</td>
 							<td class="c-part">
 								<span translate="no">{f.equipoA}</span>
 								<span class="vs">vs</span>
 								<span translate="no">{f.equipoB}</span>
-								{#if jugado(f)}
+								{#if enVivo(f)}
+									<span class="vivo-chip" title="En vivo: el monitor lo está leyendo">● en vivo</span>
+								{:else if jugado(f)}
 									<span class="jugado-chip" title="Ya se jugó ({f.golesA}-{f.golesB})"
 										>✓ {f.golesA}-{f.golesB}</span
 									>
@@ -352,21 +362,10 @@
 								<input
 									class="url"
 									type="url"
-									placeholder="https://www.cloudbet.com/…"
+									placeholder="(auto) — URL solo si no empareja por nombre"
 									bind:value={f.url}
 									onblur={() => onUrlBlur(f)}
 									disabled={jugado(f)}
-								/>
-							</td>
-							<td class="c-tog">
-								<input
-									class="chk"
-									type="checkbox"
-									bind:checked={f.monitorear}
-									onchange={() => guardar(f)}
-									disabled={jugado(f)}
-									title={jugado(f) ? 'Ya se jugó: no se monitorea' : ''}
-									aria-label="Monitorear partido #{f.numero}"
 								/>
 							</td>
 							<td class="c-st">
@@ -376,8 +375,6 @@
 									<span class="st ok" title="Guardado">✓</span>
 								{:else if f.err}
 									<span class="st err" title={f.err}>!</span>
-								{:else if f.monitorear && !f.url.trim()}
-									<span class="st warn" title="Activo pero sin URL: el runner aún no lo vigila">⚠</span>
 								{/if}
 							</td>
 						</tr>
@@ -784,8 +781,26 @@
 		z-index: 1;
 	}
 
-	.cfg tbody tr.mon {
-		background: rgba(245, 158, 11, 0.08);
+	.cfg tbody tr.vivo {
+		background: rgba(74, 222, 128, 0.08);
+	}
+
+	.cfg-nota {
+		margin: 0.1rem 0 0.7rem;
+		font-size: 0.78rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	.vivo-chip {
+		margin-left: 0.5rem;
+		font-size: 0.7rem;
+		font-weight: 700;
+		white-space: nowrap;
+		color: #6ee7a8;
+		background: rgba(74, 222, 128, 0.16);
+		border: 1px solid rgba(74, 222, 128, 0.45);
+		border-radius: 5px;
+		padding: 0.02rem 0.36rem;
 	}
 
 	.cfg tbody tr:hover td {
@@ -835,18 +850,6 @@
 		color: rgba(255, 255, 255, 0.3);
 	}
 
-	.c-tog {
-		width: 6rem;
-		text-align: center;
-	}
-
-	.chk {
-		width: 1.15rem;
-		height: 1.15rem;
-		accent-color: #f59e0b;
-		cursor: pointer;
-	}
-
 	.c-st {
 		width: 2rem;
 		text-align: center;
@@ -863,11 +866,6 @@
 
 	.st.err {
 		color: #f87171;
-		cursor: help;
-	}
-
-	.st.warn {
-		color: #fbbf24;
 		cursor: help;
 	}
 
