@@ -2,6 +2,7 @@
   import {
     Trophy,
     Users,
+    Radio,
     Newspaper,
     LayoutGrid,
     Swords,
@@ -53,6 +54,14 @@
     <a href="/" class="nav-item" aria-current={page.url.pathname === '/' ? 'page' : undefined}>
       <Users size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Participantes</span>
+    </a>
+    <a
+      href="/en-vivo"
+      class="nav-item nav-vivo"
+      aria-current={page.url.pathname === '/en-vivo' ? 'page' : undefined}
+    >
+      <Radio size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>En Vivo</span>
     </a>
     <a
       href="/partidos"
@@ -222,6 +231,15 @@
 
   .nav-labs:hover {
     color: #fde68a;
+  }
+
+  /* En Vivo: acento rojo tenue para que se sienta "en vivo". */
+  .nav-vivo {
+    color: #fca5a5;
+  }
+
+  .nav-vivo:hover {
+    color: #fecaca;
   }
 
   /* En pantallas chicas: solo íconos (texto oculto) para que no se desborde. */

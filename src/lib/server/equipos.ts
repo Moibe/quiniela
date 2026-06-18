@@ -7,7 +7,7 @@ function normaliza(s: string): string {
 		.toLowerCase()
 		.normalize('NFD')
 		.replace(/[̀-ͯ]/g, '') // quita acentos
-		.replace(/[.,'`’]/g, ' ') // puntos, comas, apostrofos
+		.replace(/[.,'`’&]/g, ' ') // puntos, comas, apóstrofos, & (p.ej. "Bosnia & Herzegovina")
 		.replace(/\s+/g, ' ')
 		.trim();
 }
