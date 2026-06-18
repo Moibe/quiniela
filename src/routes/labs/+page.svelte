@@ -28,6 +28,7 @@
 	);
 
 	let filtro = $state('');
+	let editandoId = $state<number | null>(null); // fila con el input de URL (override) abierto
 	let soloVivo = $state(false);
 	let ocultarJugados = $state(false);
 	// Un partido "ya pasó" = tiene marcador final y no está en curso.
@@ -167,6 +168,9 @@
 	function onUrlBlur(f: (typeof filas)[number]) {
 		if (f.url.trim() !== f.urlBase) guardar(f);
 	}
+
+	// Enfoca el input de URL al abrirlo (agregar/editar override).
+	const autofocus = (node: HTMLElement) => node.focus();
 
 	function estado(v: Vivo): 'vivo' | 'final' | 'espera' {
 		if (v.golesA == null || v.golesB == null) return 'espera';
@@ -329,14 +333,32 @@
 								{/if}
 							</td>
 							<td class="c-url">
-								<input
-									class="url"
-									type="url"
-									placeholder="(auto) — URL solo si no empareja por nombre"
-									bind:value={f.url}
-									onblur={() => onUrlBlur(f)}
-									disabled={jugado(f)}
-								/>
+								{#if editandoId === f.id}
+									<input
+										class="url"
+										type="url"
+										placeholder="https://www.cloudbet.com/…"
+										bind:value={f.url}
+										onblur={() => {
+											onUrlBlur(f);
+											editandoId = null;
+										}}
+										use:autofocus
+									/>
+								{:else if jugado(f)}
+									<!-- ya jugó: sin override -->
+								{:else if f.url.trim()}
+									<button
+										type="button"
+										class="url-edit set"
+										title={f.url}
+										onclick={() => (editandoId = f.id)}>🔗 URL</button
+									>
+								{:else}
+									<button type="button" class="url-edit" onclick={() => (editandoId = f.id)}
+										>+ URL</button
+									>
+								{/if}
 							</td>
 							<td class="c-st">
 								{#if f.guardando}
@@ -761,7 +783,37 @@
 	}
 
 	.c-url {
-		width: 100%;
+		white-space: nowrap;
+	}
+
+	.c-url .url {
+		width: 17rem;
+		min-width: 0;
+	}
+
+	.url-edit {
+		font: inherit;
+		font-size: 0.74rem;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.5);
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+		border-radius: 6px;
+		padding: 0.18rem 0.5rem;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.url-edit:hover {
+		color: #fff;
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.url-edit.set {
+		color: #6ee7a8;
+		border-color: rgba(74, 222, 128, 0.4);
+		background: rgba(74, 222, 128, 0.12);
 	}
 
 	.url {
