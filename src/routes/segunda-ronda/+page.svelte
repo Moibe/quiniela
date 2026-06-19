@@ -22,7 +22,7 @@
 			<select id="part" class="sel notranslate" value={data.selectedKey} onchange={elegir} translate="no">
 				<option value="real">⚽ Real</option>
 				{#each data.participantes as p (p.id)}
-					<option value={p.id}>{p.nombre}</option>
+					<option value={String(p.id)}>{p.nombre}</option>
 				{/each}
 			</select>
 		</div>
