@@ -1,0 +1,44 @@
+==========================================================
+  MONITOR DE LA QUINIELA  -  guia rapida
+==========================================================
+
+Este programa lee los marcadores de los partidos en vivo y los
+empuja a la quiniela. Hay que dejarlo corriendo durante los partidos.
+
+
+--------------------------------------------------------
+PRIMERA VEZ (una sola vez, en tu computadora):
+--------------------------------------------------------
+1) Node.js:
+   - Si esta carpeta YA trae un archivo "node.exe": NO instalas nada, salta al paso 2.
+   - Si NO lo trae: entra a https://nodejs.org, descarga la version "LTS"
+     e instalala (Siguiente / Siguiente / Finalizar).
+   - Si en tu compu (p. ej. la del trabajo) NO te deja instalar: pidele a Moi
+     el paquete que trae "node.exe" incluido; ese no necesita instalar ni admin.
+
+2) Ten Google Chrome o Microsoft Edge (Edge ya viene en Windows). La mayoria ya tiene.
+
+3) Descomprime esta carpeta donde quieras (por ejemplo, el Escritorio).
+
+4) Asegurate de que el archivo "secreto.txt" este aqui dentro,
+   junto a "iniciar-monitor.bat" (te lo pasa Moi).
+
+
+--------------------------------------------------------
+CADA VEZ QUE QUIERAS MONITOREAR:
+--------------------------------------------------------
+- Doble clic en  "iniciar-monitor.bat"
+- La primera vez tardara ~1 minuto (instala lo que necesita).
+- Se abre una ventana negra y empieza a trabajar.
+- DEJA ESA VENTANA ABIERTA mientras quieras que monitoree.
+- Para detenerlo: haz clic en la ventana y presiona  Ctrl + C.
+
+
+--------------------------------------------------------
+SI ALGO FALLA:
+--------------------------------------------------------
+- "No esta instalado Node.js"  ->  haz el paso 1 de arriba.
+- "Falta el archivo secreto.txt"  ->  pidele el archivo a Moi y ponlo aqui.
+- "No encontre Google Chrome"  ->  instala Chrome (o avisale a Moi).
+
+Cualquier duda, mandale captura de la ventana a Moi.

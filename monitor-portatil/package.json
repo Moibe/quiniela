@@ -1,0 +1,8 @@
+{
+	"name": "monitor-quiniela-portatil",
+	"private": true,
+	"type": "module",
+	"dependencies": {
+		"playwright-core": "1.60.0"
+	}
+}

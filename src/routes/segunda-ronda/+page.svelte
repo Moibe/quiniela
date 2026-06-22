@@ -17,7 +17,7 @@
 			<label class="sel-label" for="part">
 				{data.esReal
 					? 'Segunda Ronda según los resultados reales hasta ahora'
-					: 'Segunda Ronda según los pronósticos de'}
+					: 'Proyección de Posible 2da Ronda basado en los resultados de: '}
 			</label>
 			<select id="part" class="sel notranslate" value={data.selectedKey} onchange={elegir} translate="no">
 				<option value="real">⚽ Real</option>

@@ -7,6 +7,7 @@
 
 <section class="grupos">
 	<div class="head">
+		<h1>Tabla de Posiciones en Tiempo Real</h1>
 		<p class="sub">
 			Tablas de los 12 grupos del Mundial · <strong>{data.jugados}</strong> de {data.total} partidos
 			jugados
@@ -71,6 +72,12 @@
 		box-sizing: border-box;
 		padding: 0.4rem 1.5rem 1.5rem;
 		color: rgba(255, 255, 255, 0.95);
+	}
+
+	.head h1 {
+		margin: 0 0 0.35rem;
+		font-size: 1.5rem;
+		font-weight: 800;
 	}
 
 	.sub {
