@@ -5,7 +5,6 @@
 
 	let { data }: { data: PageData } = $props();
 	let enCurso = $state(untrack(() => data.enCurso));
-	let fuente = $state(untrack(() => data.fuente));
 	let conexion = $state(true);
 
 	async function refrescar() {
@@ -17,7 +16,6 @@
 			}
 			const d = await res.json();
 			enCurso = d.enCurso;
-			fuente = d.fuente;
 			conexion = true;
 		} catch {
 			conexion = false;
@@ -33,11 +31,6 @@
 <section class="envivo">
 	<div class="head">
 		<h1>En Vivo</h1>
-		{#if enCurso.length}
-			<span class="fuente" class:manual={fuente === 'manual'}>
-				{fuente === 'monitor' ? 'monitor en vivo' : 'captura manual'}
-			</span>
-		{/if}
 		{#if !conexion}
 			<span class="aviso">Sin conexión — datos quizá no actuales.</span>
 		{/if}
@@ -49,6 +42,7 @@
 			{#each enCurso as m (m.numero)}
 				<li class="vrow">
 					<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo</span>
+					<span class="src" class:manual={m.fuente === 'manual'}>{m.fuente}</span>
 					<span class="vnum">#{m.numero}</span>
 					<span class="team a">
 						<span class="nm" translate="no">{m.equipoA}</span>
@@ -96,21 +90,23 @@
 		padding: 0.15rem 0.55rem;
 	}
 
-	/* Chip de fuente: de dónde sale el marcador en este momento. */
-	.fuente {
-		font-size: 0.72rem;
+	/* Etiqueta de fuente por fila: de dónde sale ESE marcador (monitor o manual). */
+	.src {
+		flex-shrink: 0;
+		font-size: 0.62rem;
 		font-weight: 700;
-		letter-spacing: 0.02em;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
 		color: #6ee7b7;
-		background: rgba(16, 185, 129, 0.14);
+		background: rgba(16, 185, 129, 0.16);
 		border: 1px solid rgba(16, 185, 129, 0.4);
 		border-radius: 999px;
-		padding: 0.15rem 0.6rem;
+		padding: 0.08rem 0.45rem;
 	}
 
-	.fuente.manual {
-		color: #fde68a;
-		background: rgba(245, 158, 11, 0.14);
+	.src.manual {
+		color: #fcd34d;
+		background: rgba(245, 158, 11, 0.16);
 		border-color: rgba(245, 158, 11, 0.4);
 	}
 
