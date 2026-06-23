@@ -5,6 +5,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let enCurso = $state(untrack(() => data.enCurso));
+	let fuente = $state(untrack(() => data.fuente));
 	let conexion = $state(true);
 
 	async function refrescar() {
@@ -14,7 +15,9 @@
 				conexion = false;
 				return;
 			}
-			enCurso = await res.json();
+			const d = await res.json();
+			enCurso = d.enCurso;
+			fuente = d.fuente;
 			conexion = true;
 		} catch {
 			conexion = false;
@@ -30,11 +33,16 @@
 <section class="envivo">
 	<div class="head">
 		<h1>En Vivo</h1>
+		{#if enCurso.length}
+			<span class="fuente" class:manual={fuente === 'manual'}>
+				{fuente === 'monitor' ? 'monitor en vivo' : 'captura manual'}
+			</span>
+		{/if}
 		{#if !conexion}
 			<span class="aviso">Sin conexión — datos quizá no actuales.</span>
 		{/if}
 	</div>
-	<p class="sub">Partidos en curso ahora mismo, con su marcador oficial.</p>
+	<p class="sub">Marcadores de los partidos que se están jugando ahora mismo.</p>
 
 	{#if enCurso.length}
 		<ul class="lista">
@@ -86,6 +94,24 @@
 		border: 1px solid rgba(245, 158, 11, 0.4);
 		border-radius: 8px;
 		padding: 0.15rem 0.55rem;
+	}
+
+	/* Chip de fuente: de dónde sale el marcador en este momento. */
+	.fuente {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		color: #6ee7b7;
+		background: rgba(16, 185, 129, 0.14);
+		border: 1px solid rgba(16, 185, 129, 0.4);
+		border-radius: 999px;
+		padding: 0.15rem 0.6rem;
+	}
+
+	.fuente.manual {
+		color: #fde68a;
+		background: rgba(245, 158, 11, 0.14);
+		border-color: rgba(245, 158, 11, 0.4);
 	}
 
 	.sub {
