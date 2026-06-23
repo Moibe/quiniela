@@ -19,7 +19,7 @@
 
 	<div class="grid">
 		{#each data.grupos as g (g.label)}
-			<TablaGrupo grupo={g} />
+			<TablaGrupo grupo={g} qlf />
 		{/each}
 	</div>
 </section>
