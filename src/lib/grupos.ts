@@ -27,6 +27,7 @@ export type EquipoStanding = {
 	pts: number; // puntos
 	pos: number; // posición en el grupo (1..4)
 	enVivo: boolean; // está jugando ahora (partido en curso)
+	terceroClasifica: boolean; // 3er lugar que va entre los mejores 8 terceros (clasifica)
 };
 
 export type Grupo = {
@@ -111,10 +112,10 @@ export function computeGrupos(partidos: PartidoIn[]): Grupo[] {
 	etiquetados.sort((a, b) => a.label.localeCompare(b.label));
 
 	// 3) Tabla de cada grupo con los marcadores ya capturados.
-	return etiquetados.map(({ teams, label }) => {
+	const grupos = etiquetados.map(({ teams, label }) => {
 		const acc = new Map<string, EquipoStanding>();
 		for (const t of teams) {
-			acc.set(t, { equipo: t, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, pos: 0, enVivo: false });
+			acc.set(t, { equipo: t, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, pos: 0, enVivo: false, terceroClasifica: false });
 		}
 
 		let jugados = 0;
@@ -160,4 +161,14 @@ export function computeGrupos(partidos: PartidoIn[]): Grupo[] {
 
 		return { label, equipos, partidosJugados: jugados };
 	});
+
+	// Mejores 8 terceros (regla del Mundial 2026): se rankean los 12 terceros entre sí por los
+	// mismos criterios (pts, dif. de goles, goles a favor) y los 8 primeros clasifican.
+	const terceros = grupos.map((g) => g.equipos[2]).filter((t): t is EquipoStanding => !!t);
+	terceros.sort(
+		(x, y) => y.pts - x.pts || y.dg - x.dg || y.gf - x.gf || x.equipo.localeCompare(y.equipo, 'es')
+	);
+	terceros.slice(0, 8).forEach((t) => (t.terceroClasifica = true));
+
+	return grupos;
 }

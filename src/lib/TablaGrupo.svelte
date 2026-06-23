@@ -2,7 +2,9 @@
 	import Bandera from '$lib/Bandera.svelte';
 	import type { Grupo } from '$lib/grupos';
 
-	let { grupo }: { grupo: Grupo } = $props();
+	// qlf: muestra "QLF" (calificado) en los 2 primeros. Se activa en En Vivo, donde la tabla sirve
+	// para ver en tiempo real quién va clasificando.
+	let { grupo, qlf = false }: { grupo: Grupo; qlf?: boolean } = $props();
 </script>
 
 <div class="grupo">
@@ -34,6 +36,7 @@
 							<Bandera equipo={t.equipo} />
 							<span class="eq-name notranslate" translate="no" title={t.equipo}>{t.equipo}</span>
 							{#if t.enVivo}<span class="vivo-dot" title="En vivo" aria-hidden="true"></span>{/if}
+							{#if qlf && (t.pos <= 2 || t.terceroClasifica)}<span class="qlf" title="Calificado">QLF</span>{/if}
 						</th>
 						<td>{t.pj}</td>
 						<td class="c-sec">{t.g}</td>
@@ -152,6 +155,32 @@
 		box-shadow: inset 3px 0 0 #4ade80;
 		color: #86efac;
 		font-weight: 700;
+	}
+
+	/* "QLF" (calificado) en los 2 primeros: letras blancas con brillo. */
+	.qlf {
+		flex-shrink: 0;
+		margin-left: auto;
+		padding-left: 0.4rem;
+		font-size: 0.6rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		color: #fff;
+		text-shadow:
+			0 0 4px rgba(255, 255, 255, 0.95),
+			0 0 11px rgba(255, 255, 255, 0.6),
+			0 0 20px rgba(255, 255, 255, 0.35);
+		animation: qlf-brillo 2.2s ease-in-out infinite;
+	}
+
+	@keyframes qlf-brillo {
+		0%,
+		100% {
+			opacity: 0.82;
+		}
+		50% {
+			opacity: 1;
+		}
 	}
 
 	/* Equipo jugando ahora: punto azul pulsante. */

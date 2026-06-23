@@ -25,6 +25,14 @@
 		}
 	}
 
+	function hace(ms: number | null): string {
+		if (ms == null) return '';
+		const min = Math.round(ms / 60000);
+		if (min < 60) return `hace ${Math.max(1, min)}m`;
+		const h = Math.floor(min / 60);
+		return `hace ${h}h ${min % 60}m`;
+	}
+
 	onMount(() => {
 		const id = setInterval(refrescar, 10000); // se actualiza solo
 		return () => clearInterval(id);
@@ -43,8 +51,14 @@
 	{#if enCurso.length}
 		<ul class="lista">
 			{#each enCurso as m (m.numero)}
-				<li class="vrow">
-					<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo</span>
+				<li class="vrow" class:desconectado={m.estado === 'desconectado'} class:terminado={m.estado === 'terminado'}>
+					{#if m.estado === 'vivo'}
+						<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo</span>
+					{:else if m.estado === 'terminado'}
+						<span class="chip fin"><span class="dot fin" aria-hidden="true"></span> finalizado · {hace(m.haceMs)}</span>
+					{:else}
+						<span class="chip off"><span class="dot off" aria-hidden="true"></span> desconectado · {hace(m.haceMs)}</span>
+					{/if}
 					<span class="src" class:manual={m.fuente === 'manual'}>{m.fuente}</span>
 					<span class="vnum">#{m.numero}</span>
 					<span class="team a">
@@ -65,9 +79,9 @@
 				{grupos.length === 1 ? 'Tabla del grupo en juego' : 'Tablas de los grupos en juego'}
 				<span class="g-nota">incluye el marcador en curso</span>
 			</h2>
-			<div class="grid">
+			<div class="grid" style="--cols:{Math.min(grupos.length, 2)}">
 				{#each grupos as g (g.label)}
-					<TablaGrupo grupo={g} />
+					<TablaGrupo grupo={g} qlf />
 				{/each}
 			</div>
 		{/if}
@@ -162,6 +176,16 @@
 		}
 	}
 
+	/* El monitor se apagó (desconectado) o el partido terminó (finalizado): marcador conservado,
+	   atenuado y sin pulso. */
+	.vrow.desconectado,
+	.vrow.terminado {
+		background: rgba(255, 255, 255, 0.03);
+		border-color: rgba(255, 255, 255, 0.14);
+		animation: none;
+		opacity: 0.72;
+	}
+
 	.chip {
 		flex-shrink: 0;
 		display: inline-flex;
@@ -192,6 +216,26 @@
 		100% {
 			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
 		}
+	}
+
+	/* Chip atenuado para el estado desconectado. */
+	.chip.off {
+		color: #9ca3af;
+	}
+
+	.dot.off {
+		background: #9ca3af;
+		animation: none;
+	}
+
+	/* Chip para partido finalizado (terminó; lo dejamos 30 min). */
+	.chip.fin {
+		color: #7dd3fc;
+	}
+
+	.dot.fin {
+		background: #7dd3fc;
+		animation: none;
 	}
 
 	.vnum {
@@ -257,14 +301,16 @@
 		color: rgba(255, 255, 255, 0.5);
 	}
 
+	/* Tablas de los grupos en juego: lado a lado en desktop (hasta 2 por fila), apiladas en móvil.
+	   --cols = nº de grupos involucrados (tope 2); cada tabla se topa en 30rem y encoge si hace falta. */
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+		grid-template-columns: repeat(var(--cols, 1), minmax(0, 30rem));
 		gap: 1rem;
 		align-items: start;
 	}
 
-	@media (max-width: 560px) {
+	@media (max-width: 640px) {
 		.grid {
 			grid-template-columns: 1fr;
 		}
