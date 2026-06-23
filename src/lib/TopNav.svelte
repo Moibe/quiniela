@@ -242,19 +242,51 @@
     color: #fecaca;
   }
 
-  /* En pantallas chicas: solo íconos (texto oculto) para que no se desborde. */
+  /* En pantallas chicas: solo íconos (texto oculto) para que no se desborde.
+     También ocultamos el título "Quiniela" (queda la copita como botón de
+     inicio) y apretamos el padding, para que quepan todos los íconos de la
+     nav —incluido Segunda Ronda— sin salirse del borde. */
   @media (max-width: 680px) {
+    .topnav {
+      padding: 0 0.6rem;
+    }
+    .brand {
+      gap: 0;
+      padding: 0.25rem;
+    }
+    .brand-title {
+      display: none;
+    }
     .topnav-nav {
-      margin-left: 0.6rem;
-      padding-left: 0.6rem;
+      margin-left: 0.5rem;
+      padding-left: 0.5rem;
       gap: 0.1rem;
     }
     .nav-item {
-      padding: 0.45rem 0.55rem;
+      padding: 0.45rem 0.5rem;
     }
     .nav-item span,
     .topnav-btn span {
       display: none;
+    }
+  }
+
+  /* Teléfonos muy angostos (≤360px): apretamos aún más y achicamos la copita
+     para que el último ícono (Segunda Ronda) no se recorte. */
+  @media (max-width: 360px) {
+    .topnav {
+      padding: 0 0.4rem;
+    }
+    .brand :global(svg) {
+      width: 22px;
+      height: 22px;
+    }
+    .topnav-nav {
+      margin-left: 0.35rem;
+      padding-left: 0.35rem;
+    }
+    .nav-item {
+      padding: 0.45rem 0.35rem;
     }
   }
 
