@@ -18,7 +18,7 @@ import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { getAllMonitorScores } from '$lib/server/monitorScores';
 import { latidoRunner } from '$lib/server/monitorHeartbeat';
-import { computeGrupos, type Grupo } from '$lib/grupos';
+import { computeGrupos, type Grupo, type EquipoStanding } from '$lib/grupos';
 
 export type FuenteEnVivo = 'monitor' | 'manual';
 export type EstadoEnVivo = 'vivo' | 'desconectado' | 'terminado';
@@ -34,9 +34,19 @@ export interface PartidoEnVivo {
 	haceMs: number | null; // antigüedad de la última lectura si está 'desconectado'; null si 'vivo'
 }
 
+export interface TerceroEnVivo {
+	grupo: string;
+	equipo: string;
+	pj: number;
+	dg: number;
+	pts: number;
+	clasifica: boolean; // entre los mejores 8 terceros (clasifica a 2da ronda)
+}
+
 export interface EnVivo {
 	enCurso: PartidoEnVivo[];
 	grupos: Grupo[];
+	terceros: TerceroEnVivo[];
 }
 
 const FRESCO_MS = 45_000; // refrescado hace menos ⇒ en vivo
@@ -98,18 +108,30 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 	}
 	enCurso.sort((a, b) => a.numero - b.numero);
 
-	// --- Tablas de los grupos involucrados, con el marcador del monitor aplicado encima ---
-	const equiposVivos = new Set(enCurso.flatMap((m) => [m.equipoA, m.equipoB]));
-	let grupos: Grupo[] = [];
-	if (equiposVivos.size) {
-		const overlaid = todos.map((p) => {
-			const ov = overlay.get(p.id);
-			return ov
-				? { numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB, golesA: ov.golesA, golesB: ov.golesB, enCurso: ov.enCurso }
-				: { numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB, golesA: p.golesA, golesB: p.golesB, enCurso: p.enCurso };
-		});
-		grupos = computeGrupos(overlaid).filter((g) => g.equipos.some((e) => equiposVivos.has(e.equipo)));
-	}
+	// --- Grupos y tabla de terceros, con el marcador del monitor aplicado encima de producción ---
+	const overlaid = todos.map((p) => {
+		const ov = overlay.get(p.id);
+		return ov
+			? { numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB, golesA: ov.golesA, golesB: ov.golesB, enCurso: ov.enCurso }
+			: { numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB, golesA: p.golesA, golesB: p.golesB, enCurso: p.enCurso };
+	});
+	const todosGrupos = computeGrupos(overlaid);
 
-	return { enCurso, grupos };
+	// Tablas de los grupos EN JUEGO (solo los involucrados en los partidos en vivo).
+	const equiposVivos = new Set(enCurso.flatMap((m) => [m.equipoA, m.equipoB]));
+	const grupos = equiposVivos.size
+		? todosGrupos.filter((g) => g.equipos.some((e) => equiposVivos.has(e.equipo)))
+		: [];
+
+	// Los 12 terceros, ordenados de mejor a peor (los 8 primeros llevan clasifica=true).
+	const terceros: TerceroEnVivo[] = todosGrupos
+		.map((g) => ({ grupo: g.label, s: g.equipos[2] }))
+		.filter((x): x is { grupo: string; s: EquipoStanding } => !!x.s)
+		.sort(
+			(a, b) =>
+				b.s.pts - a.s.pts || b.s.dg - a.s.dg || b.s.gf - a.s.gf || a.s.equipo.localeCompare(b.s.equipo, 'es')
+		)
+		.map(({ grupo, s }) => ({ grupo, equipo: s.equipo, pj: s.pj, dg: s.dg, pts: s.pts, clasifica: s.terceroClasifica }));
+
+	return { enCurso, grupos, terceros };
 }
