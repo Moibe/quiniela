@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import Bandera from '$lib/Bandera.svelte';
+	import TablaGrupo from '$lib/TablaGrupo.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	let enCurso = $state(untrack(() => data.enCurso));
+	let grupos = $state(untrack(() => data.grupos));
 	let conexion = $state(true);
 
 	async function refrescar() {
@@ -16,6 +18,7 @@
 			}
 			const d = await res.json();
 			enCurso = d.enCurso;
+			grupos = d.grupos;
 			conexion = true;
 		} catch {
 			conexion = false;
@@ -56,6 +59,18 @@
 				</li>
 			{/each}
 		</ul>
+
+		{#if grupos.length}
+			<h2 class="g-titulo">
+				{grupos.length === 1 ? 'Tabla del grupo en juego' : 'Tablas de los grupos en juego'}
+				<span class="g-nota">incluye el marcador en curso</span>
+			</h2>
+			<div class="grid">
+				{#each grupos as g (g.label)}
+					<TablaGrupo grupo={g} />
+				{/each}
+			</div>
+		{/if}
 	{:else}
 		<p class="vacio">No hay partidos en curso ahora mismo.</p>
 	{/if}
@@ -222,5 +237,36 @@
 	.vacio {
 		font-size: 0.9rem;
 		color: rgba(255, 255, 255, 0.6);
+	}
+
+	/* Tablas de los grupos en juego, debajo de los partidos. */
+	.g-titulo {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+		margin: 2rem 0 0.9rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.9);
+	}
+
+	.g-nota {
+		font-size: 0.72rem;
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.5);
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+		gap: 1rem;
+		align-items: start;
+	}
+
+	@media (max-width: 560px) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

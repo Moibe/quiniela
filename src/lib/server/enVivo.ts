@@ -1,15 +1,17 @@
 // Fuente de datos de la página pública "En Vivo".
-// UNE dos fuentes para mostrar TODOS los partidos que se juegan ahora mismo, venga de donde venga
-// el marcador:
-//   • monitor — los marcadores que el runner empuja al sandbox (Cloudbet in-play), tomando solo los
-//     que siguen EN CURSO y FRESCOS (refrescados hace poco).
-//   • manual  — los partidos que el admin marcó "en curso" a mano en /partidos.
-// Si un mismo partido cae en ambas, GANA el monitor (es el marcador en vivo real); cada fila indica
-// su fuente. Si el monitor está apagado, naturalmente solo quedan los manuales (y viceversa).
-import { eq, inArray } from 'drizzle-orm';
+// Devuelve dos cosas:
+//   • enCurso — los partidos que se juegan ahora mismo, UNIENDO dos fuentes (cada fila trae la suya):
+//       - monitor: marcadores que el runner empuja al sandbox (Cloudbet in-play), solo los EN CURSO y
+//         FRESCOS (refrescados hace poco).
+//       - manual:  partidos que el admin marcó "en curso" a mano en /partidos.
+//     Si un partido cae en ambas, gana el monitor (marcador en vivo real).
+//   • grupos — las tablas de los grupos involucrados en esos partidos, calculadas con el marcador en
+//     vivo APLICADO encima de producción (overlay del monitor), para que la tabla refleje el partido
+//     en curso aunque su marcador viva solo en el sandbox.
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { getAllMonitorScores } from '$lib/server/monitorScores';
+import { computeGrupos, type Grupo } from '$lib/grupos';
 
 export type FuenteEnVivo = 'monitor' | 'manual';
 
@@ -24,6 +26,7 @@ export interface PartidoEnVivo {
 
 export interface EnVivo {
 	enCurso: PartidoEnVivo[];
+	grupos: Grupo[];
 }
 
 // Sin refrescarse más de esto ⇒ ya no está en vivo (terminó y Cloudbet lo sacó del in-play, o el
@@ -32,63 +35,61 @@ export interface EnVivo {
 const FRESCO_MS = 45_000;
 
 export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
-	// Fuente 1 — monitor: entradas del sandbox aún en curso y frescas.
+	// Marcadores del monitor aún en curso y frescos.
 	const scores = getAllMonitorScores();
 	const vivos = new Map([...scores].filter(([, s]) => s.enCurso && ahora - s.ts < FRESCO_MS));
 
-	// Fuente 2 — manual: partidos marcados EN CURSO a mano (marcador provisional de producción).
-	const manualRows = await db
+	// Todos los partidos en una sola lectura (sirve para la lista en vivo Y para las tablas).
+	const todos = await db
 		.select({
 			id: partidos.id,
 			numero: partidos.numero,
 			equipoA: partidos.equipoA,
 			equipoB: partidos.equipoB,
 			golesA: partidos.golesA,
-			golesB: partidos.golesB
+			golesB: partidos.golesB,
+			enCurso: partidos.enCurso
 		})
-		.from(partidos)
-		.where(eq(partidos.enCurso, true));
+		.from(partidos);
 
-	// Nombres/numero de los partidos monitoreados (de la BD; el sandbox solo guarda id y goles).
-	const monRows = vivos.size
-		? await db
-				.select({
-					id: partidos.id,
-					numero: partidos.numero,
-					equipoA: partidos.equipoA,
-					equipoB: partidos.equipoB
-				})
-				.from(partidos)
-				.where(inArray(partidos.id, [...vivos.keys()]))
-		: [];
-
-	// Unión por id: el monitor gana sobre lo manual cuando un partido está en ambas.
-	const porId = new Map<number, PartidoEnVivo>();
-
-	for (const r of monRows) {
-		const s = vivos.get(r.id);
-		porId.set(r.id, {
-			numero: r.numero,
-			equipoA: r.equipoA,
-			equipoB: r.equipoB,
-			golesA: s?.golesA ?? null,
-			golesB: s?.golesB ?? null,
-			fuente: 'monitor'
-		});
+	// --- Lista de partidos en vivo (merge monitor+manual; el monitor gana) ---
+	const enCurso: PartidoEnVivo[] = [];
+	for (const p of todos) {
+		const s = vivos.get(p.id);
+		if (s) {
+			enCurso.push({
+				numero: p.numero,
+				equipoA: p.equipoA,
+				equipoB: p.equipoB,
+				golesA: s.golesA,
+				golesB: s.golesB,
+				fuente: 'monitor'
+			});
+		} else if (p.enCurso) {
+			enCurso.push({
+				numero: p.numero,
+				equipoA: p.equipoA,
+				equipoB: p.equipoB,
+				golesA: p.golesA,
+				golesB: p.golesB,
+				fuente: 'manual'
+			});
+		}
 	}
-	for (const r of manualRows) {
-		if (porId.has(r.id)) continue; // ya cubierto por el monitor
-		porId.set(r.id, {
-			numero: r.numero,
-			equipoA: r.equipoA,
-			equipoB: r.equipoB,
-			golesA: r.golesA,
-			golesB: r.golesB,
-			fuente: 'manual'
+	enCurso.sort((a, b) => a.numero - b.numero);
+
+	// --- Tablas de los grupos involucrados, con el marcador del monitor aplicado encima ---
+	const equiposVivos = new Set(enCurso.flatMap((m) => [m.equipoA, m.equipoB]));
+	let grupos: Grupo[] = [];
+	if (equiposVivos.size) {
+		const overlaid = todos.map((p) => {
+			const s = vivos.get(p.id);
+			return s
+				? { numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB, golesA: s.golesA, golesB: s.golesB, enCurso: true }
+				: { numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB, golesA: p.golesA, golesB: p.golesB, enCurso: p.enCurso };
 		});
+		grupos = computeGrupos(overlaid).filter((g) => g.equipos.some((e) => equiposVivos.has(e.equipo)));
 	}
 
-	// Orden fijo por número de partido (#1→#72), igual que el resto de la app.
-	const enCurso = [...porId.values()].sort((a, b) => a.numero - b.numero);
-	return { enCurso };
+	return { enCurso, grupos };
 }
