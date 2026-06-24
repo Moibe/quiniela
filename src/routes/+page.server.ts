@@ -61,7 +61,18 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	});
 
+	// Partido a auto-enfocar al entrar: el primero EN CURSO; si ninguno, el jugado MÁS RECIENTE
+	// (por fecha de captura). null = nada que enfocar (la tabla arranca arriba).
+	let foco = mats.find((m) => m.enCurso) ?? null;
+	if (!foco) {
+		for (const m of mats) {
+			if (m.golesA !== null && m.golesB !== null && m.fecha) {
+				if (!foco || m.fecha.getTime() > (foco.fecha?.getTime() ?? 0)) foco = m;
+			}
+		}
+	}
+
 	// Orden FIJO por número (#1→#72): las filas NO se mueven. Los partidos en
 	// curso se anuncian con un banner arriba de la tabla, no reordenando.
-	return { participantes: parts.map((p) => p.nombre), rows };
+	return { participantes: parts.map((p) => p.nombre), rows, focoNumero: foco?.numero ?? null };
 };

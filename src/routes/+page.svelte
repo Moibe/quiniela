@@ -39,6 +39,15 @@
 	// Marcar/desmarcar una FILA (partido) con un clic en su identidad (# o equipos).
 	let filaMarcada = $state<number | null>(null);
 	const toggleFila = (n: number) => (filaMarcada = filaMarcada === n ? null : n);
+
+	// Auto-enfoque al entrar: lleva a la vista la fila del partido actual/más reciente.
+	// rAF: espera al layout tras la hidratación (el scroll vive en .table-wrap, no en la ventana).
+	const scrollSiFoco = (node: HTMLElement, esFoco: boolean) => {
+		if (esFoco)
+			requestAnimationFrame(() =>
+				node.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+			);
+	};
 </script>
 
 <section class="participantes">
@@ -108,6 +117,7 @@
 						class:jugado={r.jugado}
 						class:encurso={r.enCurso}
 						class:fila-marcada={filaMarcada === r.numero}
+						use:scrollSiFoco={r.numero === data.focoNumero}
 					>
 						<th
 							scope="row"
