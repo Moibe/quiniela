@@ -32,6 +32,17 @@
 			hour: '2-digit',
 			minute: '2-digit'
 		}).format(d);
+
+	// Partido "actual" para auto-enfocar: el primero EN CURSO (en vivo). Si ninguno, no se enfoca.
+	const actualId = $derived(data.partidos.find((p) => p.enCurso)?.id ?? null);
+
+	// Acción: al montar, lleva ese partido a la vista (centrado). Solo en el montaje (sin update),
+	// así no vuelve a hacer scroll al guardar/refrescar.
+	function scrollSiActual(node: HTMLElement, esActual: boolean) {
+		// rAF: espera al layout tras la hidratación (el scroll vive en un contenedor interno, no en
+		// la ventana), si no scrollIntoView corre demasiado pronto y no mueve nada.
+		if (esActual) requestAnimationFrame(() => node.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+	}
 </script>
 
 <section class="resultados">
@@ -50,6 +61,7 @@
 				class:jugado
 				class:encurso={p.enCurso}
 				class:moviendo={data.isAdmin && movingId === p.id}
+				use:scrollSiActual={p.id === actualId}
 				ondblclick={(e) => onFilaDblClick(e, p.id)}
 			>
 				<span class="num">#{p.numero}</span>
@@ -113,8 +125,15 @@
 							</form>
 							<button type="button" class="fijar-btn" onclick={() => (movingId = null)} title="Fijar en su lugar" aria-label="Fijar">✓</button>
 						{:else}
+							{#if jugado || p.enCurso}
+								<span
+									class="fuente"
+									class:monitor={p.autoMonitor}
+									title={p.autoMonitor ? 'Llenado automáticamente por el monitor' : 'Capturado a mano'}
+								>{p.autoMonitor ? 'monitor' : 'manual'}</span>
+							{/if}
 							{#if p.enCurso}
-								<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> Partido en Curso</span>
+								<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> En Curso</span>
 							{:else if jugado}
 								<time class="when">{fmtFecha(p.fecha as Date)}</time>
 							{:else}
@@ -161,7 +180,7 @@
 
 	.partido {
 		display: grid;
-		grid-template-columns: 2.6rem 1fr 10rem; /* # | cuerpo (equipos+marcador) | meta */
+		grid-template-columns: 2.6rem 1fr 12rem; /* # | cuerpo (equipos+marcador) | meta */
 		align-items: center;
 		gap: 0.8rem;
 		padding: 0.5rem 0.9rem;
@@ -331,6 +350,27 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	/* Etiqueta de fuente del resultado: capturado a mano (manual) o por el monitor. */
+	.fuente {
+		flex-shrink: 0;
+		font-size: 0.58rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		padding: 0.05rem 0.4rem;
+		border-radius: 999px;
+		color: #cbd5e1;
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		white-space: nowrap;
+	}
+
+	.fuente.monitor {
+		color: #7dd3fc;
+		background: rgba(125, 211, 252, 0.14);
+		border-color: rgba(125, 211, 252, 0.4);
 	}
 
 	.when {
