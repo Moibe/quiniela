@@ -33,8 +33,24 @@
 			minute: '2-digit'
 		}).format(d);
 
-	// Partido "actual" para auto-enfocar: el primero EN CURSO (en vivo). Si ninguno, no se enfoca.
-	const actualId = $derived(data.partidos.find((p) => p.enCurso)?.id ?? null);
+	// Partido a auto-enfocar: el primero EN CURSO (en vivo); si ninguno, el ÚLTIMO jugado (fecha más
+	// reciente). null = nada que enfocar (arranca arriba).
+	const actualId = $derived.by(() => {
+		const vivo = data.partidos.find((p) => p.enCurso);
+		if (vivo) return vivo.id;
+		let ultId: number | null = null;
+		let ultT = -1;
+		for (const p of data.partidos) {
+			if (p.golesA !== null && p.golesB !== null && p.fecha) {
+				const t = p.fecha.getTime();
+				if (t > ultT) {
+					ultT = t;
+					ultId = p.id;
+				}
+			}
+		}
+		return ultId;
+	});
 
 	// Acción: al montar, lleva ese partido a la vista (centrado). Solo en el montaje (sin update),
 	// así no vuelve a hacer scroll al guardar/refrescar.
@@ -125,7 +141,8 @@
 							</form>
 							<button type="button" class="fijar-btn" onclick={() => (movingId = null)} title="Fijar en su lugar" aria-label="Fijar">✓</button>
 						{:else}
-							{#if jugado || p.enCurso}
+							{#if p.enCurso}
+								<!-- Fuente (manual/monitor) SOLO en el partido en curso; ya jugado no es relevante. -->
 								<span
 									class="fuente"
 									class:monitor={p.autoMonitor}
