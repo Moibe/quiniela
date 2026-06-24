@@ -150,7 +150,7 @@
 								>{p.autoMonitor ? 'monitor' : 'manual'}</span>
 							{/if}
 							{#if p.enCurso}
-								<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> En Curso</span>
+								<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> En Curso{#if p.minutoVivo}{' · ' + p.minutoVivo}{/if}</span>
 							{:else if jugado}
 								<time class="when">{fmtFecha(p.fecha as Date)}</time>
 							{:else}

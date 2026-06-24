@@ -36,7 +36,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	// Sandbox en memoria — NO toca `partidos`. enCurso=true mientras está vivo; final=true lo
 	// marca terminado en el sandbox (sigue sin afectar producción ni los puntos).
-	setMonitorScore(partidoId, golesA, golesB, !final, Date.now());
+	setMonitorScore(partidoId, golesA, golesB, !final, null, Date.now());
 
 	return json({ ok: true, partidoId, golesA, golesB, enCurso: !final });
 };

@@ -2,6 +2,7 @@ import { asc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { participantes, partidos, pronosticos } from '$lib/server/db/schema';
 import { puntosDe, PUNTOS_EXACTO, PUNTOS_RESULTADO } from '$lib/scoring';
+import { getMinutosVivos } from '$lib/server/monitorScores';
 import type { PageServerLoad } from './$types';
 
 // Estado de aciertos de una celda (para iluminar la cuadrícula en guinda):
@@ -36,6 +37,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	// Filas alineadas al orden de participantes (pronos[i] = participante i).
 	// Cada celda lleva el marcador pronosticado (s) y su acierto (hit) contra
 	// el resultado real, si el partido ya se jugó.
+	const minutos = getMinutosVivos(Date.now()); // minuto en vivo del monitor, por partidoId
 	const rows = mats.map((m) => {
 		const real =
 			m.golesA !== null && m.golesB !== null ? { golesA: m.golesA, golesB: m.golesB } : null;
@@ -56,6 +58,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			equipoB: m.equipoB,
 			jugado: real !== null,
 			enCurso: m.enCurso,
+			minuto: minutos.get(m.id) ?? null,
 			real: real ? `${real.golesA}-${real.golesB}` : null,
 			pronos
 		};

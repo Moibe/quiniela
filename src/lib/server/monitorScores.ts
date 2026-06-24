@@ -7,6 +7,7 @@ export interface MarcadorMonitor {
 	golesA: number | null;
 	golesB: number | null;
 	enCurso: boolean;
+	minuto: string | null; // minuto que muestra Cloudbet (ej. "67'"), sin segundos; null si no hay
 	ts: number; // epoch ms de la última vez que el runner reportó este partido
 	cambioTs: number; // epoch ms de la última vez que CAMBIÓ el marcador (para el respaldo de 4 min)
 }
@@ -20,12 +21,13 @@ export function setMonitorScore(
 	golesA: number,
 	golesB: number,
 	enCurso: boolean,
+	minuto: string | null,
 	ts: number
 ): void {
 	const prev = scores.get(partidoId);
 	// cambioTs solo avanza cuando el MARCADOR cambia (no en cada refresco de ~20s del runner).
 	const cambio = !prev || prev.golesA !== golesA || prev.golesB !== golesB;
-	scores.set(partidoId, { golesA, golesB, enCurso, ts, cambioTs: cambio ? ts : prev.cambioTs });
+	scores.set(partidoId, { golesA, golesB, enCurso, minuto, ts, cambioTs: cambio ? ts : prev.cambioTs });
 }
 
 export function getMonitorScore(partidoId: number): MarcadorMonitor | null {
@@ -35,4 +37,14 @@ export function getMonitorScore(partidoId: number): MarcadorMonitor | null {
 /** Todos los marcadores del sandbox (partidoId → marcador). Lo usan /estado y el load de /labs. */
 export function getAllMonitorScores(): Map<number, MarcadorMonitor> {
 	return scores;
+}
+
+/** Minutos (ej. "67'") de los partidos EN VIVO y frescos, por partidoId. Para mostrar el minuto en
+ *  las vistas de "en vivo" (En Vivo, badge En Curso de Partidos, banner del Concentrado). */
+export function getMinutosVivos(ahora: number, frescoMs = 45_000): Map<number, string> {
+	const m = new Map<number, string>();
+	for (const [id, s] of scores) {
+		if (s.minuto && ahora - s.ts < frescoMs) m.set(id, s.minuto);
+	}
+	return m;
 }

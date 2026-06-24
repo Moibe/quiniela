@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
+import { getMinutosVivos } from '$lib/server/monitorScores';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -13,8 +14,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	// resultados; cada partido solo se "enciende" en su lugar. Así coincide fila
 	// por fila con la cuadrícula de Participantes y no hay brincos confusos.
 	const rows = await db.select().from(partidos).orderBy(asc(partidos.numero));
+	// Minuto en vivo del monitor (ej. "67'") por partidoId, para el badge "En Curso".
+	const minutos = getMinutosVivos(Date.now());
 
-	return { partidos: rows, isAdmin: locals.isAdmin };
+	return {
+		partidos: rows.map((p) => ({ ...p, minutoVivo: minutos.get(p.id) ?? null })),
+		isAdmin: locals.isAdmin
+	};
 };
 
 // Captura/edita el marcador REAL de un partido — SOLO admin.

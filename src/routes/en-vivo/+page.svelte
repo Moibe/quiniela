@@ -55,7 +55,7 @@
 			{#each enCurso as m (m.numero)}
 				<li class="vrow" class:desconectado={m.estado === 'desconectado'} class:terminado={m.estado === 'terminado'}>
 					{#if m.estado === 'vivo'}
-						<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo</span>
+						<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo{#if m.minuto}{' · ' + m.minuto}{/if}</span>
 					{:else if m.estado === 'terminado'}
 						<span class="chip fin"><span class="dot fin" aria-hidden="true"></span> finalizado · {hace(m.haceMs)}</span>
 					{:else}

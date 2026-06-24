@@ -32,6 +32,7 @@ export interface PartidoEnVivo {
 	fuente: FuenteEnVivo; // de dónde sale el marcador de ESTA fila
 	estado: EstadoEnVivo;
 	haceMs: number | null; // antigüedad de la última lectura si está 'desconectado'; null si 'vivo'
+	minuto: string | null; // minuto del monitor (ej. "67'") si está 'vivo' por monitor; null si no
 }
 
 export interface TerceroEnVivo {
@@ -89,21 +90,23 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 		if (monVivo) {
 			enCurso.push({
 				numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB,
-				golesA: mon!.golesA, golesB: mon!.golesB, fuente: 'monitor', estado: 'vivo', haceMs: null
+				golesA: mon!.golesA, golesB: mon!.golesB, fuente: 'monitor', estado: 'vivo', haceMs: null,
+				minuto: mon!.minuto
 			});
 			overlay.set(p.id, { golesA: mon!.golesA, golesB: mon!.golesB, enCurso: true });
 		} else if (p.enCurso && !p.autoMonitor) {
 			// Provisional capturado A MANO (no el auto-respaldo del monitor, que es "transparente" aquí).
 			enCurso.push({
 				numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB,
-				golesA: p.golesA, golesB: p.golesB, fuente: 'manual', estado: 'vivo', haceMs: null
+				golesA: p.golesA, golesB: p.golesB, fuente: 'manual', estado: 'vivo', haceMs: null,
+				minuto: null
 			});
 		} else if ((monFin || monDesc) && (p.golesA === null || p.autoMonitor)) {
 			// Mostramos el del monitor salvo que haya un resultado HUMANO (ese manda y sale en Grupos).
 			enCurso.push({
 				numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB,
 				golesA: mon!.golesA, golesB: mon!.golesB, fuente: 'monitor',
-				estado: monFin ? 'terminado' : 'desconectado', haceMs: edad
+				estado: monFin ? 'terminado' : 'desconectado', haceMs: edad, minuto: null
 			});
 			overlay.set(p.id, { golesA: mon!.golesA, golesB: mon!.golesB, enCurso: false }); // cuenta, sin pulso
 		}

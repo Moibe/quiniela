@@ -75,7 +75,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 		const cA = canonEquipo(p.equipoA);
 		const aEsLocal = cA === canonEquipo(nombreA) ? true : cA === canonEquipo(nombreB) ? false : true;
-		setMonitorScore(p.id, aEsLocal ? gA : gB, aEsLocal ? gB : gA, Boolean(m.minuto), ahora);
+		setMonitorScore(p.id, aEsLocal ? gA : gB, aEsLocal ? gB : gA, Boolean(m.minuto), m.minuto ? String(m.minuto) : null, ahora);
 		idsEnPush.add(p.id);
 		emparejados++;
 	}

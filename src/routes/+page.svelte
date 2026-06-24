@@ -78,6 +78,7 @@
 					<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
 					<Bandera equipo={m.equipoB} />
 					<span class="bv-team notranslate" translate="no">{m.equipoB}</span>
+					{#if m.minuto}<span class="bv-min">{m.minuto}</span>{/if}
 				</span>
 			{/each}
 		</div>
@@ -295,6 +296,13 @@
 		border-radius: 6px;
 		font-variant-numeric: tabular-nums;
 		color: #fff;
+	}
+
+	.bv-min {
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: #fcd34d;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.leg {
