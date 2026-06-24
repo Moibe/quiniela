@@ -7,7 +7,8 @@ export interface MarcadorMonitor {
 	golesA: number | null;
 	golesB: number | null;
 	enCurso: boolean;
-	ts: number; // epoch ms de la última actualización empujada por el runner
+	ts: number; // epoch ms de la última vez que el runner reportó este partido
+	cambioTs: number; // epoch ms de la última vez que CAMBIÓ el marcador (para el respaldo de 4 min)
 }
 
 // Singleton de proceso (sobrevive el HMR del dev server, igual que el probador).
@@ -21,7 +22,10 @@ export function setMonitorScore(
 	enCurso: boolean,
 	ts: number
 ): void {
-	scores.set(partidoId, { golesA, golesB, enCurso, ts });
+	const prev = scores.get(partidoId);
+	// cambioTs solo avanza cuando el MARCADOR cambia (no en cada refresco de ~20s del runner).
+	const cambio = !prev || prev.golesA !== golesA || prev.golesB !== golesB;
+	scores.set(partidoId, { golesA, golesB, enCurso, ts, cambioTs: cambio ? ts : prev.cambioTs });
 }
 
 export function getMonitorScore(partidoId: number): MarcadorMonitor | null {

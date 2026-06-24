@@ -28,7 +28,11 @@ export const partidos = sqliteTable('partidos', {
 	// URL del partido en Cloudbet, para que el monitor externo (Plan A) lea su marcador.
 	urlCloudbet: text('url_cloudbet'),
 	// true = el admin encendió la vigilancia de este partido; el monitor externo lo toma.
-	monitorear: integer('monitorear', { mode: 'boolean' }).notNull().default(false)
+	monitorear: integer('monitorear', { mode: 'boolean' }).notNull().default(false),
+	// true = el marcador actual lo escribió En Vivo automáticamente desde el monitor (no un humano).
+	// Mientras sea true, En Vivo puede irlo actualizando; si un humano lo edita, pasa a false y En
+	// Vivo deja de tocarlo (nunca pisa lo capturado a mano).
+	autoMonitor: integer('auto_monitor', { mode: 'boolean' }).notNull().default(false)
 });
 
 // La matriz de pronósticos: 72 partidos × 29 participantes. golesA/golesB son

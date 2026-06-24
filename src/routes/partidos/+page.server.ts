@@ -47,9 +47,10 @@ async function guardarMarcador({ request, locals }: RequestEvent, enCurso: boole
 		return fail(400, { error: 'Marcador inválido (enteros ≥ 0).', partidoId });
 	}
 
+	// autoMonitor:false ⇒ resultado HUMANO; En Vivo no lo sobrescribe con el del monitor.
 	await db
 		.update(partidos)
-		.set({ golesA, golesB, fecha: new Date(), enCurso })
+		.set({ golesA, golesB, fecha: new Date(), enCurso, autoMonitor: false })
 		.where(eq(partidos.id, partidoId));
 	return { ok: true };
 }
@@ -75,7 +76,7 @@ export const actions: Actions = {
 
 		await db
 			.update(partidos)
-			.set({ golesA: null, golesB: null, fecha: null, enCurso: false })
+			.set({ golesA: null, golesB: null, fecha: null, enCurso: false, autoMonitor: false })
 			.where(eq(partidos.id, partidoId));
 		return { ok: true };
 	},

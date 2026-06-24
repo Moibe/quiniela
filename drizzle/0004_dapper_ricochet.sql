@@ -1,0 +1,1 @@
+ALTER TABLE `partidos` ADD `auto_monitor` integer DEFAULT false NOT NULL;

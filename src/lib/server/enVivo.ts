@@ -66,7 +66,8 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 			equipoB: partidos.equipoB,
 			golesA: partidos.golesA,
 			golesB: partidos.golesB,
-			enCurso: partidos.enCurso
+			enCurso: partidos.enCurso,
+			autoMonitor: partidos.autoMonitor
 		})
 		.from(partidos);
 
@@ -91,13 +92,14 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 				golesA: mon!.golesA, golesB: mon!.golesB, fuente: 'monitor', estado: 'vivo', haceMs: null
 			});
 			overlay.set(p.id, { golesA: mon!.golesA, golesB: mon!.golesB, enCurso: true });
-		} else if (p.enCurso) {
+		} else if (p.enCurso && !p.autoMonitor) {
+			// Provisional capturado A MANO (no el auto-respaldo del monitor, que es "transparente" aquí).
 			enCurso.push({
 				numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB,
 				golesA: p.golesA, golesB: p.golesB, fuente: 'manual', estado: 'vivo', haceMs: null
 			});
-		} else if ((monFin || monDesc) && p.golesA === null) {
-			// Solo si producción no tiene ya un marcador (si lo capturaste a mano, manda ese / el final).
+		} else if ((monFin || monDesc) && (p.golesA === null || p.autoMonitor)) {
+			// Mostramos el del monitor salvo que haya un resultado HUMANO (ese manda y sale en Grupos).
 			enCurso.push({
 				numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB,
 				golesA: mon!.golesA, golesB: mon!.golesB, fuente: 'monitor',
