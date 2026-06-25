@@ -23,6 +23,12 @@
 	const mitad = $derived(Math.ceil(data.standings.length / 2));
 	const izquierda = $derived(data.standings.slice(0, mitad));
 	const derecha = $derived(data.standings.slice(mitad));
+
+	// Quién SUBIÓ más lugares con el último resultado (mayor movimiento positivo). En empate gana el
+	// mejor ubicado (standings ya viene por rank). null si nadie subió.
+	const masSubio = $derived(
+		[...data.standings].filter((s) => s.mov > 0).sort((a, b) => b.mov - a.mov)[0] ?? null
+	);
 </script>
 
 {#snippet tabla(filas: typeof data.standings, lado: string)}
@@ -73,6 +79,12 @@
 			3 pts por marcador exacto · 1 pt por resultado correcto ·
 			<strong>{data.partidosJugados}</strong> de {data.totalPartidos} partidos con resultado
 		</p>
+		{#if masSubio}
+			<p class="destacado">
+				Con el último gol, <strong class="notranslate" translate="no">{masSubio.nombre}</strong> es el
+				que más lugares ha subido: <span class="flecha-sube">▲{masSubio.mov}</span>
+			</p>
+		{/if}
 	</div>
 
 	{#if data.partidosJugados === 0}
@@ -101,10 +113,28 @@
 	}
 
 	.sub {
-		margin: 0 0 1rem;
+		margin: 0 0 0.45rem;
 		font-size: 0.85rem;
 		font-weight: 400;
 		color: rgba(255, 255, 255, 0.65);
+	}
+
+	/* Línea destacada: quién subió más lugares con el último resultado. */
+	.destacado {
+		margin: 0 0 1rem;
+		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.82);
+	}
+
+	.destacado strong {
+		color: #fff;
+		font-weight: 700;
+	}
+
+	.flecha-sube {
+		color: #4ade80;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.empty {
