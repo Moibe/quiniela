@@ -71,6 +71,15 @@
 		return out;
 	});
 
+	// SOLO el SIGUIENTE par (el primer par pendiente, el próximo en jugarse) lleva el marco blanco;
+	// los demás pares pendientes se muestran como filas normales.
+	const siguienteParKey = $derived.by(() => {
+		for (const bl of bloques) {
+			if (bl.b && bl.a.golesA === null && bl.b.golesA === null) return bl.a.id;
+		}
+		return null;
+	});
+
 	// Acción: al montar, lleva ese partido a la vista (centrado). Solo en el montaje (sin update),
 	// así no vuelve a hacer scroll al guardar/refrescar.
 	function scrollSiActual(node: HTMLElement, esActual: boolean) {
@@ -191,8 +200,8 @@
 
 	<div class="list">
 		{#each bloques as bl (bl.a.id)}
-			{#if bl.b && bl.a.golesA === null && bl.b.golesA === null}
-				<!-- Par pendiente que se juega al mismo tiempo: enmarcado en un cuadro blanco brillante. -->
+			{#if bl.b && bl.a.id === siguienteParKey}
+				<!-- SOLO el siguiente par (próximo en jugarse): enmarcado en un cuadro blanco brillante. -->
 				<div class="par-sim">
 					<span class="par-tag">⏱ se juegan al mismo tiempo</span>
 					{@render fila(bl.a)}
