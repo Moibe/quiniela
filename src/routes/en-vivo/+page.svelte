@@ -37,6 +37,24 @@
 		return `hace ${h}h ${min % 60}m`;
 	}
 
+	// Hora de inicio de un próximo partido (epoch que el monitor resolvió de Cloudbet). Se muestra
+	// SIEMPRE en hora de México y formato fijo, para que SSR y cliente coincidan (sin parpadeo de
+	// hidratación) sin importar la zona horaria de quien mira.
+	function fmtInicio(ms: number | null): string {
+		if (ms == null) return '';
+		const TZ = 'America/Mexico_City';
+		const ymd = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: TZ }); // AAAA-MM-DD en hora MX
+		const d = new Date(ms);
+		const ahora = new Date();
+		const manana = new Date(ahora.getTime() + 86_400_000);
+		const hora = d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+		let dia: string;
+		if (ymd(d) === ymd(ahora)) dia = 'hoy';
+		else if (ymd(d) === ymd(manana)) dia = 'mañana';
+		else dia = d.toLocaleDateString('es-MX', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short' });
+		return `${dia} · ${hora}`;
+	}
+
 	onMount(() => {
 		const id = setInterval(refrescar, 10000); // se actualiza solo
 		return () => clearInterval(id);
@@ -90,7 +108,7 @@
 		<ul class="lista">
 			{#each proximos as m (m.numero)}
 				<li class="vrow proximo">
-					<span class="chip prox"><span class="dot prox" aria-hidden="true"></span> próximo</span>
+					<span class="chip prox"><span class="dot prox" aria-hidden="true"></span> {m.inicioMs ? `próximo · ${fmtInicio(m.inicioMs)}` : 'próximo'}</span>
 					<span class="vnum">#{m.numero}</span>
 					<span class="team a">
 						<span class="nm" translate="no">{m.equipoA}</span>

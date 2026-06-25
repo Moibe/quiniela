@@ -49,7 +49,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			enCurso: partidos.enCurso,
 			autoMonitor: partidos.autoMonitor,
 			fecha: partidos.fecha,
-			urlCloudbet: partidos.urlCloudbet
+			urlCloudbet: partidos.urlCloudbet,
+			inicioCloudbet: partidos.inicioCloudbet
 		})
 		.from(partidos);
 	const porId = new Map<string, (typeof filas)[number]>(); // id Cloudbet (override por URL) → partido
@@ -124,5 +125,22 @@ export const POST: RequestHandler = async ({ request }) => {
 		cerrados++;
 	}
 
-	return json({ ok: true, recibidos: matches.length, emparejados, sinEmparejar, respaldados, cerrados });
+	// 4) HORARIOS de los próximos: el runner empuja los partidos del listado que aún NO empiezan, con su
+	//    hora de inicio ya resuelta a epoch (Cloudbet sólo da texto relativo, así que el runner la
+	//    convierte con su reloj). La guardamos para anunciar "Próximos partidos" con hora; es estática,
+	//    así que persiste aunque el runner se apague. Nunca toca marcadores ni enCurso.
+	const proximos: Array<Record<string, unknown>> = Array.isArray(body.proximos) ? body.proximos : [];
+	let horarios = 0;
+	for (const m of proximos) {
+		const inicioMs = Number(m.inicioMs);
+		if (!Number.isFinite(inicioMs)) continue;
+		const porUrl = m.id != null ? porId.get(String(m.id)) : undefined;
+		const p = porUrl ?? porClave.get(clavePartido(String(m.nombreA ?? ''), String(m.nombreB ?? '')));
+		if (!p || p.golesA !== null) continue; // sin emparejar, o ya jugado/en curso (la hora ya no aporta)
+		if (p.inicioCloudbet && Math.abs(p.inicioCloudbet.getTime() - inicioMs) < 60_000) continue; // sin cambio
+		await db.update(partidos).set({ inicioCloudbet: new Date(inicioMs) }).where(eq(partidos.id, p.id));
+		horarios++;
+	}
+
+	return json({ ok: true, recibidos: matches.length, emparejados, sinEmparejar, respaldados, cerrados, horarios });
 };

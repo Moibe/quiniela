@@ -1,0 +1,1 @@
+ALTER TABLE `partidos` ADD `inicio_cloudbet` integer;

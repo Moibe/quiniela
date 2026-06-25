@@ -49,6 +49,7 @@ export interface ProximoEnVivo {
 	numero: number;
 	equipoA: string;
 	equipoB: string;
+	inicioMs: number | null; // hora de inicio (epoch) leída de Cloudbet por el monitor; null si no hay
 }
 
 export interface EnVivo {
@@ -76,7 +77,8 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 			golesA: partidos.golesA,
 			golesB: partidos.golesB,
 			enCurso: partidos.enCurso,
-			autoMonitor: partidos.autoMonitor
+			autoMonitor: partidos.autoMonitor,
+			inicioCloudbet: partidos.inicioCloudbet
 		})
 		.from(partidos);
 
@@ -147,7 +149,12 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 		.filter((p) => p.golesA === null && !p.enCurso && !enCursoNums.has(p.numero))
 		.sort((a, b) => a.numero - b.numero)
 		.slice(0, 2)
-		.map((p) => ({ numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB }));
+		.map((p) => ({
+			numero: p.numero,
+			equipoA: p.equipoA,
+			equipoB: p.equipoB,
+			inicioMs: p.inicioCloudbet ? p.inicioCloudbet.getTime() : null
+		}));
 
 	// Tablas de grupo a mostrar: las de los partidos EN JUEGO; y si no hay nada en vivo, las de los
 	// PRÓXIMOS (posiciones actuales del grupo, que pasan a actualizarse en vivo al arrancar el partido).

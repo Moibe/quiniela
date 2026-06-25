@@ -32,7 +32,11 @@ export const partidos = sqliteTable('partidos', {
 	// true = el marcador actual lo escribió En Vivo automáticamente desde el monitor (no un humano).
 	// Mientras sea true, En Vivo puede irlo actualizando; si un humano lo edita, pasa a false y En
 	// Vivo deja de tocarlo (nunca pisa lo capturado a mano).
-	autoMonitor: integer('auto_monitor', { mode: 'boolean' }).notNull().default(false)
+	autoMonitor: integer('auto_monitor', { mode: 'boolean' }).notNull().default(false),
+	// Hora de inicio programada, leída por el monitor del listado de Cloudbet. Cloudbet sólo da texto
+	// relativo ("Today • 2:00 PM"), así que el runner lo resuelve a un instante absoluto al leerlo (con
+	// el reloj de SU máquina, que se asume en hora de México). null mientras nadie la haya capturado.
+	inicioCloudbet: integer('inicio_cloudbet', { mode: 'timestamp' })
 });
 
 // La matriz de pronósticos: 72 partidos × 29 participantes. golesA/golesB son
