@@ -134,8 +134,10 @@
 		<p class="vacio">No hay partidos en curso ni próximos: la fase de grupos terminó.</p>
 	{/if}
 
-	{#if grupos.length}
-		<h2 class="g-titulo">
+	<div class="vivo-abajo">
+		{#if grupos.length}
+			<div class="lado-grupos">
+				<h2 class="g-titulo">
 			{#if enCurso.length}
 				{grupos.length === 1 ? 'Tabla del grupo en juego' : 'Tablas de los grupos en juego'}
 				<span class="g-nota">incluye el marcador en curso</span>
@@ -149,9 +151,10 @@
 				<TablaGrupo grupo={g} qlf vivo />
 			{/each}
 		</div>
-	{/if}
+			</div>
+		{/if}
 
-	{#if terceros.length}
+		{#if terceros.length}
 		<details class="terceros">
 			<summary class="t-head">
 				<span class="chevron" aria-hidden="true">▸</span>
@@ -190,7 +193,8 @@
 				</table>
 			</div>
 		</details>
-	{/if}
+		{/if}
+	</div>
 </section>
 
 <style>
@@ -426,6 +430,29 @@
 	}
 
 	/* Tablas de los grupos en juego, debajo de los partidos. */
+	/* En web: tabla(s) del grupo y tabla de terceros LADO A LADO (terceros a la derecha). Al angostar
+	   (móvil/tablet) hace wrap y se apilan. */
+	.vivo-abajo {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 1rem 1.5rem;
+		margin-top: 2rem;
+	}
+
+	.lado-grupos {
+		min-width: 0;
+	}
+
+	/* Dentro del contenedor lado-a-lado el margen superior lo da .vivo-abajo. */
+	.vivo-abajo .g-titulo {
+		margin-top: 0;
+	}
+
+	.vivo-abajo .terceros {
+		margin-top: 0;
+	}
+
 	.g-titulo {
 		display: flex;
 		align-items: baseline;
