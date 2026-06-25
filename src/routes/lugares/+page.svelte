@@ -29,6 +29,11 @@
 	const masSubio = $derived(
 		[...data.standings].filter((s) => s.mov > 0).sort((a, b) => b.mov - a.mov)[0] ?? null
 	);
+
+	// Quién BAJÓ más lugares con el último resultado (movimiento más negativo). null si nadie bajó.
+	const masBajo = $derived(
+		[...data.standings].filter((s) => s.mov < 0).sort((a, b) => a.mov - b.mov)[0] ?? null
+	);
 </script>
 
 {#snippet tabla(filas: typeof data.standings, lado: string)}
@@ -85,6 +90,12 @@
 				que más lugares ha subido: <span class="flecha-sube">▲{masSubio.mov}</span>
 			</p>
 		{/if}
+		{#if masBajo}
+			<p class="destacado bajo">
+				Con el último gol, <strong class="notranslate" translate="no">{masBajo.nombre}</strong> es el
+				que más lugares ha bajado: <span class="flecha-baja">▼{Math.abs(masBajo.mov)}</span>
+			</p>
+		{/if}
 	</div>
 
 	{#if data.partidosJugados === 0}
@@ -119,11 +130,55 @@
 		color: rgba(255, 255, 255, 0.65);
 	}
 
-	/* Línea destacada: quién subió más lugares con el último resultado. */
+	/* Línea destacada (centrada, en un marco blanco brilloso): quién subió más lugares con el último
+	   resultado. */
 	.destacado {
-		margin: 0 0 1rem;
+		width: fit-content;
+		max-width: 100%;
+		box-sizing: border-box;
+		margin: 0 auto 1.1rem;
+		padding: 0.5rem 1.1rem;
+		text-align: center;
 		font-size: 0.9rem;
-		color: rgba(255, 255, 255, 0.82);
+		color: rgba(255, 255, 255, 0.9);
+		border: 1.5px solid rgba(255, 255, 255, 0.85);
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.04);
+		animation: glow-blanco 2.1s ease-in-out infinite;
+	}
+
+	@keyframes glow-blanco {
+		0%,
+		100% {
+			box-shadow:
+				0 0 6px rgba(255, 255, 255, 0.3),
+				inset 0 0 6px rgba(255, 255, 255, 0.04);
+		}
+		50% {
+			box-shadow:
+				0 0 18px rgba(255, 255, 255, 0.65),
+				inset 0 0 9px rgba(255, 255, 255, 0.08);
+		}
+	}
+
+	/* Variante en ROJO: el que más lugares BAJÓ. */
+	.destacado.bajo {
+		border-color: rgba(248, 113, 113, 0.85);
+		animation-name: glow-rojo;
+	}
+
+	@keyframes glow-rojo {
+		0%,
+		100% {
+			box-shadow:
+				0 0 6px rgba(248, 113, 113, 0.3),
+				inset 0 0 6px rgba(248, 113, 113, 0.05);
+		}
+		50% {
+			box-shadow:
+				0 0 18px rgba(248, 113, 113, 0.65),
+				inset 0 0 9px rgba(248, 113, 113, 0.1);
+		}
 	}
 
 	.destacado strong {
@@ -133,6 +188,12 @@
 
 	.flecha-sube {
 		color: #4ade80;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.flecha-baja {
+		color: #f87171;
 		font-weight: 800;
 		font-variant-numeric: tabular-nums;
 	}
