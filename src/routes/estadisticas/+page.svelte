@@ -12,32 +12,49 @@
 	// Alto dinámico de las listas de "ganadores" en la VISTA SIMPLE (3 tarjetas en una fila): crecen
 	// para llenar el espacio vertical disponible. En móvil o en la vista doble (apiladas) usan el tope
 	// por defecto del CSS.
-	let listMax = $state(0); // px; 0 = usar el max-height por defecto (CSS)
+	let listMax = $state(0); // px; 0 = usar el max-height por defecto (CSS) — vista simple (3 en fila)
+	let dualH = $state(0); // px; alto FIJO uniforme de las 6 listas en la vista doble (0 = default CSS)
 
 	$effect(() => {
 		if (!browser) return;
 		void data.bloques; // re-medir si cambian las tarjetas (nuevo marcador en vivo)
 
 		const medir = () => {
-			const fila = document.querySelector('.cards-gan');
-			const lista = fila?.querySelector('.gan-list');
 			// El scroll vive en .work-scroll (panel fijo del layout), no en la ventana.
 			const cont = document.querySelector('.work-scroll');
-			if (!fila || !lista || !cont) {
+			if (!cont) {
 				listMax = 0;
+				dualH = 0;
 				return;
 			}
-			const cards = [...fila.querySelectorAll('.gan-card')];
-			const top0 = cards[0].getBoundingClientRect().top;
-			const enFila =
-				cards.length > 1 && cards.every((c) => Math.abs(c.getBoundingClientRect().top - top0) < 4);
-			if (!enFila) {
-				listMax = 0;
-				return;
-			}
-			const top = lista.getBoundingClientRect().top;
 			const fondo = cont.getBoundingClientRect().bottom;
-			listMax = Math.max(Math.round(fondo - top - 44), 150);
+
+			// Vista SIMPLE: las 3 tarjetas en una fila → la lista crece hasta el fondo.
+			const fila = document.querySelector('.cards-gan');
+			const listaS = fila?.querySelector('.gan-list');
+			if (fila && listaS) {
+				const cards = [...fila.querySelectorAll('.gan-card')];
+				const top0 = cards[0].getBoundingClientRect().top;
+				const enFila =
+					cards.length > 1 && cards.every((c) => Math.abs(c.getBoundingClientRect().top - top0) < 4);
+				listMax = enFila
+					? Math.max(Math.round(fondo - listaS.getBoundingClientRect().top - 44), 150)
+					: 0;
+			} else {
+				listMax = 0;
+			}
+
+			// Vista DOBLE: 3 tarjetas apiladas por columna → alto FIJO uniforme para las 6 listas, que
+			// reparte el espacio disponible entre las 3 (así se empatan izquierda/derecha fila por fila).
+			const col = document.querySelector('.dual .col');
+			const listas = col ? [...col.querySelectorAll('.gan-list')] : [];
+			if (col && listas.length === 3) {
+				const top = listas[0].getBoundingClientRect().top;
+				// ~136px = encabezado + paddings + gaps de las tarjetas (sin las listas).
+				dualH = Math.max(Math.round((fondo - top - 136) / 3), 120);
+			} else {
+				dualH = 0;
+			}
 		};
 
 		const raf = requestAnimationFrame(medir);
@@ -211,7 +228,7 @@
 			{#if data.enCurso.length}
 				<div class="cards">{@render vivoBanner()}</div>
 			{/if}
-			<div class="dual">
+			<div class="dual" style={dualH ? `--dual-list-h: ${dualH}px` : ''}>
 				{#each data.bloques as b (b.numero)}
 					<div class="col">
 						{@render pastel(b.grafica)}
@@ -337,6 +354,15 @@
 		width: 100%;
 		min-width: 0;
 		max-width: none;
+		box-sizing: border-box;
+	}
+
+	/* Listas en la vista doble: alto FIJO uniforme (mismo tamaño + scroll) para que las 3 de la
+	   izquierda se empaten con las 3 de la derecha. El JS (--dual-list-h) lo ajusta para llenar. */
+	.col :global(.gan-list),
+	.col :global(.gan-vacio) {
+		height: var(--dual-list-h, 13rem);
+		max-height: none;
 		box-sizing: border-box;
 	}
 
