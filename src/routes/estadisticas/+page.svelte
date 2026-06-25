@@ -223,23 +223,6 @@
 	</div>
 {/snippet}
 
-<!-- Banner de partido(s) EN CURSO con su marcador. -->
-{#snippet vivoBanner()}
-	<div class="vivo-card">
-		<span class="bv-tag"><span class="bv-dot" aria-hidden="true"></span> Partido en Curso</span>
-		{#each data.enCurso as m (m.numero)}
-			<span class="bv-match">
-				<span class="bv-num">#{m.numero}</span>
-				<span class="bv-team notranslate" translate="no">{m.equipoA}</span>
-				<Bandera equipo={m.equipoA} />
-				<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
-				<Bandera equipo={m.equipoB} />
-				<span class="bv-team notranslate" translate="no">{m.equipoB}</span>
-			</span>
-		{/each}
-	</div>
-{/snippet}
-
 <section class="estadisticas">
 	<p class="sub">
 		Distribución de pronósticos del/los partido(s) en curso (o el/los siguiente(s) pendiente(s)) y
@@ -249,9 +232,6 @@
 	{#if data.bloques.length}
 		{#if data.bloques.length >= 2}
 			<!-- Jornada final: dos partidos simultáneos del MISMO grupo, divididos 50-50. -->
-			{#if data.enCurso.length}
-				<div class="cards">{@render vivoBanner()}</div>
-			{/if}
 			<div class="dual" style={dualH ? `--dual-list-h: ${dualH}px` : ''}>
 				{#each data.bloques as b (b.numero)}
 					<div class="col">
@@ -285,9 +265,8 @@
 			</div>
 		{:else}
 			{@const b = data.bloques[0]}
-			<!-- Fila 1: las dos tarjetas "cortas" (partido en curso + pastel). -->
+			<!-- Fila 1: el pastel (el marcador en vivo ya va dentro del propio pastel). -->
 			<div class="cards">
-				{#if data.enCurso.length}{@render vivoBanner()}{/if}
 				{@render pastel(b.grafica)}
 			</div>
 
@@ -403,23 +382,6 @@
 		color: rgba(255, 255, 255, 0.6);
 	}
 
-	/* ── Tarjeta "Partido en Curso" ────────────────────────────────────────── */
-	.vivo-card {
-		flex-shrink: 0;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: flex-start;
-		gap: 0.5rem;
-		min-width: 13rem;
-		padding: 0.6rem 0.9rem;
-		background: rgba(245, 158, 11, 0.13);
-		border: 1px solid rgba(245, 158, 11, 0.55);
-		border-radius: 10px;
-		color: #fde68a;
-		animation: glow-banner 1.9s ease-in-out infinite;
-	}
-
 	@keyframes glow-banner {
 		0%,
 		100% {
@@ -428,25 +390,6 @@
 		50% {
 			box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
 		}
-	}
-
-	.bv-tag {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		font-size: 0.78rem;
-		font-weight: 700;
-		letter-spacing: 0.02em;
-		color: #fcd34d;
-		white-space: nowrap;
-	}
-
-	.bv-dot {
-		width: 9px;
-		height: 9px;
-		border-radius: 50%;
-		background: #f59e0b;
-		animation: halo 1.6s ease-out infinite;
 	}
 
 	@keyframes halo {
@@ -459,29 +402,6 @@
 		100% {
 			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
 		}
-	}
-
-	.bv-match {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.9rem;
-		font-weight: 700;
-		white-space: nowrap;
-	}
-
-	.bv-num {
-		font-size: 0.72rem;
-		font-weight: 400;
-		color: rgba(255, 255, 255, 0.55);
-	}
-
-	.bv-score {
-		padding: 0.05rem 0.55rem;
-		background: rgba(0, 0, 0, 0.22);
-		border-radius: 6px;
-		font-variant-numeric: tabular-nums;
-		color: #fff;
 	}
 
 	/* ── Gráfica de pastel ─────────────────────────────────────────────────── */
