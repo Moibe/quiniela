@@ -21,6 +21,10 @@ import type { RequestHandler } from './$types';
 // (da margen al subidor manual). Override por env para pruebas; default 4 min.
 const PROMOVER_MS = Number(env.MONITOR_PROMOVER_MS) || 4 * 60_000;
 
+// Margen para CERRAR un partido marcado "en curso" A MANO que el monitor (corriendo) ya no ve en el
+// listado in-play. No cierra los recién marcados / que sigues actualizando. Override por env; 10 min.
+const CIERRA_MANUAL_MS = Number(env.MONITOR_CIERRA_MANUAL_MS) || 10 * 60_000;
+
 const idDe = (url: unknown): string | null => {
 	const m = String(url ?? '').match(/\/(\d{4,})(?:[/?#]|$)/);
 	return m ? m[1] : null;
@@ -44,6 +48,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			golesB: partidos.golesB,
 			enCurso: partidos.enCurso,
 			autoMonitor: partidos.autoMonitor,
+			fecha: partidos.fecha,
 			urlCloudbet: partidos.urlCloudbet
 		})
 		.from(partidos);
@@ -98,5 +103,26 @@ export const POST: RequestHandler = async ({ request }) => {
 		respaldados++;
 	}
 
-	return json({ ok: true, recibidos: matches.length, emparejados, sinEmparejar, respaldados });
+	// 3) Cierra los partidos marcados EN CURSO A MANO que el monitor YA NO ve en el listado in-play
+	//    (terminaron). Equipos del listado = todos los del push (emparejados o no), así un partido
+	//    mal-emparejado pero presente NO se cierra. Solo manuales (autoMonitor=false) con marcador y
+	//    con margen desde su última captura (no toca los recién marcados ni los que sigues moviendo).
+	const equiposEnListado = new Set<string>();
+	for (const m of matches) {
+		const a = String(m.nombreA ?? '');
+		const b = String(m.nombreB ?? '');
+		if (a) equiposEnListado.add(canonEquipo(a));
+		if (b) equiposEnListado.add(canonEquipo(b));
+	}
+	let cerrados = 0;
+	for (const p of filas) {
+		if (!p.enCurso || p.autoMonitor || p.golesA === null) continue;
+		if (equiposEnListado.has(canonEquipo(p.equipoA)) || equiposEnListado.has(canonEquipo(p.equipoB)))
+			continue; // sigue en el listado in-play ⇒ en vivo, no cerrar
+		if (p.fecha && ahora - p.fecha.getTime() < CIERRA_MANUAL_MS) continue; // recién capturado
+		await db.update(partidos).set({ enCurso: false }).where(eq(partidos.id, p.id)); // finaliza (conserva marcador)
+		cerrados++;
+	}
+
+	return json({ ok: true, recibidos: matches.length, emparejados, sinEmparejar, respaldados, cerrados });
 };
