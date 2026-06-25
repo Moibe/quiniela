@@ -146,19 +146,15 @@ async function leerListado() {
 				}
 				vivos.push({ id, nombreA: nombres[0], nombreB: nombres[1], gA: Number(scores[0]), gB: Number(scores[1]), minuto });
 			} else {
-				// PRÓXIMO: sin marcador → tomar el texto de la hora. Elegimos el elemento más corto que
-				// contenga una hora (HH:MM AM/PM); preferimos uno que además traiga el día.
-				let conDia = null;
-				let soloHora = null;
-				for (const el of a.querySelectorAll('*')) {
-					const t = (el.textContent || '').trim();
-					if (t.length > 50 || !/\d{1,2}:\d{2}\s*(AM|PM)/i.test(t)) continue;
-					if (soloHora === null || t.length < soloHora.length) soloHora = t;
-					if (/today|tomorrow|mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i.test(t)) {
-						if (conDia === null || t.length < conDia.length) conDia = t;
-					}
-				}
-				const inicioTexto = conDia || soloHora;
+				// PRÓXIMO: sin marcador → sacar la hora del TEXTO de la fila (robusto a la estructura del
+				// DOM: no dependemos de que la hora viva en un elemento propio). Cloudbet la pone como
+				// "<día> • <hora>" al final de la fila, ej. "Today • 2:00 PM", "27 Jun • 9:00 AM".
+				const fila = (a.textContent || '').replace(/\s+/g, ' ').trim();
+				const m2 =
+					fila.match(
+						/(?:today|tomorrow|mon|tue|wed|thu|fri|sat|sun|\d{1,2}\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{1,2})\s*[•·]?\s*\d{1,2}:\d{2}\s*(?:am|pm)?/i
+					) || fila.match(/\d{1,2}:\d{2}\s*(?:am|pm)?/i);
+				const inicioTexto = m2 ? m2[0].trim() : null;
 				if (inicioTexto) proximos.push({ id, nombreA: nombres[0], nombreB: nombres[1], inicioTexto });
 			}
 		}
