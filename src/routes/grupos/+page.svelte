@@ -13,7 +13,8 @@
 			jugados
 		</p>
 		<p class="leyenda" aria-hidden="true">
-			<span class="chip-clasif"></span> Los 2 primeros de cada grupo avanzan
+			<span class="chip-clasif"></span> Los 2 primeros de cada grupo avanzan ·
+			<b class="qlf-leg">QLF*</b> = mejor tercero (clasificación provisional)
 		</p>
 	</div>
 
@@ -60,6 +61,11 @@
 		border-radius: 3px;
 		background: rgba(34, 197, 94, 0.18);
 		box-shadow: inset 3px 0 0 #4ade80;
+	}
+
+	.qlf-leg {
+		color: rgba(255, 255, 255, 0.82);
+		letter-spacing: 0.04em;
 	}
 
 	.grid {

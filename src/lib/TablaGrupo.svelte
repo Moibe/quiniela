@@ -36,7 +36,12 @@
 							<Bandera equipo={t.equipo} />
 							<span class="eq-name notranslate" translate="no" title={t.equipo}>{t.equipo}</span>
 							{#if t.enVivo}<span class="vivo-dot" title="En vivo" aria-hidden="true"></span>{/if}
-							{#if qlf && (t.pos <= 2 || t.terceroClasifica)}<span class="qlf" title="Calificado">QLF</span>{/if}
+							{#if qlf && (t.pos <= 2 || t.terceroClasifica)}<span
+							class="qlf"
+							title={t.pos > 2
+								? 'Mejor tercero — clasificación PROVISIONAL (depende de cómo cierren los otros grupos)'
+								: 'Calificado'}>QLF{t.pos > 2 ? '*' : ''}</span
+						>{/if}
 						</th>
 						<td>{t.pj}</td>
 						<td class="c-sec">{t.g}</td>
