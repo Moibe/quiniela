@@ -90,9 +90,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			const matsCon = matsSinObj.map((m) =>
 				m.id === objetivo.id ? { ...m, golesA, golesB } : m
 			);
-			const escenRank = new Map(
-				computeStandings(parts, matsCon, pros).standings.map((s) => [s.participanteId, s.rank])
-			);
+			const escenStandings = computeStandings(parts, matsCon, pros).standings;
+			const escenRank = new Map(escenStandings.map((s) => [s.participanteId, s.rank]));
+			const escenPuntos = new Map(escenStandings.map((s) => [s.participanteId, s.puntos]));
 
 			const lista: {
 				nombre: string;
@@ -101,6 +101,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				exacto: boolean;
 				mov: number;
 				lugar: number;
+				total: number;
 			}[] = [];
 			for (const pr of prosObj) {
 				const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, { golesA, golesB });
@@ -113,7 +114,8 @@ export const load: PageServerLoad = async ({ url }) => {
 						puntos: pts,
 						exacto: pts === PUNTOS_EXACTO,
 						mov,
-						lugar: escenRank.get(pr.participanteId) ?? 0
+						lugar: escenRank.get(pr.participanteId) ?? 0,
+						total: escenPuntos.get(pr.participanteId) ?? 0
 					});
 				}
 			}

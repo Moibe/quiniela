@@ -6,6 +6,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let enCurso = $state(untrack(() => data.enCurso));
+	let proximos = $state(untrack(() => data.proximos));
 	let grupos = $state(untrack(() => data.grupos));
 	let terceros = $state(untrack(() => data.terceros));
 	let conexion = $state(true);
@@ -19,6 +20,7 @@
 			}
 			const d = await res.json();
 			enCurso = d.enCurso;
+			proximos = d.proximos;
 			grupos = d.grupos;
 			terceros = d.terceros;
 			conexion = true;
@@ -48,7 +50,11 @@
 			<span class="aviso">Sin conexión — datos quizá no actuales.</span>
 		{/if}
 	</div>
-	<p class="sub">Marcadores de los partidos que se están jugando ahora mismo.</p>
+	<p class="sub">
+		{enCurso.length
+			? 'Marcadores de los partidos que se están jugando ahora mismo.'
+			: 'Ahora mismo no hay partidos en curso.'}
+	</p>
 
 	{#if enCurso.length}
 		<ul class="lista">
@@ -76,19 +82,47 @@
 			{/each}
 		</ul>
 
-		{#if grupos.length}
-			<h2 class="g-titulo">
+	{:else if proximos.length}
+		<h2 class="prox-titulo">
+			Próximos partidos
+			<span class="g-nota">los dos siguientes del calendario</span>
+		</h2>
+		<ul class="lista">
+			{#each proximos as m (m.numero)}
+				<li class="vrow proximo">
+					<span class="chip prox"><span class="dot prox" aria-hidden="true"></span> próximo</span>
+					<span class="vnum">#{m.numero}</span>
+					<span class="team a">
+						<span class="nm" translate="no">{m.equipoA}</span>
+						<Bandera equipo={m.equipoA} />
+					</span>
+					<span class="marc vs">vs</span>
+					<span class="team b">
+						<Bandera equipo={m.equipoB} />
+						<span class="nm" translate="no">{m.equipoB}</span>
+					</span>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<p class="vacio">No hay partidos en curso ni próximos: la fase de grupos terminó.</p>
+	{/if}
+
+	{#if grupos.length}
+		<h2 class="g-titulo">
+			{#if enCurso.length}
 				{grupos.length === 1 ? 'Tabla del grupo en juego' : 'Tablas de los grupos en juego'}
 				<span class="g-nota">incluye el marcador en curso</span>
-			</h2>
-			<div class="grid" style="--cols:{Math.min(grupos.length, 2)}">
-				{#each grupos as g (g.label)}
-					<TablaGrupo grupo={g} qlf />
-				{/each}
-			</div>
-		{/if}
-	{:else}
-		<p class="vacio">No hay partidos en curso ahora mismo.</p>
+			{:else}
+				{grupos.length === 1 ? 'Tabla del grupo' : 'Tablas de los grupos'}
+				<span class="g-nota">posiciones actuales · se actualiza en vivo durante el partido</span>
+			{/if}
+		</h2>
+		<div class="grid" style="--cols:{Math.min(grupos.length, 2)}">
+			{#each grupos as g (g.label)}
+				<TablaGrupo grupo={g} qlf />
+			{/each}
+		</div>
 	{/if}
 
 	{#if terceros.length}
@@ -324,6 +358,42 @@
 	.vacio {
 		font-size: 0.9rem;
 		color: rgba(255, 255, 255, 0.6);
+	}
+
+	/* ── Próximos partidos (cuando no hay nada en vivo): mismo formato, en tono neutro ── */
+	.prox-titulo {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+		margin: 0.2rem 0 0.9rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.9);
+	}
+
+	/* Fila de "próximo": misma estructura que la de en vivo, pero sin el resplandor ni el pulso. */
+	.vrow.proximo {
+		background: rgba(255, 255, 255, 0.03);
+		border-color: rgba(255, 255, 255, 0.14);
+		animation: none;
+	}
+
+	.chip.prox {
+		color: rgba(255, 255, 255, 0.62);
+	}
+
+	.dot.prox {
+		background: rgba(255, 255, 255, 0.5);
+		animation: none;
+	}
+
+	/* "vs" en lugar del marcador, más discreto que un resultado real. */
+	.marc.vs {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.55);
+		background: rgba(0, 0, 0, 0.18);
 	}
 
 	/* Tablas de los grupos en juego, debajo de los partidos. */

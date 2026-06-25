@@ -137,7 +137,8 @@
 						{#if g.mov > 0}
 							<span class="gan-mov" title="Subiría {g.mov} lugar(es) en la tabla">▲{g.mov}</span>
 						{/if}
-						<span class="gan-prono">{g.pronostico}</span>
+						<span class="gan-prono" title="Su pronóstico">{g.pronostico}</span>
+							<span class="gan-total" title="Puntos totales si va así">{g.total}<small>pts</small></span>
 					</li>
 				{/each}
 			</ul>
@@ -721,6 +722,33 @@
 		font-size: 0.75rem;
 		font-variant-numeric: tabular-nums;
 		color: rgba(255, 255, 255, 0.7);
+	}
+
+	/* Puntaje TOTAL proyectado del participante en este escenario (info clave al cierre). */
+	.gan-total {
+		flex-shrink: 0;
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.12rem;
+		min-width: 2.7rem;
+		justify-content: flex-end;
+		padding: 0.05rem 0.4rem;
+		border-radius: 5px;
+		background: rgba(0, 0, 0, 0.28);
+		font-size: 0.85rem;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+		color: #fff;
+	}
+
+	.gan-total small {
+		font-size: 0.58rem;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.55);
+	}
+
+	.gan-list li.exa .gan-total {
+		background: rgba(245, 158, 11, 0.28);
 	}
 
 	.gan-vacio {

@@ -44,8 +44,16 @@ export interface TerceroEnVivo {
 	clasifica: boolean; // entre los mejores 8 terceros (clasifica a 2da ronda)
 }
 
+// Partido aún no jugado, para anunciar los "Próximos partidos" cuando no hay nada en vivo.
+export interface ProximoEnVivo {
+	numero: number;
+	equipoA: string;
+	equipoB: string;
+}
+
 export interface EnVivo {
 	enCurso: PartidoEnVivo[];
+	proximos: ProximoEnVivo[];
 	grupos: Grupo[];
 	terceros: TerceroEnVivo[];
 }
@@ -122,12 +130,6 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 	});
 	const todosGrupos = computeGrupos(overlaid);
 
-	// Tablas de los grupos EN JUEGO (solo los involucrados en los partidos en vivo).
-	const equiposVivos = new Set(enCurso.flatMap((m) => [m.equipoA, m.equipoB]));
-	const grupos = equiposVivos.size
-		? todosGrupos.filter((g) => g.equipos.some((e) => equiposVivos.has(e.equipo)))
-		: [];
-
 	// Los 12 terceros, ordenados de mejor a peor (los 8 primeros llevan clasifica=true).
 	const terceros: TerceroEnVivo[] = todosGrupos
 		.map((g) => ({ grupo: g.label, s: g.equipos[2] }))
@@ -138,5 +140,24 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 		)
 		.map(({ grupo, s }) => ({ grupo, equipo: s.equipo, pj: s.pj, dg: s.dg, pts: s.pts, clasifica: s.terceroClasifica }));
 
-	return { enCurso, grupos, terceros };
+	// Próximos partidos: los DOS siguientes pendientes (sin marcador y no en curso), por número de
+	// calendario. Sirven para anunciar "Próximos partidos" cuando no hay nada en vivo.
+	const enCursoNums = new Set(enCurso.map((m) => m.numero));
+	const proximos: ProximoEnVivo[] = todos
+		.filter((p) => p.golesA === null && !p.enCurso && !enCursoNums.has(p.numero))
+		.sort((a, b) => a.numero - b.numero)
+		.slice(0, 2)
+		.map((p) => ({ numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB }));
+
+	// Tablas de grupo a mostrar: las de los partidos EN JUEGO; y si no hay nada en vivo, las de los
+	// PRÓXIMOS (posiciones actuales del grupo, que pasan a actualizarse en vivo al arrancar el partido).
+	const equiposVivos = new Set(enCurso.flatMap((m) => [m.equipoA, m.equipoB]));
+	const equiposRelevantes = equiposVivos.size
+		? equiposVivos
+		: new Set(proximos.flatMap((m) => [m.equipoA, m.equipoB]));
+	const grupos = equiposRelevantes.size
+		? todosGrupos.filter((g) => g.equipos.some((e) => equiposRelevantes.has(e.equipo)))
+		: [];
+
+	return { enCurso, proximos, grupos, terceros };
 }
