@@ -190,6 +190,9 @@
 		box-sizing: border-box;
 		padding: 0.4rem 1.5rem 1.5rem;
 		color: rgba(255, 255, 255, 0.95);
+		/* Ancho común de los bloques apilados (partidos, tabla de grupo, terceros) para que se
+		   alineen y se vea parejo. Cada tabla de grupo usa este ancho; con 2 grupos van lado a lado. */
+		--bloque: 40rem;
 	}
 
 	.head {
@@ -247,7 +250,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.8rem;
-		max-width: 44rem;
+		max-width: var(--bloque);
 	}
 
 	.vrow {
@@ -436,9 +439,11 @@
 	   --cols = nº de grupos involucrados (tope 2); cada tabla se topa en 30rem y encoge si hace falta. */
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(var(--cols, 1), minmax(0, 30rem));
+		grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
 		gap: 1rem;
 		align-items: start;
+		/* Cada tabla al ancho común; con 2 grupos, dos de ese ancho lado a lado (+ el gap). */
+		max-width: calc(var(--cols, 1) * var(--bloque) + (var(--cols, 1) - 1) * 1rem);
 	}
 
 	@media (max-width: 640px) {
@@ -450,7 +455,7 @@
 	/* Lista replegable de los 12 terceros lugares (carrera por los 8 mejores). */
 	.terceros {
 		margin: 2rem 0 0;
-		max-width: 40rem;
+		max-width: var(--bloque);
 		background: rgba(255, 255, 255, 0.03);
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 12px;

@@ -52,6 +52,25 @@
 		return ultId;
 	});
 
+	// Agrupa los partidos en PARES consecutivos (impar→par por número): cada par se juega al MISMO
+	// tiempo. Sirve para enmarcar juntos los pares que aún están pendientes (cuadro blanco brillante).
+	const bloques = $derived.by(() => {
+		const ps = data.partidos;
+		const out: { a: (typeof ps)[number]; b: (typeof ps)[number] | null }[] = [];
+		for (let i = 0; i < ps.length; ) {
+			const a = ps[i];
+			const b = ps[i + 1] ?? null;
+			if (b && a.numero % 2 === 1 && b.numero === a.numero + 1) {
+				out.push({ a, b });
+				i += 2;
+			} else {
+				out.push({ a, b: null });
+				i += 1;
+			}
+		}
+		return out;
+	});
+
 	// Acción: al montar, lleva ese partido a la vista (centrado). Solo en el montaje (sin update),
 	// así no vuelve a hacer scroll al guardar/refrescar.
 	function scrollSiActual(node: HTMLElement, esActual: boolean) {
@@ -68,11 +87,10 @@
 			en Curso» (captura en vivo). Doble clic en una fila para reordenarla (▲▼).{/if}
 	</p>
 
-	<ul class="list">
-		{#each data.partidos as p (p.id)}
-			{@const jugado = p.golesA !== null && p.golesB !== null}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<li
+	{#snippet fila(p: (typeof data.partidos)[number])}
+		{@const jugado = p.golesA !== null && p.golesB !== null}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
 				class="partido"
 				class:jugado
 				class:encurso={p.enCurso}
@@ -168,9 +186,24 @@
 				{#if actionError && actionError.partidoId === p.id}
 					<span class="row-error">{actionError.error}</span>
 				{/if}
-			</li>
+		</div>
+	{/snippet}
+
+	<div class="list">
+		{#each bloques as bl (bl.a.id)}
+			{#if bl.b && bl.a.golesA === null && bl.b.golesA === null}
+				<!-- Par pendiente que se juega al mismo tiempo: enmarcado en un cuadro blanco brillante. -->
+				<div class="par-sim">
+					<span class="par-tag">⏱ se juegan al mismo tiempo</span>
+					{@render fila(bl.a)}
+					{@render fila(bl.b)}
+				</div>
+			{:else}
+				{@render fila(bl.a)}
+				{#if bl.b}{@render fila(bl.b)}{/if}
+			{/if}
 		{/each}
-	</ul>
+	</div>
 </section>
 
 <style>
@@ -193,6 +226,46 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
+	}
+
+	/* Par de partidos PENDIENTES que se juegan al mismo tiempo: enmarcados juntos en un cuadro
+	   blanco brillante (borde + resplandor pulsante) para que se note que son simultáneos. */
+	.par-sim {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+		padding: 0.5rem 0.5rem 0.55rem;
+		border: 1.5px solid rgba(255, 255, 255, 0.85);
+		border-radius: 13px;
+		background: rgba(255, 255, 255, 0.04);
+		animation: glow-sim 2.1s ease-in-out infinite;
+	}
+
+	@keyframes glow-sim {
+		0%,
+		100% {
+			box-shadow:
+				0 0 6px rgba(255, 255, 255, 0.3),
+				inset 0 0 6px rgba(255, 255, 255, 0.04);
+		}
+		50% {
+			box-shadow:
+				0 0 18px rgba(255, 255, 255, 0.65),
+				inset 0 0 9px rgba(255, 255, 255, 0.08);
+		}
+	}
+
+	.par-tag {
+		align-self: center;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.62rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.9);
+		text-shadow: 0 0 7px rgba(255, 255, 255, 0.55);
 	}
 
 	.partido {
