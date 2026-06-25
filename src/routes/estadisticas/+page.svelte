@@ -146,6 +146,13 @@
 })}
 	<div class="pie-card">
 		<div class="pie-title">{g.enCurso ? '● En curso' : 'Siguiente'} · #{g.numero}</div>
+		<div class="pie-match">
+			<span class="pm-team notranslate" translate="no">{g.equipoA}</span>
+			<Bandera equipo={g.equipoA} />
+			<span class="pm-vs">vs</span>
+			<Bandera equipo={g.equipoB} />
+			<span class="pm-team notranslate" translate="no">{g.equipoB}</span>
+		</div>
 		<div class="pie-row">
 			<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="Desglose de pronósticos">
 				{#each segmentosDe(g) as s (s.key)}
@@ -444,6 +451,23 @@
 		font-weight: 700;
 		letter-spacing: 0.01em;
 		color: rgba(255, 255, 255, 0.7);
+	}
+
+	/* Encabezado del partido: equipos + banderas, para que se vea claro de qué juego es. */
+	.pie-match {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: #fff;
+	}
+
+	.pm-vs {
+		font-size: 0.68rem;
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.5);
 	}
 
 	.pie-row {
