@@ -84,19 +84,26 @@
 			3 pts por marcador exacto · 1 pt por resultado correcto ·
 			<strong>{data.partidosJugados}</strong> de {data.totalPartidos} partidos con resultado
 		</p>
-		{#if masSubio}
-			<p class="destacado">
-				Con el último gol, <strong class="notranslate" translate="no">{masSubio.nombre}</strong> es el
-				que más lugares ha subido: <span class="flecha-sube">▲{masSubio.mov}</span>
-			</p>
-		{/if}
-		{#if masBajo}
-			<p class="destacado bajo">
-				Con el último gol, <strong class="notranslate" translate="no">{masBajo.nombre}</strong> es el
-				que más lugares ha bajado: <span class="flecha-baja">▼{Math.abs(masBajo.mov)}</span>
-			</p>
-		{/if}
 	</div>
+
+	<!-- Banners destacados (sube/baja). En desktop van aquí, bajo el subtítulo; en móvil se mandan
+	     al FINAL de la lista vía `order` (ver media query). -->
+	{#if masSubio || masBajo}
+		<div class="destacados">
+			{#if masSubio}
+				<p class="destacado">
+					Con el último gol, <strong class="notranslate" translate="no">{masSubio.nombre}</strong> es
+					el que más lugares ha subido: <span class="flecha-sube">▲{masSubio.mov}</span>
+				</p>
+			{/if}
+			{#if masBajo}
+				<p class="destacado bajo">
+					Con el último gol, <strong class="notranslate" translate="no">{masBajo.nombre}</strong> es
+					el que más lugares ha bajado: <span class="flecha-baja">▼{Math.abs(masBajo.mov)}</span>
+				</p>
+			{/if}
+		</div>
+	{/if}
 
 	{#if data.partidosJugados === 0}
 		<p class="empty">
@@ -119,6 +126,8 @@
 <style>
 	.posiciones {
 		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
 		padding: 0.85rem 1.5rem 1rem;
 		color: rgba(255, 255, 255, 0.95);
 	}
@@ -226,6 +235,11 @@
 		}
 		.cols-mobile {
 			display: block;
+		}
+		/* Móvil: los banners destacados se van al FINAL (debajo de la lista). */
+		.destacados {
+			order: 10;
+			margin-top: 0.6rem;
 		}
 	}
 
