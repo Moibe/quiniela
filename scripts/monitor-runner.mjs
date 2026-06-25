@@ -12,8 +12,7 @@
 //   MONITOR_SECRET=elsecreto  node scripts/monitor-runner.mjs
 //
 // Tuning env: CLOUDBET_LISTADO_URL (otra lista); MONITOR_MUESTREO_MS (leer+empujar, def 20000);
-// MONITOR_PROBE_POLL_MS (re-leer URL del probador, def 5000); CLOUDBET_RECARGA_MS (recarga
-// anti-stale, def 600000); PARTIDO_HEADLESS=false para ver la ventana.
+// CLOUDBET_RECARGA_MS (recarga anti-stale, def 600000); PARTIDO_HEADLESS=false para ver la ventana.
 import { chromium } from 'playwright-core';
 
 const BASE = (process.env.QUINIELA_URL ?? 'https://noxoroxo.com').replace(/\/+$/, '');
@@ -22,7 +21,6 @@ const LISTADO_URL =
 	process.env.CLOUDBET_LISTADO_URL ??
 	'https://www.cloudbet.com/en/sports/soccer/international-world-cup?tab=matches';
 const MUESTREO_MS = Number(process.env.MONITOR_MUESTREO_MS ?? 20_000); // leer el listado y empujar
-const PROBE_POLL_MS = Number(process.env.MONITOR_PROBE_POLL_MS ?? 5_000); // re-leer la URL del probador
 const RECARGA_MS = Number(process.env.CLOUDBET_RECARGA_MS ?? 600_000); // recargar la página (anti-stale)
 const CICLOS_RECARGA = Math.max(1, Math.round(RECARGA_MS / MUESTREO_MS)); // recarga cada N ciclos (serializada)
 if (!SECRET) {
@@ -88,7 +86,6 @@ function parseInicioMs(texto, ahoraMs) {
 	return mk(Y, base.getMonth(), base.getDate());
 }
 
-let probeUrl = null; // url cruda del probador (de /labs)
 let browser = null;
 let page = null;
 let ocupado = false; // un ciclo en vuelo no dispara otro encima (evita choque de page.evaluate)
@@ -168,17 +165,7 @@ async function empujar(ruta, body) {
 	);
 }
 
-// URL del probador (de /labs). Latido también.
-async function refrescarProbe() {
-	try {
-		const r = await fetch(`${BASE}/api/monitor/probe/feed`, { headers });
-		if (r.ok) probeUrl = (await r.json()).url ?? null;
-	} catch {
-		/* si /probe/feed aún no está, ignora */
-	}
-}
-
-// Lee el listado y empuja TODO el catálogo (el server empareja). Más el probador.
+// Lee el listado y empuja TODO el catálogo (el server empareja).
 async function ciclo() {
 	if (!page || ocupado) return; // no encimar ciclos (un agregar/recarga lento no dispara otro)
 	ocupado = true;
@@ -216,13 +203,6 @@ async function ciclo() {
 		} else {
 			console.error(`catálogo HTTP ${r ? r.status : 'sin respuesta'}`);
 		}
-
-		const pid = idDe(probeUrl);
-		if (pid) {
-			const d = vivos.find((f) => f.id === pid);
-			if (d) await empujar('/api/monitor/probe/feed', { golesA: d.gA, golesB: d.gB, local: d.nombreA, visita: d.nombreB, reloj: d.minuto });
-			else await empujar('/api/monitor/probe/feed', { error: 'No aparece en el listado (¿es del Mundial y en vivo?).' });
-		}
 	} finally {
 		ocupado = false;
 	}
@@ -237,7 +217,7 @@ for (const sig of ['SIGINT', 'SIGTERM']) {
 }
 
 console.log(
-	`Runner monitor (catálogo) → ${BASE}\n  listado: ${LISTADO_URL}\n  lee+empuja cada ${seg(MUESTREO_MS)}s · probador cada ${seg(PROBE_POLL_MS)}s. Ctrl+C para salir.`
+	`Runner monitor (catálogo) → ${BASE}\n  listado: ${LISTADO_URL}\n  lee+empuja cada ${seg(MUESTREO_MS)}s. Ctrl+C para salir.`
 );
 try {
 	await abrirListado();
@@ -246,8 +226,6 @@ try {
 	console.error('¿PARTIDO_CHROME_PATH correcto? ¿conexión?');
 	process.exit(1);
 }
-await refrescarProbe();
 await ciclo();
 setInterval(() => void ciclo(), MUESTREO_MS);
-setInterval(() => void refrescarProbe(), PROBE_POLL_MS);
 // (La recarga anti-stale ya va dentro de ciclo(), serializada, para no chocar con la lectura.)

@@ -7,7 +7,6 @@
     LayoutGrid,
     Swords,
     ChartPie,
-    FlaskConical,
     LogOut
   } from '@lucide/svelte';
   import { enhance } from '$app/forms';
@@ -103,17 +102,6 @@
       <Swords size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Segunda Ronda</span>
     </a>
-    {#if isAdmin}
-      <!-- Solo visible con sesión de admin (que solo existe en administracion.*). -->
-      <a
-        href="/labs"
-        class="nav-item nav-labs"
-        aria-current={page.url.pathname === '/labs' ? 'page' : undefined}
-      >
-        <FlaskConical size={16} strokeWidth={2.2} aria-hidden="true" />
-        <span>Labs</span>
-      </a>
-    {/if}
   </nav>
 
   <div class="spacer"></div>
@@ -222,15 +210,6 @@
     background: rgba(37, 99, 235, 0.18);
     border-color: rgba(37, 99, 235, 0.45);
     box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.18) inset;
-  }
-
-  /* Labs: solo lo ve el admin; ámbar tenue para distinguirlo como área interna. */
-  .nav-labs {
-    color: #fcd34d;
-  }
-
-  .nav-labs:hover {
-    color: #fde68a;
   }
 
   /* En Vivo: acento rojo tenue para que se sienta "en vivo". */
