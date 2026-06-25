@@ -1,9 +1,20 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Bandera from '$lib/Bandera.svelte';
 	import { browser } from '$app/environment';
+	import { invalidate } from '$app/navigation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	// Auto-refresco del marcador en vivo (y de las tarjetas de "ganando puntos"): cada ~10s re-corre
+	// el load del server. Solo con la pestaña visible, para no pegarle de balde en segundo plano.
+	onMount(() => {
+		const id = setInterval(() => {
+			if (document.visibilityState === 'visible') invalidate('estad:live');
+		}, 10_000);
+		return () => clearInterval(id);
+	});
 
 	// Medalla del podio para el lugar al que llega/llegaría cada quien; vacío fuera del top 3.
 	const medalla = (lugar: number) =>
@@ -154,6 +165,8 @@
 	enCurso: boolean;
 	equipoA: string;
 	equipoB: string;
+	golesA: number | null;
+	golesB: number | null;
 	total: number;
 	local: number;
 	empate: number;
@@ -196,6 +209,14 @@
 					<span class="pdot v"></span> <span class="pnm notranslate" translate="no">{g.equipoB}</span> <b>{g.visita}</b>
 				</li>
 			</ul>
+			<!-- Marcador grande en el espacio libre del pastel: en vivo si el partido está en curso,
+			     "Por comenzar" (0–0 de salida) si es el siguiente. Se auto-refresca con el resto. -->
+			<div class="pie-marc" class:vivo={g.enCurso}>
+				<span class="pm-estado">
+					{#if g.enCurso}<span class="pm-dot" aria-hidden="true"></span> En vivo{:else}Por comenzar{/if}
+				</span>
+				<span class="pm-score">{g.golesA ?? 0}<span class="pm-dash">–</span>{g.golesB ?? 0}</span>
+			</div>
 		</div>
 	</div>
 {/snippet}
@@ -571,6 +592,65 @@
 
 	.pdot.v {
 		background: #38bdf8;
+	}
+
+	/* Marcador grande que aprovecha el espacio libre del pastel (derecha). En vivo = dorado con pulso;
+	   siguiente = atenuado con "Por comenzar". */
+	.pie-marc {
+		margin-left: auto;
+		align-self: stretch;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.3rem;
+		padding: 0 0.4rem 0 1rem;
+		min-width: 0;
+	}
+
+	.pm-estado {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.6rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		color: rgba(255, 255, 255, 0.4);
+	}
+
+	.pie-marc.vivo .pm-estado {
+		color: #fcd34d;
+	}
+
+	.pm-dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #f59e0b;
+		animation: halo 1.6s ease-out infinite;
+	}
+
+	.pm-score {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.35rem;
+		font-size: 2.1rem;
+		font-weight: 800;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+		color: rgba(255, 255, 255, 0.5);
+	}
+
+	.pie-marc.vivo .pm-score {
+		color: #fff;
+		text-shadow: 0 0 13px rgba(245, 158, 11, 0.6);
+	}
+
+	.pm-dash {
+		font-size: 1.4rem;
+		opacity: 0.45;
 	}
 
 	/* ── Tarjeta "Ganando puntos" ──────────────────────────────────────────── */

@@ -5,9 +5,11 @@ import { puntosDe, PUNTOS_EXACTO, computeStandings } from '$lib/scoring';
 import { computeGrupos } from '$lib/grupos';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ url }) => {
-	// Atar el load a la navegación: datos en vivo frescos al llegar (sin recargar).
+export const load: PageServerLoad = async ({ url, depends }) => {
+	// Atar el load a la navegación (datos frescos al llegar) y a una clave invalidable para el
+	// auto-refresco del marcador en vivo: el front llama invalidate('estad:live') cada ~10s.
 	void url.pathname;
+	depends('estad:live');
 
 	const [parts, mats, pros] = await Promise.all([
 		db.select().from(participantes).orderBy(asc(participantes.posicion), asc(participantes.id)),
@@ -62,6 +64,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			equipoA: objetivo.equipoA,
 			equipoB: objetivo.equipoB,
 			enCurso: objetivo.enCurso,
+			golesA: objetivo.golesA, // marcador real (null si aún no inicia → se muestra 0–0 de salida)
+			golesB: objetivo.golesB,
 			local: localNames.length,
 			empate: empateNames.length,
 			visita: visitaNames.length,
