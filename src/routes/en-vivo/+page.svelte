@@ -74,6 +74,8 @@
 			: 'Ahora mismo no hay partidos en curso.'}
 	</p>
 
+	<div class="vivo-cols">
+		<div class="col-izq">
 	{#if enCurso.length}
 		<ul class="lista">
 			{#each enCurso as m (m.numero)}
@@ -134,7 +136,6 @@
 		<p class="vacio">No hay partidos en curso ni próximos: la fase de grupos terminó.</p>
 	{/if}
 
-	<div class="vivo-abajo">
 		{#if grupos.length}
 			<div class="lado-grupos">
 				<h2 class="g-titulo">
@@ -153,6 +154,7 @@
 		</div>
 			</div>
 		{/if}
+		</div>
 
 		{#if terceros.length}
 		<details class="terceros">
@@ -430,26 +432,27 @@
 	}
 
 	/* Tablas de los grupos en juego, debajo de los partidos. */
-	/* En web: tabla(s) del grupo y tabla de terceros LADO A LADO (terceros a la derecha). Al angostar
-	   (móvil/tablet) hace wrap y se apilan. */
-	.vivo-abajo {
+	/* En Vivo en web: DOS columnas. Izquierda = partidos + tabla del grupo (apilados); derecha = tabla
+	   de terceros, que sube a la altura de los partidos y llena el alto (es larga). Wrap → se apilan. */
+	.vivo-cols {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: flex-start;
 		gap: 1rem 1.5rem;
-		margin-top: 2rem;
+	}
+
+	.col-izq {
+		flex: 0 1 auto;
+		min-width: 0;
 	}
 
 	.lado-grupos {
 		min-width: 0;
 	}
 
-	/* Dentro del contenedor lado-a-lado el margen superior lo da .vivo-abajo. */
-	.vivo-abajo .g-titulo {
-		margin-top: 0;
-	}
-
-	.vivo-abajo .terceros {
+	/* La de terceros (columna derecha) arranca arriba, a la altura de los partidos (sin el margen
+	   superior que usaba cuando iba apilada debajo del grupo). */
+	.vivo-cols .terceros {
 		margin-top: 0;
 	}
 
