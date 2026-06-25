@@ -139,13 +139,23 @@
 		color: rgba(255, 255, 255, 0.65);
 	}
 
-	/* Línea destacada (centrada, en un marco blanco brilloso): quién subió más lugares con el último
-	   resultado. */
+	/* Contenedor de los banners destacados. En web van EN LÍNEA (lado a lado, centrados); en móvil se
+	   apilan (ver media query). */
+	.destacados {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0 0 1rem;
+	}
+
+	/* Línea destacada (en un marco brilloso): quién subió/bajó más lugares con el último resultado. */
 	.destacado {
 		width: fit-content;
 		max-width: 100%;
 		box-sizing: border-box;
-		margin: 0 auto 0.45rem;
+		margin: 0;
 		padding: 0.5rem 1.1rem;
 		text-align: center;
 		font-size: 0.9rem;
@@ -163,7 +173,6 @@
 	   hacia la tabla. */
 	.destacado.bajo {
 		border-color: rgba(248, 113, 113, 0.85);
-		margin-bottom: 1rem;
 		animation: glow-rojo 2.1s ease-in-out infinite;
 	}
 
@@ -239,7 +248,8 @@
 		/* Móvil: los banners destacados se van al FINAL (debajo de la lista). */
 		.destacados {
 			order: 10;
-			margin-top: 0.6rem;
+			flex-direction: column;
+			margin: 0.6rem 0 0;
 		}
 	}
 
