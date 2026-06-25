@@ -4,7 +4,11 @@
 
 	// qlf: muestra "QLF" (calificado) en los 2 primeros. Se activa en En Vivo, donde la tabla sirve
 	// para ver en tiempo real quién va clasificando.
-	let { grupo, qlf = false }: { grupo: Grupo; qlf?: boolean } = $props();
+	// vivo: en En Vivo, si el grupo tiene un partido EN CURSO, parte la columna de puntos en dos:
+	// "Reales" (solo resultados finales) y "En vivo" (incluye el marcador en curso, a la derecha).
+	let { grupo, qlf = false, vivo = false }: { grupo: Grupo; qlf?: boolean; vivo?: boolean } = $props();
+
+	const doble = $derived(vivo && grupo.equipos.some((e) => e.enVivo));
 </script>
 
 <div class="grupo">
@@ -25,7 +29,12 @@
 					<th class="c-sec" title="Goles a favor">GF</th>
 					<th class="c-sec" title="Goles en contra">GC</th>
 					<th title="Diferencia de goles">DG</th>
-					<th class="c-pts">Pts</th>
+					{#if doble}
+						<th class="c-real" title="Puntos con resultados FINALES (reales)">Reales</th>
+						<th class="c-pts c-vivo" title="Puntos en TIEMPO REAL (incluye el marcador en curso)">En vivo</th>
+					{:else}
+						<th class="c-pts">Pts</th>
+					{/if}
 				</tr>
 			</thead>
 			<tbody>
@@ -50,7 +59,12 @@
 						<td class="c-sec">{t.gf}</td>
 						<td class="c-sec">{t.gc}</td>
 						<td class="dg">{t.dg > 0 ? '+' + t.dg : t.dg}</td>
-						<td class="c-pts">{t.pts}</td>
+						{#if doble}
+							<td class="c-real">{t.ptsReal ?? t.pts}</td>
+							<td class="c-pts c-vivo">{t.pts}</td>
+						{:else}
+							<td class="c-pts">{t.pts}</td>
+						{/if}
 					</tr>
 				{/each}
 			</tbody>
@@ -149,6 +163,19 @@
 		font-weight: 700;
 		color: #bbf7d0;
 		font-size: 0.95rem;
+	}
+
+	/* Columna "Reales" (puntos solo con resultados finales): secundaria, atenuada. */
+	.c-real {
+		color: rgba(255, 255, 255, 0.55);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* Columna "En vivo" (puntos en tiempo real): acento azul + banda para separarla de los reales. */
+	.c-vivo {
+		color: #7dd3fc;
+		box-shadow: inset 2px 0 0 rgba(56, 189, 248, 0.45);
 	}
 
 	/* Posiciones de clasificación (1-2): banda verde a la izquierda. */

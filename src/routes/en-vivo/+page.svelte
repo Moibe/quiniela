@@ -146,7 +146,7 @@
 		</h2>
 		<div class="grid" style="--cols:{Math.min(grupos.length, 2)}">
 			{#each grupos as g (g.label)}
-				<TablaGrupo grupo={g} qlf />
+				<TablaGrupo grupo={g} qlf vivo />
 			{/each}
 		</div>
 	{/if}

@@ -24,7 +24,8 @@ export type EquipoStanding = {
 	gf: number; // goles a favor
 	gc: number; // goles en contra
 	dg: number; // diferencia de goles
-	pts: number; // puntos
+	pts: number; // puntos (en En Vivo, EN TIEMPO REAL: incluye el marcador en curso)
+	ptsReal?: number; // puntos SOLO con resultados finales; lo pega En Vivo para la columna "reales"
 	pos: number; // posición en el grupo (1..4)
 	enVivo: boolean; // está jugando ahora (partido en curso)
 	terceroClasifica: boolean; // 3er lugar que va entre los mejores 8 terceros (clasifica)

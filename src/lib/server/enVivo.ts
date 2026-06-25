@@ -149,6 +149,15 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 	});
 	const todosGrupos = computeGrupos(overlaid);
 
+	// Puntos REALES (solo resultados finales): mismo cálculo pero tratando los partidos EN CURSO como
+	// NO jugados. Se pega como `ptsReal` a cada equipo para mostrar dos columnas (reales vs tiempo real).
+	const gruposReal = computeGrupos(
+		overlaid.map((p) => (p.enCurso ? { ...p, golesA: null, golesB: null } : p))
+	);
+	const ptsRealDe = new Map<string, number>();
+	for (const g of gruposReal) for (const e of g.equipos) ptsRealDe.set(e.equipo, e.pts);
+	for (const g of todosGrupos) for (const e of g.equipos) e.ptsReal = ptsRealDe.get(e.equipo) ?? e.pts;
+
 	// Los 12 terceros, ordenados de mejor a peor (los 8 primeros llevan clasifica=true).
 	const terceros: TerceroEnVivo[] = todosGrupos
 		.map((g) => ({ grupo: g.label, s: g.equipos[2] }))
