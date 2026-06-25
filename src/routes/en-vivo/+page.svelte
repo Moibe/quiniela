@@ -88,7 +88,7 @@
 						<span class="chip off"><span class="dot off" aria-hidden="true"></span> desconectado · {hace(m.haceMs)}</span>
 					{/if}
 					{#if m.estado !== 'porEmpezar'}
-						<span class="src" class:manual={m.fuente === 'manual'}>{m.fuente}</span>
+						<span class="src" class:manual={m.fuente === 'manual'}>{m.fuente === 'monitor' ? 'automático' : m.fuente}</span>
 					{/if}
 					<span class="vnum">#{m.numero}</span>
 					<span class="team a">
