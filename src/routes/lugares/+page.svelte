@@ -136,7 +136,7 @@
 		width: fit-content;
 		max-width: 100%;
 		box-sizing: border-box;
-		margin: 0 auto 1.1rem;
+		margin: 0 auto 0.45rem;
 		padding: 0.5rem 1.1rem;
 		text-align: center;
 		font-size: 0.9rem;
@@ -144,27 +144,18 @@
 		border: 1.5px solid rgba(255, 255, 255, 0.85);
 		border-radius: 12px;
 		background: rgba(255, 255, 255, 0.04);
-		animation: glow-blanco 2.1s ease-in-out infinite;
+		/* Marco blanco brilloso ESTÁTICO (sin pulso continuo). */
+		box-shadow:
+			0 0 11px rgba(255, 255, 255, 0.4),
+			inset 0 0 6px rgba(255, 255, 255, 0.05);
 	}
 
-	@keyframes glow-blanco {
-		0%,
-		100% {
-			box-shadow:
-				0 0 6px rgba(255, 255, 255, 0.3),
-				inset 0 0 6px rgba(255, 255, 255, 0.04);
-		}
-		50% {
-			box-shadow:
-				0 0 18px rgba(255, 255, 255, 0.65),
-				inset 0 0 9px rgba(255, 255, 255, 0.08);
-		}
-	}
-
-	/* Variante en ROJO: el que más lugares BAJÓ. */
+	/* Variante en ROJO (el que más bajó): conserva el glow continuo pulsante + un poco más de aire
+	   hacia la tabla. */
 	.destacado.bajo {
 		border-color: rgba(248, 113, 113, 0.85);
-		animation-name: glow-rojo;
+		margin-bottom: 1rem;
+		animation: glow-rojo 2.1s ease-in-out infinite;
 	}
 
 	@keyframes glow-rojo {
