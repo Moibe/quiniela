@@ -77,21 +77,29 @@
 	{#if enCurso.length}
 		<ul class="lista">
 			{#each enCurso as m (m.numero)}
-				<li class="vrow" class:desconectado={m.estado === 'desconectado'} class:terminado={m.estado === 'terminado'}>
+				<li class="vrow" class:desconectado={m.estado === 'desconectado'} class:terminado={m.estado === 'terminado'} class:proximo={m.estado === 'porEmpezar'}>
 					{#if m.estado === 'vivo'}
 						<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo{#if m.minuto}{' · ' + m.minuto}{/if}</span>
 					{:else if m.estado === 'terminado'}
 						<span class="chip fin"><span class="dot fin" aria-hidden="true"></span> finalizado · {hace(m.haceMs)}</span>
+					{:else if m.estado === 'porEmpezar'}
+						<span class="chip prox"><span class="dot prox" aria-hidden="true"></span> por empezar</span>
 					{:else}
 						<span class="chip off"><span class="dot off" aria-hidden="true"></span> desconectado · {hace(m.haceMs)}</span>
 					{/if}
-					<span class="src" class:manual={m.fuente === 'manual'}>{m.fuente}</span>
+					{#if m.estado !== 'porEmpezar'}
+						<span class="src" class:manual={m.fuente === 'manual'}>{m.fuente}</span>
+					{/if}
 					<span class="vnum">#{m.numero}</span>
 					<span class="team a">
 						<span class="nm" translate="no">{m.equipoA}</span>
 						<Bandera equipo={m.equipoA} />
 					</span>
-					<span class="marc">{m.golesA ?? '–'} : {m.golesB ?? '–'}</span>
+					{#if m.estado === 'porEmpezar'}
+						<span class="marc vs">vs</span>
+					{:else}
+						<span class="marc">{m.golesA ?? '–'} : {m.golesB ?? '–'}</span>
+					{/if}
 					<span class="team b">
 						<Bandera equipo={m.equipoB} />
 						<span class="nm" translate="no">{m.equipoB}</span>

@@ -21,7 +21,7 @@ import { latidoRunner } from '$lib/server/monitorHeartbeat';
 import { computeGrupos, type Grupo, type EquipoStanding } from '$lib/grupos';
 
 export type FuenteEnVivo = 'monitor' | 'manual';
-export type EstadoEnVivo = 'vivo' | 'desconectado' | 'terminado';
+export type EstadoEnVivo = 'vivo' | 'desconectado' | 'terminado' | 'porEmpezar';
 
 export interface PartidoEnVivo {
 	numero: number;
@@ -120,6 +120,23 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 			});
 			overlay.set(p.id, { golesA: mon!.golesA, golesB: mon!.golesB, enCurso: false }); // cuenta, sin pulso
 		}
+	}
+	// "Por empezar": mantener visible al COMPAÑERO de un par simultáneo (impar↔par consecutivo) cuando
+	// su pareja ya arrancó pero él sigue pendiente, hasta que también empiece. Evita que desaparezca
+	// cuando solo uno del par cae en vivo (p. ej. el monitor cacha primero uno de los dos).
+	const yaEnLista = new Set(enCurso.map((m) => m.numero));
+	const porNumero = new Map(todos.map((p) => [p.numero, p]));
+	for (const m of [...enCurso]) {
+		if (m.estado !== 'vivo' && m.estado !== 'desconectado') continue;
+		const parNum = m.numero % 2 === 1 ? m.numero + 1 : m.numero - 1;
+		if (yaEnLista.has(parNum)) continue;
+		const comp = porNumero.get(parNum);
+		if (!comp || comp.enCurso || comp.golesA !== null) continue; // no existe, ya en curso, o ya jugado
+		enCurso.push({
+			numero: comp.numero, equipoA: comp.equipoA, equipoB: comp.equipoB,
+			golesA: null, golesB: null, fuente: 'manual', estado: 'porEmpezar', haceMs: null, minuto: null
+		});
+		yaEnLista.add(parNum);
 	}
 	enCurso.sort((a, b) => a.numero - b.numero);
 
