@@ -137,19 +137,21 @@
 		{#if gn.lista.length}
 			<ul class="gan-list">
 				{#each gn.lista as g, i (i)}
+					{@const lugarReal = g.lugar + g.mov}
 					<li class:exa={g.exacto}>
-						<span class="gan-lugar" title="Lugar {g.lugar}">
+						<span class="gan-lugar" title="Lugar al que llegaría con este marcador: {g.lugar}°">
 							{#if medalla(g.lugar)}<span class="gan-medalla" aria-hidden="true"
 									>{medalla(g.lugar)}</span
 								>{/if}<span class="gan-num">{g.lugar}°</span>
 						</span>
 						<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
 						<span class="gan-nombre notranslate" translate="no">{g.nombre}</span>
+						<span class="gan-real" title="Lugar actual (ahora mismo)">{lugarReal}°</span>
+						<span class="gan-total" title="Puntos totales si va así">{g.total}<small>pts</small></span>
 						{#if g.mov > 0}
 							<span class="gan-mov" title="Subiría {g.mov} lugar(es) en la tabla">▲{g.mov}</span>
 						{/if}
 						<span class="gan-prono" title="Su pronóstico">{g.pronostico}</span>
-							<span class="gan-total" title="Puntos totales si va así">{g.total}<small>pts</small></span>
 					</li>
 				{/each}
 			</ul>
@@ -781,13 +783,25 @@
 	}
 
 	.gan-nombre {
-		flex: 1;
+		flex: 0 1 auto;
+		max-width: 8rem;
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-weight: 700;
 	}
+
+	/* Lugar ACTUAL (ahora mismo), a la derecha del nombre, antes de los puntos. */
+	.gan-real {
+		flex-shrink: 0;
+		min-width: 1.7rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		color: rgba(255, 255, 255, 0.72);
+	}
+
 
 	.gan-mov {
 		flex-shrink: 0;
