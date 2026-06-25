@@ -9,28 +9,24 @@
 	const medalla = (lugar: number) =>
 		lugar === 1 ? '🥇' : lugar === 2 ? '🥈' : lugar === 3 ? '🥉' : '';
 
-	// Alto dinámico de las listas de los 3 cuadros de "ganadores": crecen para
-	// llenar el espacio vertical disponible (sin que la página haga scroll) y, como
-	// comparten el mismo tope y el contenedor usa align-items: stretch, los tres
-	// quedan parejos de altura. En móvil (apilados) se usa el tope por defecto.
+	// Alto dinámico de las listas de "ganadores" en la VISTA SIMPLE (3 tarjetas en una fila): crecen
+	// para llenar el espacio vertical disponible. En móvil o en la vista doble (apiladas) usan el tope
+	// por defecto del CSS.
 	let listMax = $state(0); // px; 0 = usar el max-height por defecto (CSS)
 
 	$effect(() => {
 		if (!browser) return;
-		void data.ganando; // re-medir si cambian las tarjetas (nuevo marcador en vivo)
+		void data.bloques; // re-medir si cambian las tarjetas (nuevo marcador en vivo)
 
 		const medir = () => {
 			const fila = document.querySelector('.cards-gan');
 			const lista = fila?.querySelector('.gan-list');
-			// El scroll vive en .work-scroll (panel fijo del layout), no en la ventana:
-			// medimos su borde inferior visible para no provocar su scroll interno.
+			// El scroll vive en .work-scroll (panel fijo del layout), no en la ventana.
 			const cont = document.querySelector('.work-scroll');
 			if (!fila || !lista || !cont) {
 				listMax = 0;
 				return;
 			}
-			// Si las tarjetas NO están en una sola fila (móvil, apiladas), usar el
-			// tope por defecto para que cada una quede compacta.
 			const cards = [...fila.querySelectorAll('.gan-card')];
 			const top0 = cards[0].getBoundingClientRect().top;
 			const enFila =
@@ -39,9 +35,6 @@
 				listMax = 0;
 				return;
 			}
-			// Alto disponible: del inicio de la lista al fondo visible del área de
-			// scroll, menos el padding inferior de la tarjeta (~10) + de la sección
-			// (~24) + holgura, para que quepa sin generar scroll.
 			const top = lista.getBoundingClientRect().top;
 			const fondo = cont.getBoundingClientRect().bottom;
 			listMax = Math.max(Math.round(fondo - top - 44), 150);
@@ -55,8 +48,7 @@
 		};
 	});
 
-	// Segmentos del pastel (SVG): local / empate / visitante. Cada uno con su lista
-	// de nombres (tooltip). Si solo hay un resultado, se dibuja un círculo completo.
+	// Segmentos del pastel (SVG): local / empate / visitante. Cada uno con su lista de nombres.
 	function arcPath(start: number, end: number) {
 		const rad = (a: number) => ((a - 90) * Math.PI) / 180;
 		const x1 = 50 + 50 * Math.cos(rad(start));
@@ -67,9 +59,14 @@
 		return `M50,50 L${x1.toFixed(2)},${y1.toFixed(2)} A50,50 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`;
 	}
 
-	const segmentos = $derived.by(() => {
-		const g = data.grafica;
-		if (!g) return [];
+	function segmentosDe(g: {
+		equipoA: string;
+		equipoB: string;
+		total: number;
+		localNames: string[];
+		empateNames: string[];
+		visitaNames: string[];
+	}) {
 		const defs = [
 			{ key: 'l', label: g.equipoA, color: '#4ade80', names: g.localNames },
 			{ key: 'e', label: 'Empate', color: '#fbbf24', names: g.empateNames },
@@ -83,14 +80,14 @@
 			acc += d.names.length;
 			return { ...d, full: false, path: arcPath(start, (acc / total) * 360) };
 		});
-	});
+	}
 </script>
 
 <!-- Tarjeta reutilizable de "ganadores": vigente y escenarios (+1 local / +1 visita). -->
 {#snippet ganadores(
 	titulo: string,
 	sub: string,
-	gn: NonNullable<typeof data.ganando>,
+	gn: (typeof data.bloques)[number]['ganando'],
 	tono: string,
 	vacio: string,
 	equipo: string
@@ -133,110 +130,145 @@
 	</div>
 {/snippet}
 
+<!-- Pastel de distribución de pronósticos de un partido. -->
+{#snippet pastel(g: {
+	numero: number;
+	enCurso: boolean;
+	equipoA: string;
+	equipoB: string;
+	total: number;
+	local: number;
+	empate: number;
+	visita: number;
+	localNames: string[];
+	empateNames: string[];
+	visitaNames: string[];
+})}
+	<div class="pie-card">
+		<div class="pie-title">{g.enCurso ? '● En curso' : 'Siguiente'} · #{g.numero}</div>
+		<div class="pie-row">
+			<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="Desglose de pronósticos">
+				{#each segmentosDe(g) as s (s.key)}
+					{#if s.full}
+						<circle cx="50" cy="50" r="50" fill={s.color} stroke="rgba(0,0,0,0.25)" stroke-width="0.5">
+							<title>{s.label}: {s.names.join(', ')}</title>
+						</circle>
+					{:else}
+						<path d={s.path} fill={s.color} stroke="rgba(0,0,0,0.3)" stroke-width="0.6">
+							<title>{s.label}: {s.names.join(', ')}</title>
+						</path>
+					{/if}
+				{/each}
+			</svg>
+			<ul class="pie-leg">
+				<li title="{g.equipoA}: {g.localNames.join(', ')}">
+					<span class="pdot l"></span> <span class="pnm notranslate" translate="no">{g.equipoA}</span> <b>{g.local}</b>
+				</li>
+				<li title="Empate: {g.empateNames.join(', ')}">
+					<span class="pdot e"></span> <span class="pnm">Empate</span> <b>{g.empate}</b>
+				</li>
+				<li title="{g.equipoB}: {g.visitaNames.join(', ')}">
+					<span class="pdot v"></span> <span class="pnm notranslate" translate="no">{g.equipoB}</span> <b>{g.visita}</b>
+				</li>
+			</ul>
+		</div>
+	</div>
+{/snippet}
+
+<!-- Banner de partido(s) EN CURSO con su marcador. -->
+{#snippet vivoBanner()}
+	<div class="vivo-card">
+		<span class="bv-tag"><span class="bv-dot" aria-hidden="true"></span> Partido en Curso</span>
+		{#each data.enCurso as m (m.numero)}
+			<span class="bv-match">
+				<span class="bv-num">#{m.numero}</span>
+				<span class="bv-team notranslate" translate="no">{m.equipoA}</span>
+				<Bandera equipo={m.equipoA} />
+				<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
+				<Bandera equipo={m.equipoB} />
+				<span class="bv-team notranslate" translate="no">{m.equipoB}</span>
+			</span>
+		{/each}
+	</div>
+{/snippet}
+
 <section class="estadisticas">
 	<p class="sub">
-		Distribución de pronósticos del partido en curso (o el siguiente pendiente) y los partidos en
-		vivo.
+		Distribución de pronósticos del/los partido(s) en curso (o el/los siguiente(s) pendiente(s)) y
+		los partidos en vivo. En la jornada final, los dos partidos simultáneos del grupo van lado a lado.
 	</p>
 
-	{#if data.enCurso.length || data.grafica}
-		<!-- Fila 1: las dos tarjetas "cortas" (partido en curso + pastel). -->
-		<div class="cards">
+	{#if data.bloques.length}
+		{#if data.bloques.length >= 2}
+			<!-- Jornada final: dos partidos simultáneos del MISMO grupo, divididos 50-50. -->
 			{#if data.enCurso.length}
-				<div class="vivo-card">
-					<span class="bv-tag"
-						><span class="bv-dot" aria-hidden="true"></span> Partido en Curso</span
-					>
-					{#each data.enCurso as m (m.numero)}
-						<span class="bv-match">
-							<span class="bv-num">#{m.numero}</span>
-							<span class="bv-team notranslate" translate="no">{m.equipoA}</span>
-							<Bandera equipo={m.equipoA} />
-							<span class="bv-score">{m.real?.replace('-', ' – ')}</span>
-							<Bandera equipo={m.equipoB} />
-							<span class="bv-team notranslate" translate="no">{m.equipoB}</span>
-						</span>
-					{/each}
-				</div>
+				<div class="cards">{@render vivoBanner()}</div>
 			{/if}
-
-			{#if data.grafica}
-				{@const g = data.grafica}
-				<div class="pie-card">
-					<div class="pie-title">{g.enCurso ? '● En curso' : 'Siguiente'} · #{g.numero}</div>
-					<div class="pie-row">
-						<svg
-							class="pie"
-							viewBox="0 0 100 100"
-							role="img"
-							aria-label="Desglose de pronósticos"
-						>
-							{#each segmentos as s (s.key)}
-								{#if s.full}
-									<circle
-										cx="50"
-										cy="50"
-										r="50"
-										fill={s.color}
-										stroke="rgba(0,0,0,0.25)"
-										stroke-width="0.5"
-									>
-										<title>{s.label}: {s.names.join(', ')}</title>
-									</circle>
-								{:else}
-									<path d={s.path} fill={s.color} stroke="rgba(0,0,0,0.3)" stroke-width="0.6">
-										<title>{s.label}: {s.names.join(', ')}</title>
-									</path>
-								{/if}
-							{/each}
-						</svg>
-						<ul class="pie-leg">
-							<li title="{g.equipoA}: {g.localNames.join(', ')}">
-								<span class="pdot l"></span> <span class="pnm notranslate" translate="no">{g.equipoA}</span> <b>{g.local}</b>
-							</li>
-							<li title="Empate: {g.empateNames.join(', ')}">
-								<span class="pdot e"></span> <span class="pnm">Empate</span> <b>{g.empate}</b>
-							</li>
-							<li title="{g.equipoB}: {g.visitaNames.join(', ')}">
-								<span class="pdot v"></span> <span class="pnm notranslate" translate="no">{g.equipoB}</span> <b>{g.visita}</b>
-							</li>
-						</ul>
+			<div class="dual">
+				{#each data.bloques as b (b.numero)}
+					<div class="col">
+						{@render pastel(b.grafica)}
+						{@render ganadores(
+							b.pendiente ? 'Ganando puntos si va así:' : 'Ganando puntos con resultado actual:',
+							'',
+							b.ganando,
+							'vig',
+							'Nadie va ganando puntos con este marcador.',
+							''
+						)}
+						{@render ganadores(
+							'Si anota',
+							'',
+							b.golLocal,
+							'loc',
+							'Nadie ganaría puntos con ese marcador.',
+							b.golLocal.equipoA
+						)}
+						{@render ganadores(
+							'Si anota',
+							'',
+							b.golVisita,
+							'vis',
+							'Nadie ganaría puntos con ese marcador.',
+							b.golVisita.equipoB
+						)}
 					</div>
-				</div>
-			{/if}
-		</div>
+				{/each}
+			</div>
+		{:else}
+			{@const b = data.bloques[0]}
+			<!-- Fila 1: las dos tarjetas "cortas" (partido en curso + pastel). -->
+			<div class="cards">
+				{#if data.enCurso.length}{@render vivoBanner()}{/if}
+				{@render pastel(b.grafica)}
+			</div>
 
-		<!-- Fila 2 (aparte, abajo): tarjetas de "ganadores", más altas por sus listas. -->
-		{#if data.ganando}
+			<!-- Fila 2 (aparte, abajo): tarjetas de "ganadores", más altas por sus listas. -->
 			<div class="cards cards-gan" style={listMax ? `--gan-list-max: ${listMax}px` : ''}>
 				{@render ganadores(
-					data.pendiente ? 'Ganando puntos si va así:' : 'Ganando puntos con resultado actual:',
+					b.pendiente ? 'Ganando puntos si va así:' : 'Ganando puntos con resultado actual:',
 					'',
-					data.ganando,
+					b.ganando,
 					'vig',
 					'Nadie va ganando puntos con este marcador.',
 					''
 				)}
-				{#if data.golLocal}
-					{@render ganadores(
-						'Si anota',
-						'',
-						data.golLocal,
-						'loc',
-						'Nadie ganaría puntos con ese marcador.',
-						data.golLocal.equipoA
-					)}
-				{/if}
-				{#if data.golVisita}
-					{@render ganadores(
-						'Si anota',
-						'',
-						data.golVisita,
-						'vis',
-						'Nadie ganaría puntos con ese marcador.',
-						data.golVisita.equipoB
-					)}
-				{/if}
+				{@render ganadores(
+					'Si anota',
+					'',
+					b.golLocal,
+					'loc',
+					'Nadie ganaría puntos con ese marcador.',
+					b.golLocal.equipoA
+				)}
+				{@render ganadores(
+					'Si anota',
+					'',
+					b.golVisita,
+					'vis',
+					'Nadie ganaría puntos con ese marcador.',
+					b.golVisita.equipoB
+				)}
 			</div>
 		{/if}
 
@@ -264,8 +296,7 @@
 		color: rgba(255, 255, 255, 0.65);
 	}
 
-	/* Las dos tarjetas, lado a lado (envuelven en móvil). Mismo orden que en
-	   Participantes: primero el partido en curso, luego el pastel. */
+	/* Las dos tarjetas, lado a lado (envuelven en móvil). */
 	.cards {
 		display: flex;
 		flex-wrap: wrap;
@@ -273,10 +304,39 @@
 		gap: 1rem 1.25rem;
 	}
 
-	/* Segunda fila: las tarjetas de "ganadores" (más altas por sus listas), en su
-	   propia línea para no descuadrar a las dos cortas de arriba. */
 	.cards-gan {
 		margin-top: 1.1rem;
+	}
+
+	/* ── Jornada final: dos partidos simultáneos lado a lado (50-50) ─────────── */
+	.dual {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.25rem;
+		align-items: start;
+		margin-top: 1rem;
+	}
+
+	.col {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		min-width: 0;
+	}
+
+	/* En las columnas, las tarjetas llenan el ancho (no su min/max de la vista simple). */
+	.col :global(.pie-card),
+	.col :global(.gan-card) {
+		width: 100%;
+		min-width: 0;
+		max-width: none;
+		box-sizing: border-box;
+	}
+
+	@media (max-width: 760px) {
+		.dual {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.nota,
@@ -286,7 +346,7 @@
 		color: rgba(255, 255, 255, 0.6);
 	}
 
-	/* ── Tarjeta "Partido en Curso" (copia de Participantes) ───────────────── */
+	/* ── Tarjeta "Partido en Curso" ────────────────────────────────────────── */
 	.vivo-card {
 		flex-shrink: 0;
 		display: flex;
@@ -367,7 +427,7 @@
 		color: #fff;
 	}
 
-	/* ── Gráfica de pastel (copia de Participantes) ────────────────────────── */
+	/* ── Gráfica de pastel ─────────────────────────────────────────────────── */
 	.pie-card {
 		flex-shrink: 0;
 		display: flex;
@@ -462,7 +522,7 @@
 		background: #38bdf8;
 	}
 
-	/* ── Tarjeta "Ganando puntos" (con el marcador vigente del partido en curso) ── */
+	/* ── Tarjeta "Ganando puntos" ──────────────────────────────────────────── */
 	.gan-card {
 		flex-shrink: 0;
 		display: flex;
@@ -476,8 +536,6 @@
 		border-radius: 10px;
 	}
 
-	/* Escenarios "+1 gol": franja superior con el color del lado (local verde /
-	   visita azul, igual que el pastel) para distinguirlos del marcador vigente. */
 	.gan-card.loc {
 		border-top: 2px solid rgba(74, 222, 128, 0.7);
 	}
@@ -486,8 +544,6 @@
 		border-top: 2px solid rgba(56, 189, 248, 0.7);
 	}
 
-	/* Tarjeta del marcador vigente: marco ámbar + halo pulsante, igual que la
-	   tarjeta de "Partido en Curso" (reusa la animación glow-banner). */
 	.gan-card.vig {
 		border-color: rgba(245, 158, 11, 0.55);
 		animation: glow-banner 1.9s ease-in-out infinite;
@@ -500,8 +556,6 @@
 		gap: 0.6rem;
 	}
 
-	/* Encabezado de las 3 tarjetas: título + (bandera opcional), grande y
-	   blanco e igual en todas. La bandera escala con el font-size del contenedor. */
 	.gan-anota {
 		display: inline-flex;
 		align-items: center;
@@ -537,13 +591,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
-		/* Tope dinámico (lo fija el JS para llenar el viewport); 16rem por defecto
-		   (SSR / móvil apilado). El mismo tope en los 3 + stretch = altura pareja. */
 		max-height: var(--gan-list-max, 16rem);
 		overflow-y: auto;
 	}
 
-	/* Acierto de resultado (1 pt): rosa mexicano (igual que la cuadrícula). */
 	.gan-list li {
 		display: flex;
 		align-items: center;
@@ -555,14 +606,11 @@
 		border-left: 3px solid rgba(240, 76, 158, 0.7);
 	}
 
-	/* Marcador exacto (3 pts): ámbar (resalta sobre el verde), hasta arriba. */
 	.gan-list li.exa {
 		background: rgba(245, 158, 11, 0.22);
 		border-left-color: rgba(245, 158, 11, 0.95);
 	}
 
-	/* Lugar al que llega/llegaría: medalla (podio) + número, pegado a la izquierda.
-	   Caja de ancho fijo y alineada a la derecha para que los badges de pts queden parejos. */
 	.gan-lugar {
 		flex-shrink: 0;
 		display: inline-flex;
@@ -596,7 +644,6 @@
 		color: #fff;
 	}
 
-	/* Badge del "3 pts" (exacto): ámbar sólido con texto oscuro (alto contraste). */
 	.gan-list li.exa .gan-badge {
 		background: rgba(245, 158, 11, 0.9);
 		color: #422006;
@@ -611,8 +658,6 @@
 		font-weight: 700;
 	}
 
-	/* Flechita: cuántos lugares SUBIRÍA en la tabla si el partido terminara con
-	   este marcador (vs la tabla sin contarlo). Solo se muestra si sube (▲ verde). */
 	.gan-mov {
 		flex-shrink: 0;
 		font-size: 0.68rem;

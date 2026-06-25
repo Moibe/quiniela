@@ -2,6 +2,7 @@ import { asc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { participantes, partidos, pronosticos } from '$lib/server/db/schema';
 import { puntosDe, PUNTOS_EXACTO, computeStandings } from '$lib/scoring';
+import { computeGrupos } from '$lib/grupos';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -14,7 +15,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		db.select().from(pronosticos)
 	]);
 
-	// Partido(s) EN CURSO con su marcador provisional.
+	// Partido(s) EN CURSO con su marcador provisional (banner).
 	const enCurso = mats
 		.filter((m) => m.enCurso)
 		.map((m) => ({
@@ -24,12 +25,24 @@ export const load: PageServerLoad = async ({ url }) => {
 			real: m.golesA !== null && m.golesB !== null ? `${m.golesA}-${m.golesB}` : null
 		}));
 
-	// Gráfica de pastel: desglose local/empate/visitante de los pronósticos para el
-	// partido EN CURSO; si no hay, el SIGUIENTE pendiente (primero por número).
-	const objetivo = mats.find((m) => m.enCurso) ?? mats.find((m) => m.golesA === null);
-	let grafica = null;
-	if (objetivo) {
-		const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
+	// Mapa equipo → grupo, para confirmar que el par de la jornada final es del MISMO grupo.
+	const grupoDe = new Map<string, string>();
+	for (const g of computeGrupos(mats)) for (const e of g.equipos) grupoDe.set(e.equipo, g.label);
+
+	// Objetivo(s): los partidos NO finalizados (en curso o pendientes), por número. En la jornada
+	// final hay DOS simultáneos: si los dos siguientes son del MISMO grupo, mostramos ambos; si no
+	// (jornada normal, uno a la vez), mostramos solo el siguiente.
+	const candidatos = mats.filter((m) => m.enCurso || m.golesA === null); // mats ya viene por número
+	const [c0, c1] = candidatos;
+	const esPar =
+		!!c0 && !!c1 && !!grupoDe.get(c0.equipoA) && grupoDe.get(c0.equipoA) === grupoDe.get(c1.equipoA);
+	const objetivos = esPar ? [c0, c1] : c0 ? [c0] : [];
+
+	const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
+
+	// Calcula el bloque de estadísticas (pastel + tarjetas de escenarios) de UN partido objetivo.
+	function computeBloque(objetivo: (typeof mats)[number]) {
+		// Pastel: desglose local/empate/visitante de los pronósticos para este partido.
 		const localNames: string[] = [];
 		const empateNames: string[] = [];
 		const visitaNames: string[] = [];
@@ -44,7 +57,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		localNames.sort(orden);
 		empateNames.sort(orden);
 		visitaNames.sort(orden);
-		grafica = {
+		const grafica = {
 			numero: objetivo.numero,
 			equipoA: objetivo.equipoA,
 			equipoB: objetivo.equipoB,
@@ -57,28 +70,15 @@ export const load: PageServerLoad = async ({ url }) => {
 			empateNames,
 			visitaNames
 		};
-	}
 
-	// Tarjetas de "ganadores" para el OBJETIVO (el partido en curso o, si no hay, el
-	// siguiente pendiente): quién GANARÍA puntos con un marcador dado. Exacto (3 pts)
-	// hasta arriba, luego acierto de resultado (1 pt); los que fallan no se listan.
-	// Si el partido aún no empieza, se asume 0-0 de salida para tener estadísticas
-	// desde antes. Se calculan con el marcador del objetivo y los escenarios
-	// "+1 gol local" / "+1 gol visita".
-	let ganando = null;
-	let golLocal = null;
-	let golVisita = null;
-	let pendiente = false; // true = el objetivo aún no empieza (tarjetas asumen 0-0)
-	if (objetivo) {
-		const nombrePorId = new Map(parts.map((p) => [p.id, p.nombre]));
+		// Tarjetas de "ganadores": quién GANARÍA puntos con un marcador dado (3 pts exacto arriba,
+		// luego 1 pt). Si aún no empieza, se asume 0-0 de salida. Escenarios: actual, +1 local, +1 visita.
 		const prosObj = pros.filter((pr) => pr.partidoId === objetivo.id);
-		const ga = objetivo.golesA ?? 0; // 0-0 por defecto si todavía no hay marcador
+		const ga = objetivo.golesA ?? 0;
 		const gb = objetivo.golesB ?? 0;
-		pendiente = !objetivo.enCurso;
+		const pendiente = !objetivo.enCurso;
 
-		// Tabla BASE: cómo estaría la clasificación SIN contar este partido. Sirve de
-		// referencia para medir cuántos lugares subiría cada quien si terminara con un
-		// marcador dado (mismo ranking que Lugares).
+		// Tabla BASE: clasificación SIN contar este partido, para medir cuánto subiría cada quien.
 		const matsSinObj = mats.map((m) =>
 			m.id === objetivo.id ? { ...m, golesA: null, golesB: null } : m
 		);
@@ -87,7 +87,6 @@ export const load: PageServerLoad = async ({ url }) => {
 		);
 
 		const tarjeta = (golesA: number, golesB: number) => {
-			// Ranking si el partido terminara con ESTE marcador.
 			const matsCon = matsSinObj.map((m) =>
 				m.id === objetivo.id ? { ...m, golesA, golesB } : m
 			);
@@ -101,12 +100,11 @@ export const load: PageServerLoad = async ({ url }) => {
 				puntos: number;
 				exacto: boolean;
 				mov: number;
-				lugar: number; // a qué lugar llega/llegaría en la tabla con este marcador
+				lugar: number;
 			}[] = [];
 			for (const pr of prosObj) {
 				const pts = puntosDe({ golesA: pr.golesA, golesB: pr.golesB }, { golesA, golesB });
 				if (pts > 0) {
-					// + = sube lugares (su rank baja de número) respecto a la tabla base.
 					const mov =
 						(baseRank.get(pr.participanteId) ?? 0) - (escenRank.get(pr.participanteId) ?? 0);
 					lista.push({
@@ -131,10 +129,21 @@ export const load: PageServerLoad = async ({ url }) => {
 			};
 		};
 
-		ganando = tarjeta(ga, gb); // marcador actual (o 0-0 si aún no empieza)
-		golLocal = tarjeta(ga + 1, gb); // si anota el local
-		golVisita = tarjeta(ga, gb + 1); // si anota la visita
+		return {
+			numero: objetivo.numero,
+			equipoA: objetivo.equipoA,
+			equipoB: objetivo.equipoB,
+			enCurso: objetivo.enCurso,
+			pendiente,
+			grafica,
+			ganando: tarjeta(ga, gb),
+			golLocal: tarjeta(ga + 1, gb),
+			golVisita: tarjeta(ga, gb + 1)
+		};
 	}
 
-	return { grafica, enCurso, ganando, golLocal, golVisita, pendiente };
+	// 1 bloque (jornada normal) o 2 (jornada final: par simultáneo del mismo grupo, 50-50).
+	const bloques = objetivos.map(computeBloque);
+
+	return { bloques, enCurso };
 };
