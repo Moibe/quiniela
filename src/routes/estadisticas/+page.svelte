@@ -139,15 +139,15 @@
 				{#each gn.lista as g, i (i)}
 					{@const lugarReal = g.lugar + g.mov}
 					<li class:exa={g.exacto}>
+						<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
+						<span class="gan-nombre notranslate" translate="no">{g.nombre}</span>
+						<span class="gan-real" title="Lugar actual (ahora mismo)">{lugarReal}°</span>
+						<span class="gan-total" title="Puntos totales si va así">{g.total}<small>pts</small></span>
 						<span class="gan-lugar" title="Lugar al que llegaría con este marcador: {g.lugar}°">
 							{#if medalla(g.lugar)}<span class="gan-medalla" aria-hidden="true"
 									>{medalla(g.lugar)}</span
 								>{/if}<span class="gan-num">{g.lugar}°</span>
 						</span>
-						<span class="gan-badge">{g.exacto ? '🎯 3 pts' : '✓ 1 pt'}</span>
-						<span class="gan-nombre notranslate" translate="no">{g.nombre}</span>
-						<span class="gan-real" title="Lugar actual (ahora mismo)">{lugarReal}°</span>
-						<span class="gan-total" title="Puntos totales si va así">{g.total}<small>pts</small></span>
 						{#if g.mov > 0}
 							<span class="gan-mov" title="Subiría {g.mov} lugar(es) en la tabla">▲{g.mov}</span>
 						{/if}
