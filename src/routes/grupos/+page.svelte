@@ -88,7 +88,7 @@
 		margin: 0 0 0.35rem;
 		font-size: 0.85rem;
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.7);
+		color: #fff;
 	}
 
 	.leyenda {
@@ -98,7 +98,7 @@
 		margin: 0;
 		font-size: 0.72rem;
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.55);
+		color: #fff;
 	}
 
 	.chip-clasif {
