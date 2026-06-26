@@ -239,7 +239,7 @@
 		margin: 0;
 		font-size: 0.72rem;
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.5);
+		color: #fff;
 	}
 
 	/* Banner de partido(s) EN CURSO: arriba, AFUERA de la tabla. No reordena nada;
