@@ -9,6 +9,13 @@
 		const v = (e.currentTarget as HTMLSelectElement).value;
 		goto(`?p=${v}`, { keepFocus: true, noScroll: true });
 	}
+
+	// Los 16 cruces en 8 pares: mitad izquierda (pares 0-3 = llaves 1-8) y derecha (4-7 = 9-16).
+	const pares = $derived.by(() => {
+		const out: (typeof data.cruces)[] = [];
+		for (let i = 0; i < data.cruces.length; i += 2) out.push([data.cruces[i], data.cruces[i + 1]]);
+		return out;
+	});
 </script>
 
 <section class="segunda">
@@ -46,26 +53,43 @@
 		{/if}
 	</div>
 
-	<div class="cruces">
-		{#each data.cruces as c (c.numero)}
-			<div class="cruce">
-				<span class="llave">Partido {c.numero}</span>
-				<div class="enfrent">
-					<span class="lado a">
-						<span class="org">{c.a.origen}</span>
-						<span class="nm notranslate" translate="no" title={c.a.equipo}>{c.a.equipo}</span>
-						<Bandera equipo={c.a.equipo} />
-					</span>
-					<span class="vs">vs</span>
-					<span class="lado b">
-						<Bandera equipo={c.b.equipo} />
-						<span class="nm notranslate" translate="no" title={c.b.equipo}>{c.b.equipo}</span>
-						<span class="org">{c.b.origen}</span>
-					</span>
-				</div>
+	{#snippet matchBox(c: (typeof data.cruces)[number])}
+		<div class="match">
+			<span class="mnum">#{c.numero}</span>
+			<span class="team">
+				<Bandera equipo={c.a.equipo} />
+				<span class="nm notranslate" translate="no" title={c.a.equipo}>{c.a.equipo}</span>
+				<span class="org">{c.a.origen}</span>
+			</span>
+			<span class="team">
+				<Bandera equipo={c.b.equipo} />
+				<span class="nm notranslate" translate="no" title={c.b.equipo}>{c.b.equipo}</span>
+				<span class="org">{c.b.origen}</span>
+			</span>
+		</div>
+	{/snippet}
+
+	{#if data.cruces.length}
+		<div class="bracket">
+			<div class="col izq">
+				{#each pares.slice(0, 4) as par (par[0].numero)}
+					<div class="par">
+						{@render matchBox(par[0])}
+						{@render matchBox(par[1])}
+					</div>
+				{/each}
 			</div>
-		{/each}
-	</div>
+			<div class="centro" aria-hidden="true"><span class="trofeo">🏆</span></div>
+			<div class="col der">
+				{#each pares.slice(4, 8) as par (par[0].numero)}
+					<div class="par">
+						{@render matchBox(par[0])}
+						{@render matchBox(par[1])}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </section>
 
 <style>
@@ -122,67 +146,101 @@
 		max-width: 60rem;
 	}
 
-	.cruces {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(25rem, 1fr));
-		gap: 0.5rem 1rem;
-		align-items: start;
-	}
-
-	.cruce {
+	/* Bracket de dieciseisavos: dos mitades (8 llaves c/u) que pliegan hacia el centro. */
+	.bracket {
 		display: flex;
 		align-items: center;
-		gap: 0.7rem;
-		padding: 0.5rem 0.85rem;
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 10px;
+		justify-content: center;
+		gap: 1.6rem;
+		overflow-x: auto;
+		padding-bottom: 0.5rem;
 	}
 
-	.llave {
+	.col {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 1.7rem;
+	}
+
+	.par {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+	}
+
+	/* Conector de bracket: une las 2 llaves del par y apunta hacia el centro. */
+	.col.izq .par::after,
+	.col.der .par::after {
+		content: '';
+		position: absolute;
+		top: 25%;
+		bottom: 25%;
+		width: 0.7rem;
+		border: 2px solid rgba(34, 197, 94, 0.45);
+	}
+
+	.col.izq .par::after {
+		right: -0.85rem;
+		border-left: 0;
+		border-radius: 0 7px 7px 0;
+	}
+
+	.col.der .par::after {
+		left: -0.85rem;
+		border-right: 0;
+		border-radius: 7px 0 0 7px;
+	}
+
+	.centro {
 		flex-shrink: 0;
-		width: 3.6rem;
-		font-size: 0.68rem;
-		font-weight: 700;
-		color: rgba(255, 255, 255, 0.45);
-		letter-spacing: 0.02em;
-	}
-
-	.enfrent {
-		display: grid;
-		grid-template-columns: 1fr auto 1fr;
+		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		flex: 1;
-		min-width: 0;
+		justify-content: center;
+		font-size: 1.9rem;
+		filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.4));
 	}
 
-	.lado {
-		display: inline-flex;
+	.match {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		width: 13rem;
+		padding: 0.4rem 0.6rem;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 8px;
+	}
+
+	.mnum {
+		position: absolute;
+		top: 0.25rem;
+		right: 0.45rem;
+		font-size: 0.56rem;
+		color: rgba(255, 255, 255, 0.3);
+	}
+
+	.team {
+		display: flex;
 		align-items: center;
 		gap: 0.4rem;
 		min-width: 0;
 	}
 
-	.lado.a {
-		justify-content: flex-end;
-	}
-
-	.lado.b {
-		justify-content: flex-start;
-	}
-
-	.nm {
+	.team .nm {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-weight: 700;
-		font-size: 0.85rem;
+		font-size: 0.82rem;
 	}
 
-	.org {
+	.team .org {
+		margin-left: auto;
 		flex-shrink: 0;
-		font-size: 0.62rem;
+		font-size: 0.56rem;
 		font-weight: 700;
 		color: #86efac;
 		background: rgba(34, 197, 94, 0.14);
@@ -192,15 +250,47 @@
 		white-space: nowrap;
 	}
 
-	.vs {
-		font-size: 0.68rem;
-		font-weight: 700;
-		color: rgba(255, 255, 255, 0.4);
+	/* Mitad derecha: reflejada (bandera a la derecha, etiqueta hacia el centro). */
+	.col.der .team {
+		flex-direction: row-reverse;
 	}
 
-	@media (max-width: 560px) {
-		.cruces {
-			grid-template-columns: 1fr;
+	.col.der .team .org {
+		margin-left: 0;
+		margin-right: auto;
+	}
+
+	.col.der .mnum {
+		right: auto;
+		left: 0.45rem;
+	}
+
+	/* Móvil/angosto: sin bracket; una sola columna de llaves. */
+	@media (max-width: 820px) {
+		.bracket {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.col {
+			gap: 0.55rem;
+		}
+		.par::after,
+		.centro {
+			display: none;
+		}
+		.col.der .team {
+			flex-direction: row;
+		}
+		.col.der .team .org {
+			margin-left: auto;
+			margin-right: 0;
+		}
+		.col.der .mnum {
+			right: 0.45rem;
+			left: auto;
+		}
+		.match {
+			width: auto;
 		}
 	}
 </style>
