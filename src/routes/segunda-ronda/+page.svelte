@@ -10,10 +10,27 @@
 		goto(`?p=${v}`, { keepFocus: true, noScroll: true });
 	}
 
-	// Los 16 cruces en 8 pares: mitad izquierda (pares 0-3 = llaves 1-8) y derecha (4-7 = 9-16).
+	// Emparejado OFICIAL del cuadro FIFA 2026: qué dieciseisavos (73-88) se cruzan en octavos. Cada par
+	// = un octavo. NO es consecutivo (73-74): el cuadro es fijo por estructura (octavo 90 = Ganador 73
+	// vs Ganador 75, etc.). Mitad izquierda (pares 0-3) → una semifinal; mitad derecha (4-7) → la otra.
+	const PARES_OFICIALES = [
+		[73, 75], // R16 90  ┐ QF 97 ┐
+		[74, 77], // R16 89  ┘       │ SF 101 (izquierda)
+		[83, 84], // R16 93  ┐ QF 98 ┘
+		[81, 82], // R16 94  ┘
+		[76, 78], // R16 91  ┐ QF 99 ┐
+		[79, 80], // R16 92  ┘       │ SF 102 (derecha)
+		[86, 88], // R16 95  ┐ QF 100┘
+		[85, 87] //  R16 96  ┘
+	];
 	const pares = $derived.by(() => {
+		const byNum = new Map(data.cruces.map((c) => [c.numero, c]));
 		const out: (typeof data.cruces)[] = [];
-		for (let i = 0; i < data.cruces.length; i += 2) out.push([data.cruces[i], data.cruces[i + 1]]);
+		for (const [n1, n2] of PARES_OFICIALES) {
+			const a = byNum.get(n1);
+			const b = byNum.get(n2);
+			if (a && b) out.push([a, b]);
+		}
 		return out;
 	});
 </script>
