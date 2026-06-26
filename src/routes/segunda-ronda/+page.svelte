@@ -68,7 +68,7 @@
 	</div>
 
 	{#snippet matchBox(c: (typeof data.cruces)[number])}
-		<div class="match">
+		<div class="match" class:confirmado={data.esReal && c.confirmado}>
 			<span class="mnum">#{c.numero}</span>
 			<span class="team">
 				<Bandera equipo={c.a.equipo} />
@@ -261,6 +261,14 @@
 		background: rgba(255, 255, 255, 0.04);
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 8px;
+	}
+
+	/* Cruce CONFIRMADO (ya no puede cambiar): marco DORADO + brillo suave. Solo en la vista Real. */
+	.match.confirmado {
+		border-color: rgba(250, 204, 21, 0.85);
+		box-shadow:
+			0 0 0 1px rgba(250, 204, 21, 0.4),
+			0 0 12px rgba(250, 204, 21, 0.3);
 	}
 
 	/* Número de partido (#73…): al borde EXTERIOR (izquierda en la mitad izquierda; derecha en la

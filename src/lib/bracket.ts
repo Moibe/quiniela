@@ -45,6 +45,7 @@ export type Cruce = {
 	llave: number; // 1–16 (orden de presentación)
 	a: Clasificado;
 	b: Clasificado;
+	confirmado: boolean; // el cruce YA no puede cambiar (ambos lados fijos) — ver armarCruces
 };
 
 // Plantilla FIJA oficial de los 16 dieciseisavos (partidos 73–88). Cada lado es
@@ -144,12 +145,19 @@ function armarCruces(partidosConResultado: PartidoIn[]): Cruce[] {
 			return toClas(byLabel.get(gl)!.equipos[pos - 1], `${pos}° ${gl}`, gl, false);
 		};
 
-		return PLANTILLA.map((m, i) => ({
-			numero: m.numero,
-			llave: i + 1,
-			a: resolver(m.a),
-			b: resolver(m.b)
-		}));
+		// Grupos ya terminados (6/6) y si TODOS lo están. Un cruce está CONFIRMADO (no puede cambiar)
+		// cuando ambos lados son fijos: un slot 1°/2° queda fijo al terminar SU grupo; un slot de mejor
+		// 3° solo queda fijo cuando terminaron TODOS los grupos (ahí se cierra qué 8 terceros clasifican
+		// y a qué llave va cada uno por Annex C; antes puede reordenarse con cualquier resultado).
+		const completos = new Set(grupos.filter((g) => g.partidosJugados === 6).map((g) => g.label));
+		const todosCompletos = completos.size === grupos.length;
+		const slotFijo = (c: Clasificado) => (c.tercero ? todosCompletos : completos.has(c.grupo));
+
+		return PLANTILLA.map((m, i) => {
+			const a = resolver(m.a);
+			const b = resolver(m.b);
+			return { numero: m.numero, llave: i + 1, a, b, confirmado: slotFijo(a) && slotFijo(b) };
+		});
 	}
 
 	// Fallback defensivo (datos incompletos / grupos != 12): cuadro vacío en vez
