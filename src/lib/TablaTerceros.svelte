@@ -50,18 +50,20 @@
 							<td class="c-pos">{i + 1}</td>
 							<td class="c-gr">{t.grupo}</td>
 							<th scope="row" class="c-eq">
-								<Bandera equipo={t.equipo} />
-								<span class="nm" translate="no">{t.equipo}</span>
-								{#if t.enVivo || t.pj < 3}
-									<span
-										class="pendiente"
-										class:jugando={t.enVivo}
-										title={t.enVivo
-											? 'Jugando ahora — su posición puede cambiar'
-											: 'Aún tiene partidos por jugar'}
-										aria-label="con partidos pendientes">⚽</span
-									>
-								{/if}
+								<span class="eq-in">
+									<Bandera equipo={t.equipo} />
+									<span class="nm" translate="no">{t.equipo}</span>
+									{#if t.enVivo || t.pj < 3}
+										<span
+											class="pendiente"
+											class:jugando={t.enVivo}
+											title={t.enVivo
+												? 'Jugando ahora — su posición puede cambiar'
+												: 'Aún tiene partidos por jugar'}
+											aria-label="con partidos pendientes">⚽</span
+										>
+									{/if}
+								</span>
 							</th>
 							<td>{t.pj}</td>
 							<td>{t.dg > 0 ? '+' + t.dg : t.dg}</td>
@@ -196,6 +198,11 @@
 	.terceros .c-eq {
 		text-align: left;
 		font-weight: 400;
+	}
+
+	/* El flex va en un span INTERNO, no en la celda: una celda con display:flex deja de ser table-cell
+	   y descuadra los bordes de la tabla. */
+	.terceros .c-eq .eq-in {
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
@@ -233,30 +240,56 @@
 		width: 2.6rem;
 	}
 
-	/* Los 8 que clasifican: fondo verde tenue + un MARCO verde COMPLETO rodeando todo el bloque
-	   (arriba, abajo y los dos lados), no solo la "L" de la izquierda + el corte. */
+	/* Los 8 que clasifican: fondo verde tenue + un MARCO verde COMPLETO rodeando el bloque. El marco se
+	   dibuja con box-shadow (NO con border): el border-collapse de la tabla fusiona las esquinas de los
+	   bordes por celda y la línea se veía chueca/escalonada. box-shadow se pinta por celda, recto. */
 	.terceros tbody tr.clasifica {
 		background: rgba(34, 197, 94, 0.08);
 	}
 
 	.terceros tbody tr.clasifica .c-pos {
-		border-left: 2px solid #4ade80; /* lado izquierdo */
+		box-shadow: inset 2px 0 0 #4ade80; /* línea izquierda */
 		color: #86efac;
 		font-weight: 700;
 	}
 
 	.terceros tbody tr.clasifica .c-qlf {
-		border-right: 2px solid #4ade80; /* lado derecho */
+		box-shadow: inset -2px 0 0 #4ade80; /* línea derecha */
 	}
 
 	.terceros tbody tr.primero td,
 	.terceros tbody tr.primero th {
-		border-top: 2px solid #4ade80; /* borde superior (sobre el 1º) */
+		box-shadow: inset 0 2px 0 #4ade80; /* línea superior (sobre el 1º) */
 	}
 
 	.terceros tbody tr.corte td,
 	.terceros tbody tr.corte th {
-		border-bottom: 2px solid #4ade80; /* borde inferior (bajo el 8º) */
+		box-shadow: inset 0 -2px 0 #4ade80; /* línea inferior (bajo el 8º) */
+	}
+
+	/* Esquinas: combinan dos lados (van al final para ganar a las reglas de borde simple de arriba). */
+	.terceros tbody tr.primero .c-pos {
+		box-shadow:
+			inset 2px 0 0 #4ade80,
+			inset 0 2px 0 #4ade80;
+	}
+
+	.terceros tbody tr.primero .c-qlf {
+		box-shadow:
+			inset -2px 0 0 #4ade80,
+			inset 0 2px 0 #4ade80;
+	}
+
+	.terceros tbody tr.corte .c-pos {
+		box-shadow:
+			inset 2px 0 0 #4ade80,
+			inset 0 -2px 0 #4ade80;
+	}
+
+	.terceros tbody tr.corte .c-qlf {
+		box-shadow:
+			inset -2px 0 0 #4ade80,
+			inset 0 -2px 0 #4ade80;
 	}
 
 	.terceros .qlf {
