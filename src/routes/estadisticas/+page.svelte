@@ -335,43 +335,59 @@
 		margin-top: 1.1rem;
 	}
 
-	/* ── Jornada final: dos partidos simultáneos lado a lado (50-50) ─────────── */
+	/* ── PRUEBA — Jornada final TRANSPUESTA: cada partido es una BARRA HORIZONTAL con sus módulos en
+	   una línea (pastel + las 3 tarjetas de "ganando"); el otro partido va en la fila de abajo.
+	   (Antes eran dos columnas verticales lado a lado; esto las "voltea" como en Excel.) */
 	.dual {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
+		display: flex;
+		flex-direction: column;
 		gap: 1.25rem;
-		align-items: start;
 		margin-top: 1rem;
 	}
 
+	/* Un partido y sus 4 módulos EN LÍNEA. Si no caben a lo ancho, esta fila se desliza en horizontal
+	   (no empuja la página). */
 	.col {
 		display: flex;
-		flex-direction: column;
+		flex-direction: row;
+		align-items: stretch;
 		gap: 0.9rem;
 		min-width: 0;
+		overflow-x: auto;
+		padding-bottom: 0.35rem;
 	}
 
-	/* En las columnas, las tarjetas llenan el ancho (no su min/max de la vista simple). */
+	/* Los módulos reparten el ancho de la fila (con un mínimo legible; si no caben, scroll-x). */
 	.col :global(.pie-card),
 	.col :global(.gan-card) {
-		width: 100%;
-		min-width: 0;
+		flex: 1 1 0;
+		min-width: 15rem;
 		max-width: none;
 		box-sizing: border-box;
 	}
 
-	/* Listas en la vista doble: alto FIJO uniforme (mismo tamaño + scroll) para que las 3 de la
-	   izquierda se empaten con las 3 de la derecha. El JS (--dual-list-h) lo ajusta para llenar. */
+	/* El pastel es más bajo que las listas: se centra en vertical para acompañar la altura de la fila. */
+	.col :global(.pie-card) {
+		justify-content: center;
+	}
+
+	/* Listas a una altura cómoda fija dentro de la barra horizontal (cada tarjeta scrollea la suya). */
 	.col :global(.gan-list),
 	.col :global(.gan-vacio) {
-		height: var(--dual-list-h, 13rem);
+		height: 15rem;
 		max-height: none;
 		box-sizing: border-box;
 	}
 
+	/* En angosto, los módulos de cada partido se apilan (envuelven) en vez de forzar scroll horizontal. */
 	@media (max-width: 760px) {
-		.dual {
-			grid-template-columns: 1fr;
+		.col {
+			flex-wrap: wrap;
+			overflow-x: visible;
+		}
+		.col :global(.pie-card),
+		.col :global(.gan-card) {
+			flex: 1 1 100%;
 		}
 	}
 
