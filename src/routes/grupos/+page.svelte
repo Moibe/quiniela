@@ -45,7 +45,7 @@
 		</div>
 
 		{#if terceros.length}
-			<details class="terceros" open>
+			<details class="terceros">
 				<summary class="t-head">
 					<span class="chevron" aria-hidden="true">▸</span>
 					<span class="t-titulo">Tabla de terceros lugares</span>
