@@ -2,6 +2,7 @@
 	import { onMount, untrack } from 'svelte';
 	import Bandera from '$lib/Bandera.svelte';
 	import TablaGrupo from '$lib/TablaGrupo.svelte';
+	import TablaTerceros from '$lib/TablaTerceros.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -151,6 +152,11 @@
 			{/each}
 		</div>
 			</div>
+		{/if}
+		{#if terceros.length}
+		<div class="terceros-vivo">
+			<TablaTerceros {terceros} />
+		</div>
 		{/if}
 </section>
 
@@ -389,6 +395,11 @@
 	/* Tablas de los grupos en juego, debajo de los partidos. */
 	.lado-grupos {
 		min-width: 0;
+	}
+
+	/* Tabla de terceros (replegable), apilada debajo de las tablas de grupo. */
+	.terceros-vivo {
+		margin-top: 1.5rem;
 	}
 
 	.g-titulo {
