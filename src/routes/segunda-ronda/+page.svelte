@@ -252,6 +252,7 @@
 
 	.match {
 		position: relative;
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		gap: 0.2rem;
@@ -262,11 +263,17 @@
 		border-radius: 8px;
 	}
 
+	/* Número de partido (#73…): al borde EXTERIOR (izquierda en la mitad izquierda; derecha en la
+	   mitad derecha, ver abajo) y CENTRADO verticalmente entre las dos filas. Antes iba arriba a la
+	   derecha y se encimaba con la insignia de grupo (2°A). El hueco lo da el padding exterior del
+	   .match (definido por mitad más abajo). */
 	.mnum {
 		position: absolute;
-		top: 0.25rem;
-		right: 0.45rem;
+		left: 0.35rem;
+		top: 50%;
+		transform: translateY(-50%);
 		font-size: 0.56rem;
+		line-height: 1;
 		color: rgba(255, 255, 255, 0.3);
 	}
 
@@ -309,8 +316,18 @@
 	}
 
 	.lado.der .ronda.r32 .mnum {
-		right: auto;
-		left: 0.45rem;
+		left: auto;
+		right: 0.35rem;
+	}
+
+	/* Hueco EXTERIOR para el número (lado opuesto a las insignias de grupo): izquierda en la mitad
+	   izquierda, derecha en la derecha. Así el número cabe centrado sin pisar banderas ni los "2°A". */
+	.lado.izq .ronda.r32 .match {
+		padding-left: 1.7rem;
+	}
+
+	.lado.der .ronda.r32 .match {
+		padding-right: 1.7rem;
 	}
 
 	/* Pista "desliza" (solo móvil; la regla base la oculta para no tocar el desktop). */
