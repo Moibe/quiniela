@@ -83,7 +83,7 @@
 					{#if m.estado === 'vivo'}
 						<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo{#if m.minuto}{' · ' + m.minuto}{/if}</span>
 					{:else if m.estado === 'terminado'}
-						<span class="chip fin"><span class="dot fin" aria-hidden="true"></span> finalizado · {hace(m.haceMs)}</span>
+						<span class="chip fin"><span class="dot fin" aria-hidden="true"></span> Finalizado · {hace(m.haceMs)}</span>
 					{:else if m.estado === 'porEmpezar'}
 						<span class="chip prox"><span class="dot prox" aria-hidden="true"></span> por empezar</span>
 					{:else}
