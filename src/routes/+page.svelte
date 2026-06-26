@@ -232,7 +232,7 @@
 		gap: 0.4rem 1.1rem;
 		margin: 0 0 0.35rem;
 		font-size: 0.72rem;
-		color: rgba(255, 255, 255, 0.62);
+		color: #fff;
 	}
 
 	.hint {
