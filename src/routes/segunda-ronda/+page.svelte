@@ -84,6 +84,7 @@
 	{/snippet}
 
 	{#if data.cruces.length}
+		<p class="swipe-hint" aria-hidden="true">Desliza el cuadro →</p>
 		<div class="bracket">
 			<div class="lado izq">
 				<div class="ronda r32">
@@ -312,38 +313,90 @@
 		left: 0.45rem;
 	}
 
-	/* Móvil/angosto: sin árbol; las llaves en una columna simple (se ocultan rondas vacías y patitas). */
+	/* Pista "desliza" (solo móvil; la regla base la oculta para no tocar el desktop). */
+	.swipe-hint {
+		display: none;
+	}
+
+	/* Móvil/angosto: se CONSERVA el árbol completo (misma topología, conectores y copa); solo el
+	   .bracket hace scroll horizontal. Antes se pasaba a columna sin resetear las celdas (flex:1 1 0),
+	   que sin altura definida colapsaban a 0 y encimaban los 16 partidos. Aquí mantenemos la FILA y el
+	   min-height de las celdas, y el árbol toma su ancho natural para que overflow-x sí desplace. */
 	@media (max-width: 920px) {
+		.swipe-hint {
+			display: flex;
+			align-items: center;
+			gap: 0.35rem;
+			width: max-content;
+			margin: 0 0 0.5rem;
+			padding: 0.2rem 0.65rem;
+			font-size: 0.72rem;
+			font-weight: 700;
+			color: #86efac;
+			background: rgba(34, 197, 94, 0.12);
+			border: 1px solid rgba(34, 197, 94, 0.35);
+			border-radius: 999px;
+			animation: swipeNudge 1.8s ease-in-out infinite;
+		}
 		.bracket {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 0.5rem;
+			--gap: 0.55rem;
+			flex-direction: row;
+			align-items: center;
+			justify-content: flex-start;
+			overflow-x: auto;
+			overflow-y: hidden;
+			-webkit-overflow-scrolling: touch;
+			overscroll-behavior-x: contain;
+			padding-bottom: 0.6rem;
 		}
 		.lado {
-			flex-direction: column;
-			gap: 0.5rem;
+			flex-direction: row;
+			align-items: stretch;
+			gap: var(--gap);
+			flex: 0 0 auto;
 		}
 		.ronda.con,
 		.centro {
-			display: none;
+			display: flex;
+		}
+		.centro {
+			font-size: 1.4rem;
 		}
 		.ronda.r32 .cell {
-			min-height: 0;
-			margin-bottom: 0.5rem;
-		}
-		.lado.der .ronda.r32 .team {
-			flex-direction: row;
-		}
-		.lado.der .ronda.r32 .team .org {
-			margin-left: auto;
-			margin-right: 0;
-		}
-		.lado.der .ronda.r32 .mnum {
-			right: 0.45rem;
-			left: auto;
+			min-height: 3.1rem;
+			margin-bottom: 0;
 		}
 		.match {
-			width: auto;
+			width: 10rem;
+			padding: 0.3rem 0.45rem;
+		}
+		.team {
+			gap: 0.3rem;
+		}
+		.team .nm {
+			font-size: 0.74rem;
+		}
+		.team .org {
+			font-size: 0.5rem;
+		}
+		.mnum {
+			font-size: 0.5rem;
+		}
+	}
+
+	@keyframes swipeNudge {
+		0%,
+		100% {
+			transform: translateX(0);
+		}
+		50% {
+			transform: translateX(4px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.swipe-hint {
+			animation: none;
 		}
 	}
 </style>
