@@ -137,7 +137,7 @@
 		margin: 0 0 0.45rem;
 		font-size: 0.85rem;
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.65);
+		color: #fff;
 	}
 
 	/* Contenedor de los banners destacados, mandados al FINAL de la lista (order:10) en web y móvil.
