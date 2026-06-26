@@ -78,6 +78,7 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 			golesB: partidos.golesB,
 			enCurso: partidos.enCurso,
 			autoMonitor: partidos.autoMonitor,
+			fecha: partidos.fecha,
 			inicioCloudbet: partidos.inicioCloudbet
 		})
 		.from(partidos);
@@ -119,6 +120,18 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 				estado: monFin ? 'terminado' : 'desconectado', haceMs: edad, minuto: null
 			});
 			overlay.set(p.id, { golesA: mon!.golesA, golesB: mon!.golesB, enCurso: false }); // cuenta, sin pulso
+		} else if (
+			!p.enCurso && !p.autoMonitor && p.golesA !== null && p.golesB !== null &&
+			!!p.fecha && ahora - p.fecha.getTime() < FIN_MS
+		) {
+			// Resultado FINAL capturado A MANO hace poco: se queda como "Finalizado" un rato (igual que
+			// los del monitor), en vez de desaparecer en el instante en que se marca el final. Su marcador
+			// ya está en la BD, así que no necesita overlay para las tablas.
+			enCurso.push({
+				numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB,
+				golesA: p.golesA, golesB: p.golesB, fuente: 'manual',
+				estado: 'terminado', haceMs: ahora - p.fecha.getTime(), minuto: null
+			});
 		}
 	}
 	// "Por empezar": mantener visible al COMPAÑERO de un par simultáneo (impar↔par consecutivo) cuando
