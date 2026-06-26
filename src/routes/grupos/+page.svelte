@@ -45,7 +45,7 @@
 			</p>
 		</div>
 
-		<TablaTerceros {terceros} />
+		<TablaTerceros {terceros} flotante />
 	</div>
 
 	<div class="grid">

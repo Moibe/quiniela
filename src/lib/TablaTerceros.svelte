@@ -15,11 +15,17 @@
 	};
 
 	// open: arranca desplegada (por defecto NO — se muestra solo el encabezado replegable).
-	let { terceros, open = false }: { terceros: Tercero[]; open?: boolean } = $props();
+	// flotante: al abrir, la tabla flota como popover (no empuja el contenido de abajo). Lo usa Grupos,
+	// donde va junto al título con la lista de grupos debajo; En Vivo la deja apilada en flujo normal.
+	let {
+		terceros,
+		open = false,
+		flotante = false
+	}: { terceros: Tercero[]; open?: boolean; flotante?: boolean } = $props();
 </script>
 
 {#if terceros.length}
-	<details class="terceros" {open}>
+	<details class="terceros" class:flotante {open}>
 		<summary class="t-head">
 			<span class="chevron" aria-hidden="true">▸</span>
 			<span class="t-titulo">Tabla de terceros lugares</span>
@@ -81,6 +87,31 @@
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 12px;
 		overflow: hidden;
+	}
+
+	/* Modo FLOTANTE (Grupos): al abrir, la barra (summary) se queda en su lugar y la TABLA cae como
+	   popover absoluto encima del contenido de abajo, sin empujarlo. Fondo sólido + sombra para que
+	   se lea sobre las tablas de grupo. */
+	.terceros.flotante {
+		position: relative;
+	}
+
+	.terceros.flotante[open] {
+		overflow: visible;
+	}
+
+	.terceros.flotante[open] .t-tabla {
+		position: absolute;
+		top: calc(100% + 0.4rem);
+		left: 0;
+		right: 0;
+		z-index: 30;
+		max-height: 70vh;
+		overflow: auto;
+		background: #0c2f1c;
+		border: 1px solid rgba(255, 255, 255, 0.18);
+		border-radius: 10px;
+		box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
 	}
 
 	.t-head {
