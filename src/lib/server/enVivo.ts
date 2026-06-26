@@ -42,6 +42,7 @@ export interface TerceroEnVivo {
 	dg: number;
 	pts: number;
 	clasifica: boolean; // entre los mejores 8 terceros (clasifica a 2da ronda)
+	enVivo: boolean; // su grupo tiene un partido EN CURSO (su posición puede cambiar ahora)
 }
 
 // Partido aún no jugado, para anunciar los "Próximos partidos" cuando no hay nada en vivo.
@@ -180,7 +181,7 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 			(a, b) =>
 				b.s.pts - a.s.pts || b.s.dg - a.s.dg || b.s.gf - a.s.gf || a.s.equipo.localeCompare(b.s.equipo, 'es')
 		)
-		.map(({ grupo, s }) => ({ grupo, equipo: s.equipo, pj: s.pj, dg: s.dg, pts: s.pts, clasifica: s.terceroClasifica }));
+		.map(({ grupo, s }) => ({ grupo, equipo: s.equipo, pj: s.pj, dg: s.dg, pts: s.pts, clasifica: s.terceroClasifica, enVivo: s.enVivo }));
 
 	// Próximos partidos: los DOS siguientes pendientes (sin marcador y no en curso), por número de
 	// calendario. Sirven para anunciar "Próximos partidos" cuando no hay nada en vivo.

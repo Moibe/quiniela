@@ -2,7 +2,8 @@
 	import Bandera from '$lib/Bandera.svelte';
 
 	// Un tercero de la tabla "carrera por los 8 mejores". Misma forma en Grupos (derivado) y En Vivo
-	// (TerceroEnVivo): grupo, equipo, pj, dg, pts y si está entre los 8 que clasifican.
+	// (TerceroEnVivo): grupo, equipo, pj, dg, pts, si está entre los 8 que clasifican y si su grupo
+	// aún no termina (enVivo = juega ahora mismo).
 	type Tercero = {
 		grupo: string;
 		equipo: string;
@@ -10,6 +11,7 @@
 		dg: number;
 		pts: number;
 		clasifica: boolean;
+		enVivo: boolean;
 	};
 
 	// open: arranca desplegada (por defecto NO — se muestra solo el encabezado replegable).
@@ -44,6 +46,16 @@
 							<th scope="row" class="c-eq">
 								<Bandera equipo={t.equipo} />
 								<span class="nm" translate="no">{t.equipo}</span>
+								{#if t.enVivo || t.pj < 3}
+									<span
+										class="pendiente"
+										class:jugando={t.enVivo}
+										title={t.enVivo
+											? 'Jugando ahora — su posición puede cambiar'
+											: 'Aún tiene partidos por jugar'}
+										aria-label="con partidos pendientes">⚽</span
+									>
+								{/if}
 							</th>
 							<td>{t.pj}</td>
 							<td>{t.dg > 0 ? '+' + t.dg : t.dg}</td>
@@ -157,6 +169,28 @@
 		align-items: center;
 		gap: 0.4rem;
 		min-width: 0;
+	}
+
+	/* Balón ⚽: el grupo de este tercero aún NO termina (le faltan partidos) o está jugando AHORA
+	   (.jugando → pulso suave). Avisa que su posición es provisional. */
+	.terceros .pendiente {
+		flex-shrink: 0;
+		font-size: 0.72rem;
+		line-height: 1;
+	}
+
+	.terceros .pendiente.jugando {
+		animation: balon-late 1.3s ease-in-out infinite;
+	}
+
+	@keyframes balon-late {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.3;
+		}
 	}
 
 	.terceros .c-pts {

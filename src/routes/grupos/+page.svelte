@@ -25,7 +25,8 @@
 				pj: s.pj,
 				dg: s.dg,
 				pts: s.pts,
-				clasifica: s.terceroClasifica
+				clasifica: s.terceroClasifica,
+				enVivo: s.enVivo
 			}))
 	);
 </script>
