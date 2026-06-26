@@ -178,7 +178,7 @@
 					</thead>
 					<tbody>
 						{#each terceros as t, i (t.equipo)}
-							<tr class:clasifica={t.clasifica} class:corte={i === 7}>
+							<tr class:clasifica={t.clasifica} class:primero={i === 0} class:corte={i === 7}>
 								<td class="c-pos">{i + 1}</td>
 								<td class="c-gr">{t.grupo}</td>
 								<th scope="row" class="c-eq">
@@ -597,19 +597,30 @@
 		width: 2.6rem;
 	}
 
-	/* Los 8 que clasifican: banda verde; el 8º lleva la línea de corte. */
+	/* Los 8 que clasifican: fondo verde tenue + un MARCO verde COMPLETO rodeando todo el bloque
+	   (arriba, abajo y los dos lados), no solo la "L" de la izquierda + el corte. */
 	.terceros tbody tr.clasifica {
 		background: rgba(34, 197, 94, 0.08);
 	}
 
 	.terceros tbody tr.clasifica .c-pos {
-		box-shadow: inset 3px 0 0 #4ade80;
+		border-left: 2px solid #4ade80; /* lado izquierdo */
 		color: #86efac;
 		font-weight: 700;
 	}
 
-	.terceros tbody tr.corte {
-		border-bottom: 2px solid rgba(74, 222, 128, 0.55);
+	.terceros tbody tr.clasifica .c-qlf {
+		border-right: 2px solid #4ade80; /* lado derecho */
+	}
+
+	.terceros tbody tr.primero td,
+	.terceros tbody tr.primero th {
+		border-top: 2px solid #4ade80; /* borde superior (sobre el 1º) */
+	}
+
+	.terceros tbody tr.corte td,
+	.terceros tbody tr.corte th {
+		border-bottom: 2px solid #4ade80; /* borde inferior (bajo el 8º) */
 	}
 
 	.terceros .qlf {
