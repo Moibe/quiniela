@@ -63,14 +63,6 @@
       <span>Participantes</span>
     </a>
     <a
-      href="/partidos"
-      class="nav-item"
-      aria-current={page.url.pathname === '/partidos' ? 'page' : undefined}
-    >
-      <Newspaper size={16} strokeWidth={2.2} aria-hidden="true" />
-      <span>Partidos</span>
-    </a>
-    <a
       href="/lugares"
       class="nav-item"
       aria-current={page.url.pathname === '/lugares' ? 'page' : undefined}
@@ -85,6 +77,14 @@
     >
       <ChartPie size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Estadísticas</span>
+    </a>
+    <a
+      href="/partidos"
+      class="nav-item"
+      aria-current={page.url.pathname === '/partidos' ? 'page' : undefined}
+    >
+      <Newspaper size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Partidos</span>
     </a>
     <a
       href="/grupos"
