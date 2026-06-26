@@ -86,8 +86,9 @@
 		</p>
 	</div>
 
-	<!-- Banners destacados (sube/baja). En desktop van aquí, bajo el subtítulo; en móvil se mandan
-	     al FINAL de la lista vía `order` (ver media query). -->
+	<!-- Banners destacados (sube/baja). Van al FINAL de la lista (debajo de las tablas) tanto en web
+	     como en móvil, vía `order: 10` en el flex column .posiciones. Aquí en el DOM van arriba, pero
+	     el `order` los reordena al fondo visualmente. -->
 	{#if masSubio || masBajo}
 		<div class="destacados">
 			{#if masSubio}
@@ -139,15 +140,16 @@
 		color: rgba(255, 255, 255, 0.65);
 	}
 
-	/* Contenedor de los banners destacados. En web van EN LÍNEA (lado a lado, centrados); en móvil se
-	   apilan (ver media query). */
+	/* Contenedor de los banners destacados, mandados al FINAL de la lista (order:10) en web y móvil.
+	   En web van EN LÍNEA (lado a lado, centrados); en móvil se apilan (ver media query). */
 	.destacados {
+		order: 10;
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: center;
 		align-items: center;
 		gap: 0.6rem;
-		margin: 0 0 1rem;
+		margin: 1rem 0 0;
 	}
 
 	/* Línea destacada (en un marco brilloso): quién subió/bajó más lugares con el último resultado. */
@@ -245,9 +247,8 @@
 		.cols-mobile {
 			display: block;
 		}
-		/* Móvil: los banners destacados se van al FINAL (debajo de la lista). */
+		/* Móvil: los banners se apilan en columna (ya van al final por el order base). */
 		.destacados {
-			order: 10;
 			flex-direction: column;
 			margin: 0.6rem 0 0;
 		}
