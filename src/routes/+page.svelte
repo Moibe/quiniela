@@ -11,7 +11,10 @@
 	//  • 1 clic     → resalta / quita el resalte de la columna (color, no se mueve).
 	//  • doble clic → fija / suelta la columna (sticky) para recorrer las demás.
 	// Un temporizador corto distingue el clic simple del doble.
-	let highlighted = $state<number | null>(null);
+	// VARIAS columnas resaltadas a la vez (toggle por clic). El "fijar" (doble clic) sigue siendo de
+	// UNA sola columna: la pega a la izquierda para comparar mientras recorres las demás, y dos pegadas
+	// al mismo borde se encimarían (cada una necesitaría su propio offset).
+	let highlighted = $state<Set<number>>(new Set());
 	let pinned = $state<number | null>(null);
 	let clickTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -24,7 +27,10 @@
 		}
 		clickTimer = setTimeout(() => {
 			clickTimer = null;
-			highlighted = highlighted === i ? null : i;
+			const next = new Set(highlighted);
+			if (next.has(i)) next.delete(i);
+			else next.add(i);
+			highlighted = next;
 		}, 250);
 	}
 
@@ -36,9 +42,14 @@
 		pinned = pinned === i ? null : i;
 	}
 
-	// Marcar/desmarcar una FILA (partido) con un clic en su identidad (# o equipos).
-	let filaMarcada = $state<number | null>(null);
-	const toggleFila = (n: number) => (filaMarcada = filaMarcada === n ? null : n);
+	// Marcar/desmarcar VARIAS FILAS (partidos) con un clic en su identidad (# o equipos).
+	let filaMarcada = $state<Set<number>>(new Set());
+	function toggleFila(n: number) {
+		const next = new Set(filaMarcada);
+		if (next.has(n)) next.delete(n);
+		else next.add(n);
+		filaMarcada = next;
+	}
 
 	// Auto-enfoque al entrar: lleva a la vista la fila del partido actual/más reciente.
 	// rAF: espera al layout tras la hidratación (el scroll vive en .table-wrap, no en la ventana).
@@ -62,8 +73,8 @@
 			<span class="leg"><span class="sw sw-exa"></span> Marcador exacto · 3 pts</span>
 		</div>
 		<p class="hint">
-			💡 Clic en un participante resalta su columna (doble clic la fija) · clic en un partido (# o
-			equipos) marca su fila.
+			💡 Clic en participantes resalta sus columnas (varias a la vez; doble clic fija una) · clic en un partido (# o
+			equipos) marca sus filas (varias a la vez).
 		</p>
 	</div>
 
@@ -102,7 +113,7 @@
 							scope="col"
 							class="col-p notranslate"
 							translate="no"
-							class:highlighted={highlighted === i}
+							class:highlighted={highlighted.has(i)}
 							class:pinned={pinned === i}
 							title="1 clic resalta · doble clic fija/suelta"
 							onclick={() => onColClick(i)}
@@ -117,7 +128,7 @@
 					<tr
 						class:jugado={r.jugado}
 						class:encurso={r.enCurso}
-						class:fila-marcada={filaMarcada === r.numero}
+						class:fila-marcada={filaMarcada.has(r.numero)}
 						use:scrollSiFoco={r.numero === data.focoNumero}
 					>
 						<th
@@ -145,7 +156,7 @@
 						{#each r.pronos as cell, i (i)}
 							<td
 								class="prono"
-								class:highlighted={highlighted === i}
+								class:highlighted={highlighted.has(i)}
 								class:pinned={pinned === i}
 								class:hit-resultado={cell.hit === 1}
 								class:hit-exacto={cell.hit === 2}>{cell.s}</td
