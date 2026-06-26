@@ -225,7 +225,7 @@
 		margin: 0 0 1.25rem;
 		font-size: 0.85rem;
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.6);
+		color: #fff;
 	}
 
 	.list {
