@@ -320,7 +320,7 @@
 		margin: 0.2rem 0 1rem;
 		font-size: 0.85rem;
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.65);
+		color: #fff;
 	}
 
 	/* Las dos tarjetas, lado a lado (envuelven en móvil). */
