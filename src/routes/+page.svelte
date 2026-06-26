@@ -222,7 +222,7 @@
 		margin: 0 0 0.4rem;
 		font-size: 0.85rem;
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.7);
+		color: #fff;
 	}
 
 	/* Leyenda de colores: explica el guinda que ilumina la cuadrícula. */
