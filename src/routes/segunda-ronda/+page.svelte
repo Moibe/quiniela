@@ -23,16 +23,13 @@
 		[86, 88], // R16 95  ┐ QF 100┘
 		[85, 87] //  R16 96  ┘
 	];
-	const pares = $derived.by(() => {
-		const byNum = new Map(data.cruces.map((c) => [c.numero, c]));
-		const out: (typeof data.cruces)[] = [];
-		for (const [n1, n2] of PARES_OFICIALES) {
-			const a = byNum.get(n1);
-			const b = byNum.get(n2);
-			if (a && b) out.push([a, b]);
-		}
-		return out;
-	});
+	// Orden de los 16avos en cada mitad del bracket (aplanando los pares). Emparejar consecutivos en
+	// este orden reproduce TODO el cuadro: 16avos → octavos → cuartos → semis → final (centro).
+	const porNum = $derived(new Map(data.cruces.map((c) => [c.numero, c])));
+	const aCruces = (ps: number[][]) =>
+		ps.flat().map((n) => porNum.get(n)).filter((c): c is (typeof data.cruces)[number] => !!c);
+	const izq = $derived(aCruces(PARES_OFICIALES.slice(0, 4)));
+	const der = $derived(aCruces(PARES_OFICIALES.slice(4, 8)));
 </script>
 
 <section class="segunda">
@@ -88,22 +85,22 @@
 
 	{#if data.cruces.length}
 		<div class="bracket">
-			<div class="col izq">
-				{#each pares.slice(0, 4) as par (par[0].numero)}
-					<div class="par">
-						{@render matchBox(par[0])}
-						{@render matchBox(par[1])}
-					</div>
-				{/each}
+			<div class="lado izq">
+				<div class="ronda r32">
+					{#each izq as c (c.numero)}<div class="cell">{@render matchBox(c)}</div>{/each}
+				</div>
+				<div class="ronda con">{#each [0, 1, 2, 3] as i (i)}<div class="cell"></div>{/each}</div>
+				<div class="ronda con">{#each [0, 1] as i (i)}<div class="cell"></div>{/each}</div>
+				<div class="ronda con fin">{#each [0] as i (i)}<div class="cell"></div>{/each}</div>
 			</div>
 			<div class="centro" aria-hidden="true"><span class="trofeo">🏆</span></div>
-			<div class="col der">
-				{#each pares.slice(4, 8) as par (par[0].numero)}
-					<div class="par">
-						{@render matchBox(par[0])}
-						{@render matchBox(par[1])}
-					</div>
-				{/each}
+			<div class="lado der">
+				<div class="ronda con fin">{#each [0] as i (i)}<div class="cell"></div>{/each}</div>
+				<div class="ronda con">{#each [0, 1] as i (i)}<div class="cell"></div>{/each}</div>
+				<div class="ronda con">{#each [0, 1, 2, 3] as i (i)}<div class="cell"></div>{/each}</div>
+				<div class="ronda r32">
+					{#each der as c (c.numero)}<div class="cell">{@render matchBox(c)}</div>{/each}
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -163,51 +160,84 @@
 		max-width: 60rem;
 	}
 
-	/* Bracket de dieciseisavos: dos mitades (8 llaves c/u) que pliegan hacia el centro. */
+	/* Bracket COMPLETO: dos mitades en rondas (16avos → octavos → cuartos → semis) que convergen al
+	   centro (la copa). Las rondas intermedias son columnas VACÍAS: solo aportan los puntos de unión y
+	   las "patitas". Las celdas usan flex:1 para que sus centros se alineen entre rondas (8→4→2→1), así
+	   los conectores caen justo en cada cruce. */
 	.bracket {
+		--linea: rgba(34, 197, 94, 0.55);
+		--gap: 1.15rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 1.6rem;
 		overflow-x: auto;
 		padding-bottom: 0.5rem;
 	}
 
-	.col {
+	.lado {
 		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		gap: 1.7rem;
+		align-items: stretch;
+		gap: var(--gap);
 	}
 
-	.par {
+	.ronda {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.ronda .cell {
+		flex: 1 1 0;
+		display: flex;
+		align-items: center;
 		position: relative;
-		display: flex;
-		flex-direction: column;
-		gap: 0.55rem;
 	}
 
-	/* Conector de bracket: une las 2 llaves del par y apunta hacia el centro. */
-	.col.izq .par::after,
-	.col.der .par::after {
+	/* La columna de 16avos define la altura (y el espaciado) del bracket. */
+	.ronda.r32 .cell {
+		min-height: 4rem;
+	}
+
+	/* Conectores ("patitas"): cada celda de ronda intermedia dibuja la llave entrante (vertical + 2
+	   brazos) hacia sus dos alimentadoras de la ronda previa. Izquierda mira a la izquierda; la mitad
+	   derecha, reflejada, mira a la derecha. */
+	.lado.izq .ronda.con .cell::before {
 		content: '';
 		position: absolute;
+		right: 100%;
 		top: 25%;
 		bottom: 25%;
-		width: 0.7rem;
-		border: 2px solid rgba(34, 197, 94, 0.45);
+		width: var(--gap);
+		border-right: 2px solid var(--linea);
+		border-top: 2px solid var(--linea);
+		border-bottom: 2px solid var(--linea);
 	}
 
-	.col.izq .par::after {
-		right: -0.85rem;
-		border-left: 0;
-		border-radius: 0 7px 7px 0;
+	.lado.der .ronda.con .cell::before {
+		content: '';
+		position: absolute;
+		left: 100%;
+		top: 25%;
+		bottom: 25%;
+		width: var(--gap);
+		border-left: 2px solid var(--linea);
+		border-top: 2px solid var(--linea);
+		border-bottom: 2px solid var(--linea);
 	}
 
-	.col.der .par::after {
-		left: -0.85rem;
-		border-right: 0;
-		border-radius: 7px 0 0 7px;
+	/* Tramo final: de la semifinal de cada lado a la copa (centro). */
+	.lado.izq .ronda.fin .cell::after,
+	.lado.der .ronda.fin .cell::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		width: calc(var(--gap) + 0.3rem);
+		border-top: 2px solid var(--linea);
+	}
+	.lado.izq .ronda.fin .cell::after {
+		left: 100%;
+	}
+	.lado.der .ronda.fin .cell::after {
+		right: 100%;
 	}
 
 	.centro {
@@ -215,8 +245,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 1.9rem;
-		filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.4));
+		font-size: 2rem;
+		filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.45));
 	}
 
 	.match {
@@ -267,42 +297,48 @@
 		white-space: nowrap;
 	}
 
-	/* Mitad derecha: reflejada (bandera a la derecha, etiqueta hacia el centro). */
-	.col.der .team {
+	/* Mitad derecha: 16avos reflejados (bandera a la derecha, etiqueta hacia el centro). */
+	.lado.der .ronda.r32 .team {
 		flex-direction: row-reverse;
 	}
 
-	.col.der .team .org {
+	.lado.der .ronda.r32 .team .org {
 		margin-left: 0;
 		margin-right: auto;
 	}
 
-	.col.der .mnum {
+	.lado.der .ronda.r32 .mnum {
 		right: auto;
 		left: 0.45rem;
 	}
 
-	/* Móvil/angosto: sin bracket; una sola columna de llaves. */
-	@media (max-width: 820px) {
+	/* Móvil/angosto: sin árbol; las llaves en una columna simple (se ocultan rondas vacías y patitas). */
+	@media (max-width: 920px) {
 		.bracket {
 			flex-direction: column;
 			align-items: stretch;
+			gap: 0.5rem;
 		}
-		.col {
-			gap: 0.55rem;
+		.lado {
+			flex-direction: column;
+			gap: 0.5rem;
 		}
-		.par::after,
+		.ronda.con,
 		.centro {
 			display: none;
 		}
-		.col.der .team {
+		.ronda.r32 .cell {
+			min-height: 0;
+			margin-bottom: 0.5rem;
+		}
+		.lado.der .ronda.r32 .team {
 			flex-direction: row;
 		}
-		.col.der .team .org {
+		.lado.der .ronda.r32 .team .org {
 			margin-left: auto;
 			margin-right: 0;
 		}
-		.col.der .mnum {
+		.lado.der .ronda.r32 .mnum {
 			right: 0.45rem;
 			left: auto;
 		}
