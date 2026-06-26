@@ -61,6 +61,7 @@ export interface EnVivo {
 
 const FRESCO_MS = 45_000; // refrescado hace menos ⇒ en vivo
 const FIN_MS = 30 * 60_000; // partido terminado (runner vivo): se conserva 30 min y luego se quita
+const FIN_MANUAL_MS = 10 * 60_000; // final capturado A MANO: se queda "Finalizado" 10 min y luego se quita
 const CADUCA_MS = 2 * 60 * 60_000; // monitor caído: "desconectado" hasta 2h (cubre un partido completo)
 
 export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
@@ -122,11 +123,11 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 			overlay.set(p.id, { golesA: mon!.golesA, golesB: mon!.golesB, enCurso: false }); // cuenta, sin pulso
 		} else if (
 			!p.enCurso && !p.autoMonitor && p.golesA !== null && p.golesB !== null &&
-			!!p.fecha && ahora - p.fecha.getTime() < FIN_MS
+			!!p.fecha && ahora - p.fecha.getTime() < FIN_MANUAL_MS
 		) {
-			// Resultado FINAL capturado A MANO hace poco: se queda como "Finalizado" un rato (igual que
-			// los del monitor), en vez de desaparecer en el instante en que se marca el final. Su marcador
-			// ya está en la BD, así que no necesita overlay para las tablas.
+			// Resultado FINAL capturado A MANO hace poco: se queda como "Finalizado" 10 min, en vez de
+			// desaparecer en el instante en que se marca el final. Su marcador ya está en la BD, así que
+			// no necesita overlay para las tablas.
 			enCurso.push({
 				numero: p.numero, equipoA: p.equipoA, equipoB: p.equipoB,
 				golesA: p.golesA, golesB: p.golesB, fuente: 'manual',
