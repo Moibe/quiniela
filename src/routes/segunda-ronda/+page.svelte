@@ -6,13 +6,8 @@
 
 	let { data }: { data: PageData } = $props();
 
-	function elegir(e: Event) {
-		const v = (e.currentTarget as HTMLSelectElement).value;
-		goto(`?p=${v}`, { keepFocus: true, noScroll: true });
-	}
-
-	// Opciones del selector EN ORDEN (igual que el dropdown): "real" + cada participante. Las flechas
-	// ‹ › saltan al anterior/siguiente y dan la vuelta (cíclico) para recorrerlos todos sin tope.
+	// Opciones de navegación EN ORDEN: "real" + cada participante. Las flechas ‹ › saltan al
+	// anterior/siguiente y dan la vuelta (cíclico) para recorrerlos todos sin tope.
 	const opciones = $derived(['real', ...data.participantes.map((p) => String(p.id))]);
 	function mover(delta: number) {
 		const n = opciones.length;
@@ -50,11 +45,11 @@
 <section class="segunda">
 	<div class="head">
 		<div class="sel-row">
-			<label class="sel-label" for="part">
+			<span class="sel-label">
 				{data.esReal
 					? 'Segunda Ronda según los resultados reales hasta ahora'
 					: 'Proyección de Posible 2da Ronda basado en los resultados de: '}
-			</label>
+			</span>
 			<div class="sel-group">
 				{#if !data.esReal}
 					<span class="aciertos-pill">{totalAciertos} {totalAciertos === 1 ? 'Acierto' : 'Aciertos'}</span>
@@ -68,19 +63,14 @@
 				>
 					<ChevronLeft size={18} strokeWidth={2.6} aria-hidden="true" />
 				</button>
-				<select
-					id="part"
-					class="sel notranslate"
+				<span
+					class="sel-actual notranslate"
 					class:acierto-sel={!data.esReal}
-					value={data.selectedKey}
-					onchange={elegir}
 					translate="no"
+					aria-live="polite"
 				>
-					<option value="real">⚽ Real</option>
-					{#each data.participantes as p (p.id)}
-						<option value={String(p.id)}>{p.nombre}</option>
-					{/each}
-				</select>
+					{data.esReal ? '⚽ Real' : data.selectedNombre}
+				</span>
 				<button
 					type="button"
 					class="sel-nav"
@@ -167,9 +157,9 @@
 		gap: 0.4rem;
 	}
 
-	/* En vista de participante, el dropdown va enmarcado en DORADO (mismo formato que los cruces
+	/* En vista de participante, el nombre va enmarcado en DORADO (mismo formato que los cruces
 	   acertados) con una pastilla "X Aciertos" encima. */
-	.sel.acierto-sel {
+	.sel-actual.acierto-sel {
 		border-color: rgba(250, 204, 21, 0.85);
 		box-shadow:
 			0 0 0 1px rgba(250, 204, 21, 0.4),
@@ -220,7 +210,13 @@
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 	}
 
-	.sel {
+	/* Nombre del participante (o "Real") actual, mostrado como texto fijo entre las flechas (ya no es
+	   un dropdown). min-width para que no salte de ancho al cambiar de nombre. */
+	.sel-actual {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 7rem;
 		font: inherit;
 		font-weight: 700;
 		font-size: 0.95rem;
@@ -228,22 +224,7 @@
 		background: rgba(255, 255, 255, 0.08);
 		border: 1px solid rgba(255, 255, 255, 0.25);
 		border-radius: 8px;
-		padding: 0.3rem 0.6rem;
-		color-scheme: dark;
-		cursor: pointer;
-	}
-
-	.sel:focus {
-		outline: none;
-		border-color: rgba(34, 197, 94, 0.6);
-		box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
-	}
-
-	/* Sin esto, las opciones heredan el texto blanco del select sobre el fondo
-	   blanco del menú nativo y se ven en blanco (invisibles). Fondo oscuro. */
-	.sel option {
-		background: #0a2a19;
-		color: #fff;
+		padding: 0.3rem 0.7rem;
 	}
 
 	/* Bracket COMPLETO: dos mitades en rondas (16avos → octavos → cuartos → semis) que convergen al
