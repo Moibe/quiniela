@@ -23,9 +23,19 @@ export const load: PageServerLoad = async ({ url }) => {
 	const participante =
 		pParam && pParam !== 'real' ? (parts.find((p) => p.id === Number(pParam)) ?? null) : null;
 
+	// Cuadro REAL (hasta ahora). En la vista de un participante, además comparamos su cuadro contra el
+	// real para marcar los cruces ACERTADOS (mismo enfrentamiento exacto en esa llave).
+	const reales = computeBracketReal(mats);
 	const cruces = participante
-		? computeBracket(mats, pros, participante.id)
-		: computeBracketReal(mats);
+		? (() => {
+				const realPorNum = new Map(reales.map((c) => [c.numero, c]));
+				return computeBracket(mats, pros, participante.id).map((c) => {
+					const r = realPorNum.get(c.numero);
+					const acierto = !!r && r.a.equipo === c.a.equipo && r.b.equipo === c.b.equipo;
+					return { ...c, acierto };
+				});
+			})()
+		: reales.map((c) => ({ ...c, acierto: false }));
 
 	return {
 		participantes: parts.map((p) => ({ id: p.id, nombre: p.nombre })),

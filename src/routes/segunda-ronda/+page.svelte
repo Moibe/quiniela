@@ -68,8 +68,13 @@
 	</div>
 
 	{#snippet matchBox(c: (typeof data.cruces)[number])}
-		<div class="match" class:confirmado={data.esReal && c.confirmado}>
+		<div
+			class="match"
+			class:confirmado={data.esReal && c.confirmado}
+			class:acierto={!data.esReal && c.acierto}
+		>
 			<span class="mnum">#{c.numero}</span>
+			{#if !data.esReal && c.acierto}<span class="acierto-tag">✓ Acierto</span>{/if}
 			<span class="team">
 				<Bandera equipo={c.a.equipo} />
 				<span class="nm notranslate" translate="no" title={c.a.equipo}>{c.a.equipo}</span>
@@ -269,12 +274,32 @@
 		border-radius: 8px;
 	}
 
-	/* Cruce CONFIRMADO (ya no puede cambiar): marco DORADO + brillo suave. Solo en la vista Real. */
-	.match.confirmado {
+	/* Marco DORADO + brillo: cruce CONFIRMADO (vista Real, ya no puede cambiar) o ACERTADO (vista de un
+	   participante: su cruce coincide exacto con el real). */
+	.match.confirmado,
+	.match.acierto {
 		border-color: rgba(250, 204, 21, 0.85);
 		box-shadow:
 			0 0 0 1px rgba(250, 204, 21, 0.4),
 			0 0 12px rgba(250, 204, 21, 0.3);
+	}
+
+	/* Etiqueta "Acierto" del cruce que coincide con el real (sobre el borde superior de la caja). */
+	.acierto-tag {
+		position: absolute;
+		top: -0.6rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 4;
+		padding: 0.05rem 0.4rem;
+		font-size: 0.55rem;
+		font-weight: 800;
+		letter-spacing: 0.03em;
+		white-space: nowrap;
+		color: #422006;
+		background: #facc15;
+		border-radius: 999px;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 	}
 
 	/* Número de partido (#73…): al borde EXTERIOR (izquierda en la mitad izquierda; derecha en la
