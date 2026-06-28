@@ -248,6 +248,10 @@
 		justify-content: center;
 		font-size: 2rem;
 		filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.45));
+		/* La copa va ENCIMA de las patitas: los conectores son pseudo-elementos posicionados que, sin
+		   esto, se pintan sobre la copa. position+z-index la dejan al frente. */
+		position: relative;
+		z-index: 3;
 	}
 
 	.match {
