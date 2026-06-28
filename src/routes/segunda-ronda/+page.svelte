@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import Bandera from '$lib/Bandera.svelte';
 	import type { PageData } from './$types';
 
@@ -8,6 +9,17 @@
 	function elegir(e: Event) {
 		const v = (e.currentTarget as HTMLSelectElement).value;
 		goto(`?p=${v}`, { keepFocus: true, noScroll: true });
+	}
+
+	// Opciones del selector EN ORDEN (igual que el dropdown): "real" + cada participante. Las flechas
+	// ‹ › saltan al anterior/siguiente y dan la vuelta (cíclico) para recorrerlos todos sin tope.
+	const opciones = $derived(['real', ...data.participantes.map((p) => String(p.id))]);
+	function mover(delta: number) {
+		const n = opciones.length;
+		if (!n) return;
+		const i = opciones.indexOf(data.selectedKey);
+		const next = ((i < 0 ? 0 : i) + delta + n) % n;
+		goto(`?p=${opciones[next]}`, { keepFocus: true, noScroll: true });
 	}
 
 	// Emparejado OFICIAL del cuadro FIFA 2026: qué dieciseisavos (73-88) se cruzan en octavos. Cada par
@@ -40,12 +52,32 @@
 					? 'Segunda Ronda según los resultados reales hasta ahora'
 					: 'Proyección de Posible 2da Ronda basado en los resultados de: '}
 			</label>
-			<select id="part" class="sel notranslate" value={data.selectedKey} onchange={elegir} translate="no">
-				<option value="real">⚽ Real</option>
-				{#each data.participantes as p (p.id)}
-					<option value={String(p.id)}>{p.nombre}</option>
-				{/each}
-			</select>
+			<div class="sel-group">
+				<button
+					type="button"
+					class="sel-nav"
+					onclick={() => mover(-1)}
+					aria-label="Participante anterior"
+					title="Anterior"
+				>
+					<ChevronLeft size={18} strokeWidth={2.6} aria-hidden="true" />
+				</button>
+				<select id="part" class="sel notranslate" value={data.selectedKey} onchange={elegir} translate="no">
+					<option value="real">⚽ Real</option>
+					{#each data.participantes as p (p.id)}
+						<option value={String(p.id)}>{p.nombre}</option>
+					{/each}
+				</select>
+				<button
+					type="button"
+					class="sel-nav"
+					onclick={() => mover(1)}
+					aria-label="Participante siguiente"
+					title="Siguiente"
+				>
+					<ChevronRight size={18} strokeWidth={2.6} aria-hidden="true" />
+				</button>
+			</div>
 		</div>
 		{#if data.esReal}
 			<p class="sub">
@@ -130,6 +162,39 @@
 	.sel-label {
 		font-size: 0.95rem;
 		font-weight: 700;
+	}
+
+	/* Selector + flechas ‹ › para saltar entre participantes. */
+	.sel-group {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.sel-nav {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.28rem;
+		color: #fff;
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		border-radius: 8px;
+		cursor: pointer;
+		transition:
+			background 0.18s ease,
+			border-color 0.18s ease;
+	}
+
+	.sel-nav:hover {
+		background: rgba(255, 255, 255, 0.16);
+		border-color: rgba(34, 197, 94, 0.6);
+	}
+
+	.sel-nav:focus-visible {
+		outline: none;
+		border-color: rgba(34, 197, 94, 0.6);
+		box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
 	}
 
 	.sel {
