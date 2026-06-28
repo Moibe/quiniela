@@ -60,14 +60,76 @@ const GRUPO_OFICIAL: Record<string, string> = {
 // Partido jugado ENTRE dos equipos del mismo grupo (para el desempate head-to-head).
 type GM = { a: string; b: string; ga: number; gb: number };
 
-// Desempate OFICIAL del Mundial 2026 DENTRO de un grupo. Para equipos empatados en PUNTOS, la FIFA
-// aplica primero el "head-to-head" (puntos, dif. de goles y goles SOLO en los partidos entre los
-// equipos empatados) y SOLO después la dif. de goles y goles GENERALES. El fair-play y el ranking
-// FIFA (criterios finales) no están en la base, así que como último recurso se ordena por nombre
-// (determinista). `matches` = los partidos jugados entre equipos de ESTE grupo.
-//   Orden: puntos → h2h(pts, dg, gf) → dg general → gf general → nombre.
+// Mini-tabla head-to-head (pts/dg/gf) de un conjunto de equipos, contando SOLO los partidos jugados
+// entre ellos.
+function h2hMini(teams: EquipoStanding[], matches: GM[]): Map<string, { pts: number; dg: number; gf: number }> {
+	const set = new Set(teams.map((e) => e.equipo));
+	const h = new Map(teams.map((e) => [e.equipo, { pts: 0, dg: 0, gf: 0 }]));
+	for (const m of matches) {
+		if (!set.has(m.a) || !set.has(m.b)) continue;
+		const A = h.get(m.a)!;
+		const B = h.get(m.b)!;
+		A.gf += m.ga;
+		B.gf += m.gb;
+		A.dg += m.ga - m.gb;
+		B.dg += m.gb - m.ga;
+		if (m.ga > m.gb) A.pts += 3;
+		else if (m.ga < m.gb) B.pts += 3;
+		else {
+			A.pts += 1;
+			B.pts += 1;
+		}
+	}
+	return h;
+}
+
+// Desempata equipos EMPATADOS EN PUNTOS con la regla oficial FIFA: head-to-head (pts, dif. de goles
+// y goles SOLO entre ellos). Si tras el head-to-head un SUBCONJUNTO sigue empatado, la regla se
+// RE-APLICA solo entre esos equipos (recursivo: para 2 equipos eso es su partido directo). Cuando ya
+// no se puede separar por head-to-head, se cae a dif. de goles general → goles general → nombre (el
+// fair-play y el ranking FIFA no están en la base; el nombre es el último recurso determinista).
+function desempatar(teams: EquipoStanding[], matches: GM[]): EquipoStanding[] {
+	if (teams.length <= 1) return [...teams];
+	const h = h2hMini(teams, matches);
+	const ordenados = [...teams].sort((x, y) => {
+		const hx = h.get(x.equipo)!;
+		const hy = h.get(y.equipo)!;
+		return hy.pts - hx.pts || hy.dg - hx.dg || hy.gf - hx.gf;
+	});
+	// Agrupa en corridas con los MISMOS valores head-to-head (pts/dg/gf).
+	const corridas: EquipoStanding[][] = [];
+	for (const e of ordenados) {
+		const he = h.get(e.equipo)!;
+		const ult = corridas[corridas.length - 1];
+		const hu = ult ? h.get(ult[0].equipo)! : null;
+		if (hu && hu.pts === he.pts && hu.dg === he.dg && hu.gf === he.gf) ult!.push(e);
+		else corridas.push([e]);
+	}
+
+	const out: EquipoStanding[] = [];
+	for (const corrida of corridas) {
+		if (corrida.length === 1) {
+			out.push(corrida[0]);
+		} else if (corrida.length < teams.length) {
+			// El head-to-head separó parte del bloque: re-aplícalo SOLO entre los que siguen empatados.
+			out.push(...desempatar(corrida, matches));
+		} else {
+			// No se pudo separar por head-to-head (todos iguales entre sí): dg general → gf → nombre.
+			out.push(
+				...[...corrida].sort(
+					(x, y) => y.dg - x.dg || y.gf - x.gf || x.equipo.localeCompare(y.equipo, 'es')
+				)
+			);
+		}
+	}
+	return out;
+}
+
+// Orden oficial FIFA 2026 dentro de un grupo: por puntos (desc) y, para cada bloque de equipos con
+// los mismos puntos, el desempate head-to-head (recursivo). `matches` = los partidos jugados de ESTE
+// grupo. Orden: puntos → h2h(pts, dg, gf) [re-aplicado al subconjunto que siga empatado] → dg
+// general → gf general → nombre.
 function ordenarGrupoFIFA(equipos: EquipoStanding[], matches: GM[]): EquipoStanding[] {
-	// Por puntos (desc) y se agrupan los que quedan EMPATADOS en puntos.
 	const porPuntos = [...equipos].sort((a, b) => b.pts - a.pts);
 	const bloques: EquipoStanding[][] = [];
 	for (const e of porPuntos) {
@@ -75,46 +137,7 @@ function ordenarGrupoFIFA(equipos: EquipoStanding[], matches: GM[]): EquipoStand
 		if (ult && ult[0].pts === e.pts) ult.push(e);
 		else bloques.push([e]);
 	}
-
-	const orden: EquipoStanding[] = [];
-	for (const bloque of bloques) {
-		if (bloque.length === 1) {
-			orden.push(bloque[0]);
-			continue;
-		}
-		// Mini-tabla head-to-head: SOLO los partidos entre los equipos empatados.
-		const set = new Set(bloque.map((e) => e.equipo));
-		const h2h = new Map(bloque.map((e) => [e.equipo, { pts: 0, dg: 0, gf: 0 }]));
-		for (const m of matches) {
-			if (!set.has(m.a) || !set.has(m.b)) continue;
-			const A = h2h.get(m.a)!;
-			const B = h2h.get(m.b)!;
-			A.gf += m.ga;
-			B.gf += m.gb;
-			A.dg += m.ga - m.gb;
-			B.dg += m.gb - m.ga;
-			if (m.ga > m.gb) A.pts += 3;
-			else if (m.ga < m.gb) B.pts += 3;
-			else {
-				A.pts += 1;
-				B.pts += 1;
-			}
-		}
-		bloque.sort((x, y) => {
-			const hx = h2h.get(x.equipo)!;
-			const hy = h2h.get(y.equipo)!;
-			return (
-				hy.pts - hx.pts ||
-				hy.dg - hx.dg ||
-				hy.gf - hx.gf ||
-				y.dg - x.dg ||
-				y.gf - x.gf ||
-				x.equipo.localeCompare(y.equipo, 'es')
-			);
-		});
-		orden.push(...bloque);
-	}
-	return orden;
+	return bloques.flatMap((bloque) => desempatar(bloque, matches));
 }
 
 export function computeGrupos(partidos: PartidoIn[]): Grupo[] {
