@@ -106,7 +106,6 @@
 	{/snippet}
 
 	{#if data.cruces.length}
-		<p class="swipe-hint" aria-hidden="true">Desliza el cuadro →</p>
 		<div class="bracket">
 			<div class="lado izq">
 				<div class="ronda r32">
@@ -126,6 +125,7 @@
 				</div>
 			</div>
 		</div>
+		<p class="swipe-hint" aria-hidden="true">Desliza el cuadro o acuesta el teléfono para ver mejor</p>
 	{/if}
 </section>
 
@@ -430,9 +430,21 @@
 		padding-right: 1.7rem;
 	}
 
-	/* Pista "desliza" (solo móvil; la regla base la oculta para no tocar el desktop). */
+	/* Pista "desliza / acuesta el teléfono": SOLO en móvil VERTICAL (en horizontal el cuadro ya cabe
+	   centrado, no hace falta). Va DEBAJO del cuadro y discreta. La regla base la oculta. */
 	.swipe-hint {
 		display: none;
+	}
+
+	@media (max-width: 920px) and (orientation: portrait) {
+		.swipe-hint {
+			display: block;
+			margin: 0.6rem auto 0;
+			text-align: center;
+			font-size: 0.68rem;
+			font-weight: 400;
+			color: rgba(255, 255, 255, 0.5);
+		}
 	}
 
 	/* Móvil/angosto: se CONSERVA el árbol completo (misma topología, conectores y copa); solo el
@@ -440,21 +452,6 @@
 	   que sin altura definida colapsaban a 0 y encimaban los 16 partidos. Aquí mantenemos la FILA y el
 	   min-height de las celdas, y el árbol toma su ancho natural para que overflow-x sí desplace. */
 	@media (max-width: 920px) {
-		.swipe-hint {
-			display: flex;
-			align-items: center;
-			gap: 0.35rem;
-			width: max-content;
-			margin: 0 0 0.5rem;
-			padding: 0.2rem 0.65rem;
-			font-size: 0.72rem;
-			font-weight: 700;
-			color: #86efac;
-			background: rgba(34, 197, 94, 0.12);
-			border: 1px solid rgba(34, 197, 94, 0.35);
-			border-radius: 999px;
-			animation: swipeNudge 1.8s ease-in-out infinite;
-		}
 		.bracket {
 			--gap: 0.55rem;
 			flex-direction: row;
@@ -504,19 +501,4 @@
 		}
 	}
 
-	@keyframes swipeNudge {
-		0%,
-		100% {
-			transform: translateX(0);
-		}
-		50% {
-			transform: translateX(4px);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.swipe-hint {
-			animation: none;
-		}
-	}
 </style>
