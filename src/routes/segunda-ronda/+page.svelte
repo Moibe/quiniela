@@ -459,7 +459,10 @@
 			--gap: 0.55rem;
 			flex-direction: row;
 			align-items: center;
-			justify-content: flex-start;
+			/* CENTRA el árbol cuando cabe (pantalla acostada / horizontal) y se alinea al INICIO —
+			   scrolleable, sin recortar el #73— cuando se desborda (vertical). `safe` evita el bug de
+			   flexbox que dejaría el inicio inalcanzable al centrar con overflow. */
+			justify-content: safe center;
 			overflow-x: auto;
 			overflow-y: hidden;
 			-webkit-overflow-scrolling: touch;
