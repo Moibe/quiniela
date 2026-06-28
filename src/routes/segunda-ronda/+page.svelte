@@ -42,6 +42,9 @@
 		ps.flat().map((n) => porNum.get(n)).filter((c): c is (typeof data.cruces)[number] => !!c);
 	const izq = $derived(aCruces(PARES_OFICIALES.slice(0, 4)));
 	const der = $derived(aCruces(PARES_OFICIALES.slice(4, 8)));
+
+	// Cuántos cruces del cuadro de este participante coinciden EXACTO con el real (aciertos).
+	const totalAciertos = $derived(data.cruces.filter((c) => c.acierto).length);
 </script>
 
 <section class="segunda">
@@ -78,6 +81,12 @@
 					<ChevronRight size={18} strokeWidth={2.6} aria-hidden="true" />
 				</button>
 			</div>
+			{#if !data.esReal && data.selectedNombre}
+				<div class="aciertos-badge">
+					<span class="aciertos-pill">{totalAciertos} {totalAciertos === 1 ? 'Acierto' : 'Aciertos'}</span>
+					<span class="notranslate" translate="no">{data.selectedNombre}</span>
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -177,6 +186,41 @@
 		outline: none;
 		border-color: rgba(34, 197, 94, 0.6);
 		box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+	}
+
+	/* Recuadro DORADO con el nombre del participante + pastilla "X Aciertos" arriba (mismo formato que
+	   los cruces acertados del cuadro). Total de cruces que coinciden con el real. */
+	.aciertos-badge {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		margin-left: 0.3rem;
+		padding: 0.35rem 0.8rem;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: #fff;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1.5px solid rgba(250, 204, 21, 0.85);
+		border-radius: 10px;
+		box-shadow:
+			0 0 0 1px rgba(250, 204, 21, 0.4),
+			0 0 12px rgba(250, 204, 21, 0.3);
+	}
+
+	.aciertos-pill {
+		position: absolute;
+		top: -0.6rem;
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 0.05rem 0.45rem;
+		font-size: 0.6rem;
+		font-weight: 800;
+		letter-spacing: 0.03em;
+		white-space: nowrap;
+		color: #422006;
+		background: #facc15;
+		border-radius: 999px;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 	}
 
 	.sel {
