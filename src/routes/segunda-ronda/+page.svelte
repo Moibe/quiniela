@@ -248,10 +248,12 @@
 		justify-content: center;
 		font-size: 2rem;
 		filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.45));
-		/* La copa va ENCIMA de las patitas: los conectores son pseudo-elementos posicionados que, sin
-		   esto, se pintan sobre la copa. position+z-index la dejan al frente. */
+		/* La copa va ENCIMA de las patitas (los conectores son pseudo-elementos posicionados que sin
+		   esto se pintan sobre ella) y se SUBE un poco para que su BASE quede apoyada sobre la línea
+		   horizontal del centro, en vez de que la línea la cruce por en medio. */
 		position: relative;
 		z-index: 3;
+		transform: translateY(-0.5em);
 	}
 
 	.match {
