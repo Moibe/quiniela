@@ -79,24 +79,6 @@
 				</button>
 			</div>
 		</div>
-		{#if data.esReal}
-			<p class="sub">
-				Dieciseisavos de final (partidos 73–88) con el <strong>cuadro oficial fijo</strong> de la
-				FIFA aplicado a la tabla <strong>real hasta ahora</strong> ({data.jugados} de {data.totalPartidos}
-				partidos con resultado). Los terceros se ubican según la tabla oficial de 495 combinaciones
-				(Annex C). Es <strong>provisional</strong>: cambia con cada partido; los equipos aún
-				empatados (incluidos los que no han jugado) se ordenan por los criterios oficiales y, a falta
-				de juego, por nombre.
-			</p>
-		{:else}
-			<p class="sub">
-				Dieciseisavos de final (partidos 73–88) con el <strong>cuadro oficial fijo</strong> de la
-				FIFA aplicado a la tabla que resultaría de los pronósticos de
-				<strong class="notranslate" translate="no">{data.selectedNombre}</strong> (1° y 2° de cada grupo + 8 mejores terceros). Los
-				terceros se ubican según la tabla oficial de 495 combinaciones (Annex C). Es hipotético:
-				refleja sus predicciones de grupos, no resultados reales.
-			</p>
-		{/if}
 	</div>
 
 	{#snippet matchBox(c: (typeof data.cruces)[number])}
@@ -221,14 +203,6 @@
 	.sel option {
 		background: #0a2a19;
 		color: #fff;
-	}
-
-	.sub {
-		margin: 0 0 1rem;
-		font-size: 0.8rem;
-		font-weight: 400;
-		color: rgba(255, 255, 255, 0.6);
-		max-width: 60rem;
 	}
 
 	/* Bracket COMPLETO: dos mitades en rondas (16avos → octavos → cuartos → semis) que convergen al
