@@ -6,6 +6,7 @@
     Newspaper,
     LayoutGrid,
     Swords,
+    Table,
     ChartPie,
     LogOut
   } from '@lucide/svelte';
@@ -101,6 +102,10 @@
     >
       <Swords size={16} strokeWidth={2.2} aria-hidden="true" />
       <span>Segunda Ronda</span>
+    </a>
+    <a href="/q2" class="nav-item" aria-current={page.url.pathname === '/q2' ? 'page' : undefined}>
+      <Table size={16} strokeWidth={2.2} aria-hidden="true" />
+      <span>Q2</span>
     </a>
   </nav>
 
