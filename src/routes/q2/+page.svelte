@@ -1,6 +1,44 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Bandera from '$lib/Bandera.svelte';
 	import { q2Participantes, q2Juegos, type Q2Juego } from '$lib/q2Data';
+	import { puntosDe, PUNTOS_EXACTO, PUNTOS_RESULTADO } from '$lib/scoring';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+
+	// Resultado EN VIVO de cada juego (del monitor/sandbox), por etiqueta (J1…J5). Se refresca cada 10s
+	// para que los aciertos (rosa = resultado, guinda = marcador exacto) se prendan/actualicen en vivo.
+	// El load solo siembra el primer pintado; a partir de ahí manda el poll, por eso capturamos el valor inicial.
+	// svelte-ignore state_referenced_locally
+	let resultados = $state(data.resultados ?? []);
+	const resPorJuego = $derived(
+		new Map(resultados.map((r) => [r.etiqueta, r] as const))
+	);
+
+	onMount(() => {
+		const id = setInterval(async () => {
+			if (document.visibilityState !== 'visible') return;
+			try {
+				const res = await fetch('/api/q2');
+				if (res.ok) resultados = (await res.json()).resultados ?? [];
+			} catch {
+				/* sin conexión: se mantiene lo último */
+			}
+		}, 10_000);
+		return () => clearInterval(id);
+	});
+
+	// Acierto de una celda contra el resultado en vivo del juego: 2 = marcador exacto (guinda),
+	// 1 = resultado correcto (rosa), 0 = nada / sin resultado aún. Misma lógica que Participantes.
+	function hitDe(p: Q2Juego['pronos'][number], etiqueta: string): 0 | 1 | 2 {
+		const r = resPorJuego.get(etiqueta);
+		if (!r || r.golesA == null || r.golesB == null || p[0] == null || p[1] == null) return 0;
+		const pts = puntosDe({ golesA: p[0], golesB: p[1] }, { golesA: r.golesA, golesB: r.golesB });
+		return pts === PUNTOS_EXACTO ? 2 : pts === PUNTOS_RESULTADO ? 1 : 0;
+	}
+
+	const enVivoJuego = (etiqueta: string) => resPorJuego.get(etiqueta)?.estado === 'vivo';
 
 	// Mismas interacciones que Participantes: VARIAS columnas resaltadas (1 clic), UNA fijada (doble
 	// clic), VARIAS filas marcadas (clic en la identidad del juego).
@@ -53,6 +91,11 @@
 				💡 Clic en participantes resalta sus columnas (varias a la vez; doble clic fija una) · clic en
 				un juego (# o equipos) marca sus filas (varias a la vez).
 			</p>
+			<div class="leyenda" aria-hidden="true">
+				<span class="leg"><span class="sw sw-res"></span> Resultado correcto</span>
+				<span class="leg"><span class="sw sw-exa"></span> Marcador exacto</span>
+				<span class="leg nota">se prenden con el resultado EN VIVO del monitor</span>
+			</div>
 		</div>
 	</div>
 
@@ -84,7 +127,7 @@
 			</thead>
 			<tbody>
 				{#each q2Juegos as j, ri (ri)}
-					<tr class:fila-marcada={filaMarcada.has(ri)}>
+					<tr class:fila-marcada={filaMarcada.has(ri)} class:envivo={enVivoJuego(j.etiqueta)}>
 						<th
 							scope="row"
 							class="col-num fila-handle"
@@ -104,10 +147,13 @@
 							</div>
 						</td>
 						{#each j.pronos as p, i (i)}
+							{@const h = hitDe(p, j.etiqueta)}
 							<td
 								class="prono"
 								class:highlighted={highlighted.has(i)}
-								class:pinned={pinned === i}>{marcador(p)}</td
+								class:pinned={pinned === i}
+								class:hit-resultado={h === 1}
+								class:hit-exacto={h === 2}>{marcador(p)}</td
 							>
 						{/each}
 					</tr>
@@ -145,6 +191,46 @@
 		font-size: 0.72rem;
 		font-weight: 400;
 		color: #fff;
+	}
+
+	/* Leyenda de colores: rosa = resultado, guinda = marcador exacto. */
+	.leyenda {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem 1.1rem;
+		margin: 0.35rem 0 0;
+		font-size: 0.72rem;
+		color: #fff;
+	}
+
+	.leg {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.leg.nota {
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	.sw {
+		width: 1.5rem;
+		height: 0.85rem;
+		border-radius: 4px;
+		flex-shrink: 0;
+	}
+
+	.sw-res {
+		background: rgba(240, 76, 158, 0.55);
+		border: 1px solid rgba(240, 76, 158, 0.8);
+	}
+
+	.sw-exa {
+		background: rgba(190, 18, 60, 0.88);
+		box-shadow:
+			inset 0 0 0 1px rgba(253, 164, 175, 0.6),
+			0 0 8px rgba(244, 63, 94, 0.55);
 	}
 
 	.table-wrap {
@@ -271,6 +357,56 @@
 		background: #0f3a23;
 	}
 
+	/* --- Aciertos: se prenden con el resultado EN VIVO del monitor ---
+	   rosa = resultado correcto, guinda = marcador exacto. Van DESPUÉS del
+	   striping/hover para ganar el cascade (misma especificidad → gana el último). */
+	tbody tr .prono.hit-resultado {
+		background: rgba(240, 76, 158, 0.45);
+		color: #fff;
+		font-weight: 600;
+		transition: background 0.25s ease;
+	}
+
+	tbody tr .prono.hit-exacto {
+		background: rgba(190, 18, 60, 0.88);
+		color: #fff;
+		font-weight: 700;
+		box-shadow:
+			inset 0 0 0 1px rgba(253, 164, 175, 0.55),
+			0 0 10px rgba(244, 63, 94, 0.45);
+		text-shadow: 0 0 8px rgba(253, 164, 175, 0.5);
+		transition: background 0.25s ease;
+	}
+
+	/* Juego EN VIVO: solo las casillas que están ganando puntos laten. */
+	@keyframes vivo-res {
+		0%,
+		100% {
+			background-color: rgba(240, 76, 158, 0.45);
+		}
+		50% {
+			background-color: rgba(240, 76, 158, 0.08);
+		}
+	}
+
+	@keyframes vivo-exa {
+		0%,
+		100% {
+			background-color: rgba(190, 18, 60, 0.88);
+		}
+		50% {
+			background-color: rgba(190, 18, 60, 0.15);
+		}
+	}
+
+	tbody tr.envivo .prono.hit-resultado {
+		animation: vivo-res 1.3s ease-in-out infinite;
+	}
+
+	tbody tr.envivo .prono.hit-exacto {
+		animation: vivo-exa 1.3s ease-in-out infinite;
+	}
+
 	/* --- Columna fijada por doble clic (sticky-left junto a los equipos) --- */
 	.col-p.pinned {
 		position: sticky;
@@ -289,6 +425,18 @@
 		box-shadow:
 			inset 2px 0 0 rgba(96, 165, 250, 0.75),
 			inset -2px 0 0 rgba(96, 165, 250, 0.55);
+	}
+
+	/* Celda fijada que además es acierto: conserva su color pero OPACO (capa sobre
+	   base oscura) para que no transparente lo que se desplaza por detrás. */
+	tbody tr td.prono.pinned.hit-resultado {
+		background: linear-gradient(rgba(240, 76, 158, 0.5), rgba(240, 76, 158, 0.5)), #0a2a19;
+		color: #fff;
+	}
+
+	tbody tr td.prono.pinned.hit-exacto {
+		background: linear-gradient(rgba(190, 18, 60, 0.92), rgba(190, 18, 60, 0.92)), #0a2a19;
+		color: #fff;
 	}
 
 	.pin {

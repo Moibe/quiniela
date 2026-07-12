@@ -222,10 +222,16 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 		? todosGrupos.filter((g) => g.equipos.some((e) => equiposRelevantes.has(e.equipo)))
 		: [];
 
-	// Juegos de la Quiniela 2 EN VIVO: su marcador vive SOLO en el sandbox (ids sintéticos Q2_ID_BASE +
-	// índice), lo empuja el monitor. Van aparte de `enCurso` para no mezclarse con la fase de grupos
-	// (p.ej. el banner de la home). Misma lógica de frescura que los partidos del monitor.
-	const q2EnCurso: Q2EnVivo[] = [];
+	// Juegos de la Quiniela 2 EN VIVO: su marcador vive SOLO en el sandbox (ids sintéticos, los empuja
+	// el monitor). Aparte de la fase de grupos. Función reutilizable (sin DB) para /q2 y su poll.
+	return { enCurso, proximos, grupos, terceros, q2EnCurso: q2EnVivo(ahora) };
+}
+
+// Marcadores EN VIVO de los juegos de la Quiniela 2 (solo del sandbox; misma frescura que el monitor).
+export function q2EnVivo(ahora: number): Q2EnVivo[] {
+	const scores = getAllMonitorScores();
+	const runnerVivo = latidoRunner(ahora).up;
+	const out: Q2EnVivo[] = [];
 	q2Juegos.forEach((j, i) => {
 		const mon = scores.get(Q2_ID_BASE + i);
 		if (!mon || !mon.enCurso) return;
@@ -234,7 +240,7 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 		const fin = !vivo && edad < FIN_MS && runnerVivo;
 		const desc = !vivo && edad >= FRESCO_MS && edad < CADUCA_MS && !runnerVivo;
 		if (!vivo && !fin && !desc) return;
-		q2EnCurso.push({
+		out.push({
 			etiqueta: j.etiqueta,
 			equipoA: j.equipoA,
 			equipoB: j.equipoB,
@@ -245,6 +251,5 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 			minuto: vivo ? mon.minuto : null
 		});
 	});
-
-	return { enCurso, proximos, grupos, terceros, q2EnCurso };
+	return out;
 }
