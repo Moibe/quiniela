@@ -1,7 +1,7 @@
-// GET /api/q2 — marcadores EN VIVO de los juegos de la Quiniela 2 (para el poll de la página /q2).
-// Solo lee el sandbox (sin BD). Público: es info de la quiniela.
+// GET /api/q2 — resultados de los juegos de la Quiniela 2 (para el poll de la página /q2): marcador
+// MANUAL persistido + overlay del sandbox del monitor cuando el juego está en vivo. Público: info de la quiniela.
 import { json } from '@sveltejs/kit';
-import { q2EnVivo } from '$lib/server/enVivo';
+import { q2Efectivo } from '$lib/server/enVivo';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = () => json({ resultados: q2EnVivo(Date.now()) });
+export const GET: RequestHandler = async () => json({ resultados: await q2Efectivo(Date.now()) });

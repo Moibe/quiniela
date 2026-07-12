@@ -3,6 +3,7 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { getMinutosVivos } from '$lib/server/monitorScores';
+import { q2Efectivo } from '$lib/server/enVivo';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -19,7 +20,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		partidos: rows.map((p) => ({ ...p, minutoVivo: minutos.get(p.id) ?? null })),
-		isAdmin: locals.isAdmin
+		isAdmin: locals.isAdmin,
+		// Resultados de los juegos de Q2 (persistidos + overlay del monitor), solo para mostrarlos
+		// abajo en la lista. La captura de Q2 vive en /q2; aquí es solo lectura.
+		q2: await q2Efectivo(Date.now())
 	};
 };
 

@@ -1,33 +1,50 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import Bandera from '$lib/Bandera.svelte';
 	import { q2Participantes, q2Juegos, type Q2Juego } from '$lib/q2Data';
 	import { puntosDe, PUNTOS_EXACTO, PUNTOS_RESULTADO } from '$lib/scoring';
-	import type { PageData } from './$types';
+	import type { PageData, ActionData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	// Resultado EN VIVO de cada juego (del monitor/sandbox), por etiqueta (J1…J5). Se refresca cada 10s
-	// para que los aciertos (rosa = resultado, guinda = marcador exacto) se prendan/actualicen en vivo.
-	// El load solo siembra el primer pintado; a partir de ahí manda el poll, por eso capturamos el valor inicial.
+	const actionError = $derived(form && 'error' in form ? form : null);
+
+	// Resultado EN VIVO/final de cada juego (manual persistido + overlay del monitor), por etiqueta
+	// (J1…J5). Se refresca cada 10s para que los aciertos (rosa = resultado, guinda = marcador exacto)
+	// se prendan/actualicen en vivo. El load solo siembra el primer pintado; a partir de ahí manda el
+	// poll, por eso capturamos el valor inicial.
 	// svelte-ignore state_referenced_locally
 	let resultados = $state(data.resultados ?? []);
-	const resPorJuego = $derived(
-		new Map(resultados.map((r) => [r.etiqueta, r] as const))
-	);
+	const resPorJuego = $derived(new Map(resultados.map((r) => [r.etiqueta, r] as const)));
+
+	// Prefill del panel de captura (solo admin): sale de data (SSR + tras guardar), NO del poll, para
+	// que el marcador de 10s no borre lo que el admin está escribiendo. Se refresca al guardar.
+	const resInicial = $derived(new Map((data.resultados ?? []).map((r) => [r.etiqueta, r] as const)));
+
+	async function refrescar() {
+		try {
+			const res = await fetch('/api/q2');
+			if (res.ok) resultados = (await res.json()).resultados ?? [];
+		} catch {
+			/* sin conexión: se mantiene lo último */
+		}
+	}
 
 	onMount(() => {
-		const id = setInterval(async () => {
-			if (document.visibilityState !== 'visible') return;
-			try {
-				const res = await fetch('/api/q2');
-				if (res.ok) resultados = (await res.json()).resultados ?? [];
-			} catch {
-				/* sin conexión: se mantiene lo último */
-			}
+		const id = setInterval(() => {
+			if (document.visibilityState === 'visible') refrescar();
 		}, 10_000);
 		return () => clearInterval(id);
 	});
+
+	// Tras guardar/limpiar un resultado: re-corre el load (refresca data + prefill) SIN resetear el
+	// <form> (los inputs usan value={...}), y refresca el coloreo al instante.
+	const trasGuardar: SubmitFunction = () => async ({ update }) => {
+		await update({ reset: false });
+		await refrescar();
+	};
 
 	// Acierto de una celda contra el resultado en vivo del juego: 2 = marcador exacto (guinda),
 	// 1 = resultado correcto (rosa), 0 = nada / sin resultado aún. Misma lógica que Participantes.
@@ -123,6 +140,75 @@
 			</div>
 		</div>
 	</div>
+
+	{#if data.isAdmin}
+		<!-- Captura de resultados de Q2 (SOLO admin). Guarda en `q2_resultados`, APARTE de la tabla
+		     `partidos`, así que no toca grupos/bracket. Alimenta el coloreo rosa/guinda de la tabla. -->
+		<div class="cap">
+			<p class="cap-title">Captura de resultados · Q2 <span class="cap-solo">solo admin</span></p>
+			<div class="cap-list">
+				{#each q2Juegos as j (j.etiqueta)}
+					{@const r = resInicial.get(j.etiqueta)}
+					<form method="POST" action="?/setResult" use:enhance={trasGuardar} class="cap-row">
+						<input type="hidden" name="etiqueta" value={j.etiqueta} />
+						<span class="cap-et">{j.etiqueta}</span>
+						<span class="cap-team a">
+							<span class="tname notranslate" translate="no">{j.equipoA}</span>
+							<Bandera equipo={j.equipoA} />
+						</span>
+						<input
+							class="cap-in"
+							type="number"
+							name="golesA"
+							min="0"
+							inputmode="numeric"
+							placeholder="–"
+							value={r?.golesA ?? ''}
+						/>
+						<span class="cap-dash">–</span>
+						<input
+							class="cap-in"
+							type="number"
+							name="golesB"
+							min="0"
+							inputmode="numeric"
+							placeholder="–"
+							value={r?.golesB ?? ''}
+						/>
+						<span class="cap-team b">
+							<Bandera equipo={j.equipoB} />
+							<span class="tname notranslate" translate="no">{j.equipoB}</span>
+						</span>
+						<span class="cap-btns">
+							<button type="submit" class="cap-btn ok" title="Guardar resultado FINAL" aria-label="Guardar final">✓</button>
+							<button
+								type="submit"
+								formaction="?/setPartial"
+								class="cap-btn partial"
+								title="Guardar EN VIVO (marca en curso · pulsa la tabla)"
+								aria-label="Guardar en vivo">⏱</button
+							>
+							{#if r}
+								<button
+									type="submit"
+									formaction="?/clearResult"
+									class="cap-btn clear"
+									title="Limpiar resultado"
+									aria-label="Limpiar">✕</button
+								>
+							{/if}
+						</span>
+						{#if r?.estado === 'vivo'}
+							<span class="cap-tag vivo">en vivo</span>
+						{:else if r}
+							<span class="cap-tag fin">final</span>
+						{/if}
+					</form>
+				{/each}
+			</div>
+			{#if actionError}<p class="cap-error">{actionError.error}</p>{/if}
+		</div>
+	{/if}
 
 	<div class="subtabs" role="tablist" aria-label="Secciones de la Quiniela 2">
 		{#each SUBTABS as t, i (t.id)}
@@ -672,6 +758,159 @@
 	@media (prefers-reduced-motion: reduce) {
 		.subtab {
 			transition: none;
+		}
+	}
+
+	/* ---- Panel de captura de resultados de Q2 (SOLO admin) ---- */
+	.cap {
+		margin: 0 0 0.9rem;
+		padding: 0.6rem 0.75rem;
+		background: rgba(255, 255, 255, 0.02);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 10px;
+	}
+	.cap-title {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0 0 0.5rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.85);
+	}
+	.cap-solo {
+		font-size: 0.6rem;
+		font-weight: 800;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		color: #86efac;
+		background: rgba(34, 197, 94, 0.16);
+		border: 1px solid rgba(34, 197, 94, 0.45);
+		border-radius: 999px;
+		padding: 0.1rem 0.45rem;
+	}
+	.cap-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+	.cap-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+	.cap-et {
+		flex: 0 0 auto;
+		width: 2rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.cap-team {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.82rem;
+	}
+	.cap-team.a {
+		flex: 1 1 0;
+		justify-content: flex-end;
+		text-align: right;
+		min-width: 5rem;
+	}
+	.cap-team.b {
+		flex: 1 1 0;
+		justify-content: flex-start;
+		min-width: 5rem;
+	}
+	.cap-in {
+		box-sizing: border-box;
+		width: 2.4rem;
+		padding: 0.25rem;
+		font: inherit;
+		font-size: 0.85rem;
+		text-align: center;
+		color: #fff;
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.18);
+		border-radius: 6px;
+	}
+	.cap-in:focus-visible {
+		outline: none;
+		border-color: rgba(34, 197, 94, 0.6);
+		box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+	}
+	.cap-dash {
+		color: rgba(255, 255, 255, 0.4);
+	}
+	.cap-btns {
+		display: inline-flex;
+		gap: 0.25rem;
+	}
+	.cap-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.7rem;
+		height: 1.7rem;
+		appearance: none;
+		cursor: pointer;
+		font-size: 0.85rem;
+		color: rgba(255, 255, 255, 0.85);
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.16);
+		border-radius: 6px;
+		transition:
+			background 0.15s ease,
+			border-color 0.15s ease,
+			color 0.15s ease;
+	}
+	.cap-btn:hover {
+		background: rgba(255, 255, 255, 0.1);
+		color: #fff;
+	}
+	.cap-btn.ok:hover {
+		border-color: rgba(34, 197, 94, 0.6);
+		color: #86efac;
+	}
+	.cap-btn.partial:hover {
+		border-color: rgba(56, 189, 248, 0.6);
+		color: #7dd3fc;
+	}
+	.cap-btn.clear:hover {
+		border-color: rgba(248, 113, 113, 0.6);
+		color: #fca5a5;
+	}
+	.cap-tag {
+		flex: 0 0 auto;
+		padding: 0.08rem 0.4rem;
+		font-size: 0.6rem;
+		font-weight: 800;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		border-radius: 999px;
+	}
+	.cap-tag.vivo {
+		color: #7dd3fc;
+		background: rgba(56, 189, 248, 0.15);
+		border: 1px solid rgba(56, 189, 248, 0.4);
+	}
+	.cap-tag.fin {
+		color: #86efac;
+		background: rgba(34, 197, 94, 0.14);
+		border: 1px solid rgba(34, 197, 94, 0.4);
+	}
+	.cap-error {
+		margin: 0.5rem 0 0;
+		font-size: 0.72rem;
+		color: #fecaca;
+	}
+
+	@media (max-width: 600px) {
+		.cap-team {
+			min-width: 3.5rem;
+			font-size: 0.75rem;
 		}
 	}
 </style>

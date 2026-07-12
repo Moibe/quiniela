@@ -15,7 +15,7 @@
 //   - runner VIVO  → el partido simplemente terminó (Cloudbet lo sacó del in-play) ⇒ sale de la lista.
 //   - runner CAÍDO → el monitor se apagó ⇒ conservamos el último marcador como 'desconectado'.
 import { db } from '$lib/server/db';
-import { partidos } from '$lib/server/db/schema';
+import { partidos, q2Resultados } from '$lib/server/db/schema';
 import { getAllMonitorScores } from '$lib/server/monitorScores';
 import { latidoRunner } from '$lib/server/monitorHeartbeat';
 import { computeGrupos, type Grupo, type EquipoStanding } from '$lib/grupos';
@@ -251,5 +251,36 @@ export function q2EnVivo(ahora: number): Q2EnVivo[] {
 			minuto: vivo ? mon.minuto : null
 		});
 	});
+	return out;
+}
+
+// Resultado EFECTIVO de cada juego de Q2, para colorear /q2 y mostrarlo en Partidos: parte del marcador
+// MANUAL persistido (lo captura el admin en /q2, tabla `q2_resultados`) y le SOBREPONE el marcador EN
+// VIVO del monitor (sandbox) mientras el juego está en curso. Misma regla que los partidos: en vivo
+// manda; ya terminado, queda el manual. Solo devuelve los juegos que tienen algún resultado.
+export async function q2Efectivo(ahora: number): Promise<Q2EnVivo[]> {
+	const vivos = new Map(q2EnVivo(ahora).map((r) => [r.etiqueta, r] as const));
+	const manuales = await db.select().from(q2Resultados);
+	const manualPorEtiqueta = new Map(manuales.map((m) => [m.etiqueta, m] as const));
+	const out: Q2EnVivo[] = [];
+	for (const j of q2Juegos) {
+		const vivo = vivos.get(j.etiqueta);
+		if (vivo) {
+			out.push(vivo); // el monitor está activo en este juego ⇒ su marcador manda
+			continue;
+		}
+		const m = manualPorEtiqueta.get(j.etiqueta);
+		if (!m || m.golesA == null || m.golesB == null) continue; // sin resultado capturado
+		out.push({
+			etiqueta: j.etiqueta,
+			equipoA: j.equipoA,
+			equipoB: j.equipoB,
+			golesA: m.golesA,
+			golesB: m.golesB,
+			estado: m.enCurso ? 'vivo' : 'terminado', // en vivo capturado a mano ⇒ pulsa; final ⇒ queda fijo
+			haceMs: null,
+			minuto: null
+		});
+	}
 	return out;
 }

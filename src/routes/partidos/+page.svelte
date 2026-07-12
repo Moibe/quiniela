@@ -9,6 +9,10 @@
 
 	const actionError = $derived(form && 'error' in form ? form : null);
 
+	// Resultado efectivo de los juegos de Q2 (persistido + monitor), por etiqueta. Solo lectura aquí;
+	// la captura de Q2 vive en /q2.
+	const q2map = $derived(new Map((data.q2 ?? []).map((r) => [r.etiqueta, r] as const)));
+
 	// Tras enviar, aplica el resultado e invalida (re-render con datos frescos)
 	// pero SIN resetear el <form>: si no, form.reset() vacía un input del marcador
 	// (los inputs usan value={...} reactivo) aunque en la base se guardó bien.
@@ -203,20 +207,32 @@
 	     `partidos` porque comparten equipos con la fase de grupos (y traen placeholders) y romperían la
 	     derivación de grupos/bracket. -->
 	{#snippet filaQ2(j: (typeof q2Juegos)[number])}
-		<div class="partido q2-row">
+		{@const r = q2map.get(j.etiqueta)}
+		{@const jugado = !!r && r.golesA !== null && r.golesB !== null}
+		<div class="partido q2-row" class:jugado class:encurso={r?.estado === 'vivo'}>
 			<span class="num">{j.etiqueta}</span>
 			<div class="cuerpo">
 				<span class="team a">
 					<span class="tname notranslate" translate="no">{j.equipoA}</span>
 					<Bandera equipo={j.equipoA} />
 				</span>
-				<span class="score-box pending">–<span class="sep">–</span>–</span>
+				{#if jugado}
+					<span class="score-box">{r?.golesA}<span class="sep">–</span>{r?.golesB}</span>
+				{:else}
+					<span class="score-box pending">–<span class="sep">–</span>–</span>
+				{/if}
 				<span class="team b">
 					<Bandera equipo={j.equipoB} />
 					<span class="tname notranslate" translate="no">{j.equipoB}</span>
 				</span>
 			</div>
-			<span class="meta"><span class="pendiente">pendiente</span></span>
+			<span class="meta">
+				{#if r?.estado === 'vivo'}
+					<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> En Curso</span>
+				{:else if !jugado}
+					<span class="pendiente">pendiente</span>
+				{/if}
+			</span>
 		</div>
 	{/snippet}
 

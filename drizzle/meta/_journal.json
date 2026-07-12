@@ -43,6 +43,13 @@
       "when": 1782410908213,
       "tag": "0005_opposite_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1783898719119,
+      "tag": "0006_blushing_goblin_queen",
+      "breakpoints": true
     }
   ]
 }

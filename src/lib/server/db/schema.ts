@@ -57,6 +57,19 @@ export const pronosticos = sqliteTable(
 	(t) => [unique('pronostico_unico').on(t.partidoId, t.participanteId)]
 );
 
+// Resultados de los 5 juegos de la Quiniela 2 (bracket J1-J5). Van APARTE de `partidos` a propósito:
+// Q2 comparte nombres de equipos con el torneo y trae placeholders (G J1, P J2…) que romperían la
+// derivación de grupos/bracket si entraran a `partidos`. Los captura el admin en /q2. La clave es la
+// etiqueta del juego ('J1'..'J5'); golesA/golesB null = sin resultado; enCurso = marcador en vivo.
+export const q2Resultados = sqliteTable('q2_resultados', {
+	etiqueta: text('etiqueta').primaryKey(), // 'J1'..'J5'
+	golesA: integer('goles_a'),
+	golesB: integer('goles_b'),
+	enCurso: integer('en_curso', { mode: 'boolean' }).notNull().default(false),
+	fecha: integer('fecha', { mode: 'timestamp' })
+});
+
 export type Participante = typeof participantes.$inferSelect;
 export type Partido = typeof partidos.$inferSelect;
 export type Pronostico = typeof pronosticos.$inferSelect;
+export type Q2Resultado = typeof q2Resultados.$inferSelect;
