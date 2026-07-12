@@ -1,0 +1,43 @@
+name: dump resultados (prod → artifact) 📥
+
+# Herramienta manual: lee los marcadores de la BD de PRODUCCIÓN (solo lectura) y
+# los sube como artifact JSON, para poder sembrarlos en una BD local de pruebas.
+# NO escribe nada en prod. Se dispara a mano desde la pestaña Actions o con `gh`.
+on:
+  workflow_dispatch:
+
+jobs:
+  dump:
+    name: leer marcadores de prod (solo lectura)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: install ssh key
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+
+      # El script de dump viaja como base64 (evita comillas anidadas). En el droplet:
+      # cargar nvm, entrar al repo, leer DATABASE_URL del .env y volcar (readonly) los
+      # partidos que YA tienen marcador a JSON, que se redirige a resultados.json en el runner.
+      - name: dump marcadores → resultados.json
+        env:
+          DUMP_B64: Y29uc3QgZnMgPSByZXF1aXJlKCdmcycpOwpjb25zdCBtID0gZnMucmVhZEZpbGVTeW5jKCcuZW52JywgJ3V0ZjgnKS5tYXRjaCgvXkRBVEFCQVNFX1VSTD0oLiopJC9tKTsKY29uc3QgdXJsID0gKG0gPyBtWzFdLnRyaW0oKSA6ICcuL2xvY2FsLmRiJykucmVwbGFjZSgvXmZpbGU6LywgJycpOwpjb25zdCBkYiA9IHJlcXVpcmUoJ2JldHRlci1zcWxpdGUzJykodXJsLCB7IHJlYWRvbmx5OiB0cnVlIH0pOwpjb25zdCByb3dzID0gZGIucHJlcGFyZSgnU0VMRUNUIGlkLCBnb2xlc19hLCBnb2xlc19iLCBlbl9jdXJzbyBGUk9NIHBhcnRpZG9zIFdIRVJFIGdvbGVzX2EgSVMgTk9UIE5VTEwgQU5EIGdvbGVzX2IgSVMgTk9UIE5VTEwgT1JERVIgQlkgaWQnKS5hbGwoKTsKcHJvY2Vzcy5zdGRvdXQud3JpdGUoSlNPTi5zdHJpbmdpZnkocm93cykpOwo=
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "export NVM_DIR=\$HOME/.nvm && . \$NVM_DIR/nvm.sh && nvm use node >/dev/null && cd ~/code/quiniela && echo $DUMP_B64 | base64 -d | node" \
+            > resultados.json
+          echo "bytes:"; wc -c < resultados.json
+          echo "preview:"; head -c 400 resultados.json; echo
+
+      - name: cleanup ssh
+        if: always()
+        run: rm -rf ~/.ssh
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-prod
+          path: resultados.json
+          retention-days: 1
