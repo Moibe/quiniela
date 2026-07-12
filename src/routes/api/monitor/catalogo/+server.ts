@@ -13,6 +13,8 @@ import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { setMonitorScore, getAllMonitorScores } from '$lib/server/monitorScores';
 import { canonEquipo, clavePartido } from '$lib/server/equipos';
+import { q2Juegos } from '$lib/q2Data';
+import { Q2_ID_BASE, q2PorClave } from '$lib/server/q2Live';
 import { marcarLatido } from '$lib/server/monitorHeartbeat';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
@@ -76,6 +78,22 @@ export const POST: RequestHandler = async ({ request }) => {
 		const porUrl = m.id != null ? porId.get(String(m.id)) : undefined;
 		const p = porUrl ?? porClave.get(clavePartido(nombreA, nombreB));
 		if (!p) {
+			// ¿Es un juego de la Quiniela 2? (fuera de `partidos`; marcador solo en el sandbox, id sintético).
+			const qi = q2PorClave.get(clavePartido(nombreA, nombreB));
+			if (qi != null) {
+				const jq = q2Juegos[qi];
+				const aEsLocal = canonEquipo(jq.equipoA) === canonEquipo(nombreA);
+				setMonitorScore(
+					Q2_ID_BASE + qi,
+					aEsLocal ? gA : gB,
+					aEsLocal ? gB : gA,
+					Boolean(m.minuto),
+					m.minuto ? String(m.minuto) : null,
+					ahora
+				);
+				emparejados++;
+				continue;
+			}
 			sinEmparejar.push({ nombreA: nombreA || '?', nombreB: nombreB || '?' });
 			continue;
 		}

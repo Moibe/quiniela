@@ -10,6 +10,7 @@
 	let proximos = $state(untrack(() => data.proximos));
 	let grupos = $state(untrack(() => data.grupos));
 	let terceros = $state(untrack(() => data.terceros));
+	let q2EnCurso = $state(untrack(() => data.q2EnCurso ?? []));
 	let conexion = $state(true);
 
 	async function refrescar() {
@@ -24,6 +25,7 @@
 			proximos = d.proximos;
 			grupos = d.grupos;
 			terceros = d.terceros;
+			q2EnCurso = d.q2EnCurso ?? [];
 			conexion = true;
 		} catch {
 			conexion = false;
@@ -134,6 +136,37 @@
 	{:else}
 		<p class="vacio">No hay partidos en curso ni próximos: la fase de grupos terminó.</p>
 	{/if}
+
+		{#if q2EnCurso.length}
+			<h2 class="g-titulo">
+				Quiniela 2 en vivo
+				<span class="g-nota">bracket J1–J5</span>
+			</h2>
+			<ul class="lista">
+				{#each q2EnCurso as m (m.etiqueta)}
+					<li class="vrow" class:desconectado={m.estado === 'desconectado'} class:terminado={m.estado === 'terminado'}>
+						{#if m.estado === 'vivo'}
+							<span class="chip"><span class="dot" aria-hidden="true"></span> en vivo{#if m.minuto}{' · ' + m.minuto}{/if}</span>
+						{:else if m.estado === 'terminado'}
+							<span class="chip fin"><span class="dot fin" aria-hidden="true"></span> Finalizado · {hace(m.haceMs)}</span>
+						{:else}
+							<span class="chip off"><span class="dot off" aria-hidden="true"></span> desconectado · {hace(m.haceMs)}</span>
+						{/if}
+						<span class="src">Q2</span>
+						<span class="vnum">{m.etiqueta}</span>
+						<span class="team a">
+							<span class="nm" translate="no">{m.equipoA}</span>
+							<Bandera equipo={m.equipoA} />
+						</span>
+						<span class="marc">{m.golesA ?? '–'} : {m.golesB ?? '–'}</span>
+						<span class="team b">
+							<Bandera equipo={m.equipoB} />
+							<span class="nm" translate="no">{m.equipoB}</span>
+						</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 
 		{#if grupos.length}
 			<div class="lado-grupos">

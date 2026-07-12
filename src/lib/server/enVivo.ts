@@ -19,6 +19,8 @@ import { partidos } from '$lib/server/db/schema';
 import { getAllMonitorScores } from '$lib/server/monitorScores';
 import { latidoRunner } from '$lib/server/monitorHeartbeat';
 import { computeGrupos, type Grupo, type EquipoStanding } from '$lib/grupos';
+import { q2Juegos } from '$lib/q2Data';
+import { Q2_ID_BASE } from '$lib/server/q2Live';
 
 export type FuenteEnVivo = 'monitor' | 'manual';
 export type EstadoEnVivo = 'vivo' | 'desconectado' | 'terminado' | 'porEmpezar';
@@ -53,11 +55,24 @@ export interface ProximoEnVivo {
 	inicioMs: number | null; // hora de inicio (epoch) leída de Cloudbet por el monitor; null si no hay
 }
 
+// Juego de la Quiniela 2 EN VIVO (marcador del monitor en el sandbox; fuera de la fase de grupos).
+export interface Q2EnVivo {
+	etiqueta: string;
+	equipoA: string;
+	equipoB: string;
+	golesA: number | null;
+	golesB: number | null;
+	estado: EstadoEnVivo;
+	haceMs: number | null;
+	minuto: string | null;
+}
+
 export interface EnVivo {
 	enCurso: PartidoEnVivo[];
 	proximos: ProximoEnVivo[];
 	grupos: Grupo[];
 	terceros: TerceroEnVivo[];
+	q2EnCurso: Q2EnVivo[];
 }
 
 const FRESCO_MS = 45_000; // refrescado hace menos ⇒ en vivo
@@ -207,5 +222,29 @@ export async function partidosEnVivo(ahora: number): Promise<EnVivo> {
 		? todosGrupos.filter((g) => g.equipos.some((e) => equiposRelevantes.has(e.equipo)))
 		: [];
 
-	return { enCurso, proximos, grupos, terceros };
+	// Juegos de la Quiniela 2 EN VIVO: su marcador vive SOLO en el sandbox (ids sintéticos Q2_ID_BASE +
+	// índice), lo empuja el monitor. Van aparte de `enCurso` para no mezclarse con la fase de grupos
+	// (p.ej. el banner de la home). Misma lógica de frescura que los partidos del monitor.
+	const q2EnCurso: Q2EnVivo[] = [];
+	q2Juegos.forEach((j, i) => {
+		const mon = scores.get(Q2_ID_BASE + i);
+		if (!mon || !mon.enCurso) return;
+		const edad = ahora - mon.ts;
+		const vivo = edad < FRESCO_MS;
+		const fin = !vivo && edad < FIN_MS && runnerVivo;
+		const desc = !vivo && edad >= FRESCO_MS && edad < CADUCA_MS && !runnerVivo;
+		if (!vivo && !fin && !desc) return;
+		q2EnCurso.push({
+			etiqueta: j.etiqueta,
+			equipoA: j.equipoA,
+			equipoB: j.equipoB,
+			golesA: mon.golesA,
+			golesB: mon.golesB,
+			estado: vivo ? 'vivo' : fin ? 'terminado' : 'desconectado',
+			haceMs: vivo ? null : edad,
+			minuto: vivo ? mon.minuto : null
+		});
+	});
+
+	return { enCurso, proximos, grupos, terceros, q2EnCurso };
 }
