@@ -79,6 +79,31 @@
 
 	const marcador = (p: Q2Juego['pronos'][number]) =>
 		p[0] == null || p[1] == null ? '' : `${p[0]}-${p[1]}`;
+
+	// --- Subtabs de la Q2 (base para ir agregando secciones de la mini-quiniela) ---
+	// 'participantes' envuelve la tabla de pronósticos; 'proximamente' es un placeholder por ahora.
+	// Para agregar un subtab: una entrada más en SUBTABS + su bloque {:else if} en el markup.
+	const SUBTABS = [
+		{ id: 'participantes', label: 'Participantes' },
+		{ id: 'proximamente', label: 'Próximamente' }
+	] as const;
+	type SubtabId = (typeof SUBTABS)[number]['id'];
+	let subtab = $state<SubtabId>('participantes');
+
+	// Navegación por teclado del tablist (patrón WAI-ARIA tabs): ←/→ ciclan, Home/End saltan.
+	function onTabKey(e: KeyboardEvent, i: number) {
+		if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
+		e.preventDefault();
+		const last = SUBTABS.length - 1;
+		let next = i;
+		if (e.key === 'ArrowRight') next = i === last ? 0 : i + 1;
+		else if (e.key === 'ArrowLeft') next = i === 0 ? last : i - 1;
+		else if (e.key === 'Home') next = 0;
+		else if (e.key === 'End') next = last;
+		subtab = SUBTABS[next].id;
+		const tabs = (e.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLElement>('[role="tab"]');
+		tabs?.[next]?.focus();
+	}
 </script>
 
 <section class="q2">
@@ -99,68 +124,98 @@
 		</div>
 	</div>
 
-	<div class="table-wrap">
-		<table>
-			<caption class="sr-only">
-				Pronósticos de {q2Participantes.length} participantes para {q2Juegos.length} juegos de la Quiniela
-				2. Filas: juegos. Columnas: participantes. Celdas: marcador pronosticado.
-			</caption>
-			<thead>
-				<tr>
-					<th scope="col" class="col-num">#</th>
-					<th scope="col" class="col-team col-a">Equipo 1</th>
-					<th scope="col" class="col-team col-b">Equipo 2</th>
-					{#each q2Participantes as nombre, i (i)}
-						<th
-							scope="col"
-							class="col-p notranslate"
-							translate="no"
-							class:highlighted={highlighted.has(i)}
-							class:pinned={pinned === i}
-							title="1 clic resalta · doble clic fija/suelta"
-							onclick={() => onColClick(i)}
-							ondblclick={() => onColDblClick(i)}
-							>{#if pinned === i}<span class="pin" aria-hidden="true">📌</span>{/if}{nombre}</th
-						>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each q2Juegos as j, ri (ri)}
-					<tr class:fila-marcada={filaMarcada.has(ri)} class:envivo={enVivoJuego(j.etiqueta)}>
-						<th
-							scope="row"
-							class="col-num fila-handle"
-							title="Clic para marcar este juego"
-							onclick={() => toggleFila(ri)}>{j.etiqueta}</th
-						>
-						<td class="col-team col-a fila-handle" onclick={() => toggleFila(ri)}>
-							<div class="ti ti-a">
-								<span class="tname notranslate" translate="no" title={j.equipoA}>{j.equipoA}</span>
-								<Bandera equipo={j.equipoA} />
-							</div>
-						</td>
-						<td class="col-team col-b fila-handle" onclick={() => toggleFila(ri)}>
-							<div class="ti ti-b">
-								<Bandera equipo={j.equipoB} />
-								<span class="tname notranslate" translate="no" title={j.equipoB}>{j.equipoB}</span>
-							</div>
-						</td>
-						{#each j.pronos as p, i (i)}
-							{@const h = hitDe(p, j.etiqueta)}
-							<td
-								class="prono"
-								class:highlighted={highlighted.has(i)}
-								class:pinned={pinned === i}
-								class:hit-resultado={h === 1}
-								class:hit-exacto={h === 2}>{marcador(p)}</td
-							>
-						{/each}
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+	<div class="subtabs" role="tablist" aria-label="Secciones de la Quiniela 2">
+		{#each SUBTABS as t, i (t.id)}
+			<button
+				id="subtab-{t.id}"
+				class="subtab"
+				class:active={subtab === t.id}
+				role="tab"
+				type="button"
+				aria-selected={subtab === t.id}
+				aria-controls="panel-{t.id}"
+				tabindex={subtab === t.id ? 0 : -1}
+				onclick={() => (subtab = t.id)}
+				onkeydown={(e) => onTabKey(e, i)}
+			>
+				{t.label}
+			</button>
+		{/each}
 	</div>
+
+	{#if subtab === 'participantes'}
+		<div id="panel-participantes" role="tabpanel" aria-labelledby="subtab-participantes" tabindex="0">
+			<div class="table-wrap">
+				<table>
+					<caption class="sr-only">
+						Pronósticos de {q2Participantes.length} participantes para {q2Juegos.length} juegos de la Quiniela
+						2. Filas: juegos. Columnas: participantes. Celdas: marcador pronosticado.
+					</caption>
+					<thead>
+						<tr>
+							<th scope="col" class="col-num">#</th>
+							<th scope="col" class="col-team col-a">Equipo 1</th>
+							<th scope="col" class="col-team col-b">Equipo 2</th>
+							{#each q2Participantes as nombre, i (i)}
+								<th
+									scope="col"
+									class="col-p notranslate"
+									translate="no"
+									class:highlighted={highlighted.has(i)}
+									class:pinned={pinned === i}
+									title="1 clic resalta · doble clic fija/suelta"
+									onclick={() => onColClick(i)}
+									ondblclick={() => onColDblClick(i)}
+									>{#if pinned === i}<span class="pin" aria-hidden="true">📌</span>{/if}{nombre}</th
+								>
+							{/each}
+						</tr>
+					</thead>
+					<tbody>
+						{#each q2Juegos as j, ri (ri)}
+							<tr class:fila-marcada={filaMarcada.has(ri)} class:envivo={enVivoJuego(j.etiqueta)}>
+								<th
+									scope="row"
+									class="col-num fila-handle"
+									title="Clic para marcar este juego"
+									onclick={() => toggleFila(ri)}>{j.etiqueta}</th
+								>
+								<td class="col-team col-a fila-handle" onclick={() => toggleFila(ri)}>
+									<div class="ti ti-a">
+										<span class="tname notranslate" translate="no" title={j.equipoA}>{j.equipoA}</span>
+										<Bandera equipo={j.equipoA} />
+									</div>
+								</td>
+								<td class="col-team col-b fila-handle" onclick={() => toggleFila(ri)}>
+									<div class="ti ti-b">
+										<Bandera equipo={j.equipoB} />
+										<span class="tname notranslate" translate="no" title={j.equipoB}>{j.equipoB}</span>
+									</div>
+								</td>
+								{#each j.pronos as p, i (i)}
+									{@const h = hitDe(p, j.etiqueta)}
+									<td
+										class="prono"
+										class:highlighted={highlighted.has(i)}
+										class:pinned={pinned === i}
+										class:hit-resultado={h === 1}
+										class:hit-exacto={h === 2}>{marcador(p)}</td
+									>
+								{/each}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	{:else if subtab === 'proximamente'}
+		<div id="panel-proximamente" role="tabpanel" aria-labelledby="subtab-proximamente" tabindex="0">
+			<div class="placeholder">
+				<p class="ph-title">Próximamente</p>
+				<p class="ph-sub">Esta sección aún no está disponible.</p>
+			</div>
+		</div>
+	{/if}
 </section>
 
 <style>
@@ -502,5 +557,121 @@
 		clip-path: inset(50%);
 		white-space: nowrap;
 		border: 0;
+	}
+
+	/* ---- Subtab bar (chips glass-verde): base de las secciones de la Q2 ----
+	   Chips independientes; el activo con borde+glow VERDE de marca (rgba(34,197,94), el mismo
+	   acento de foco/chips del sistema, ej. .admin-chip). El azul NO se usa: es "página actual"
+	   de la nav global y también la columna .pinned de esta tabla. Escalan a N: agregar un chip
+	   es una entrada en SUBTABS; overflow-x scroll si no caben. */
+	.subtabs {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 0.5rem;
+		margin: 0 0 0.9rem;
+		padding-bottom: 0.15rem; /* aire para que el glow del activo no se recorte al scrollear */
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+	.subtabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	.subtab {
+		flex: 0 0 auto;
+		appearance: none;
+		cursor: pointer;
+		padding: 0.42rem 0.95rem;
+		font-family: inherit;
+		font-size: 0.85rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		white-space: nowrap;
+		color: rgba(255, 255, 255, 0.88);
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+		border-radius: 999px;
+		text-shadow:
+			0 0 8px rgba(255, 255, 255, 0.18),
+			0 0 18px rgba(255, 255, 255, 0.08);
+		transition:
+			background 0.18s ease,
+			border-color 0.18s ease,
+			color 0.18s ease,
+			box-shadow 0.18s ease;
+	}
+
+	/* Hover de inactivo: velo blanco, idéntico a .nav-item:hover del sistema. */
+	.subtab:hover {
+		background: rgba(255, 255, 255, 0.09);
+		border-color: rgba(255, 255, 255, 0.16);
+		color: #fff;
+	}
+
+	/* Foco por teclado: mismo focus-ring verde de los controles del sistema. */
+	.subtab:focus-visible {
+		outline: none;
+		border-color: rgba(34, 197, 94, 0.6);
+		box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+	}
+
+	/* Activo: velo + borde + glow verde (tratamiento de .admin-chip), texto verde claro. */
+	.subtab.active {
+		color: #86efac;
+		background: rgba(34, 197, 94, 0.16);
+		border-color: rgba(34, 197, 94, 0.55);
+		box-shadow:
+			0 0 0 1px rgba(34, 197, 94, 0.18) inset,
+			0 0 12px rgba(34, 197, 94, 0.28);
+		text-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+	}
+	.subtab.active:hover {
+		background: rgba(34, 197, 94, 0.22);
+		color: #bbf7d0;
+	}
+	.subtab.active:focus-visible {
+		box-shadow:
+			0 0 0 1px rgba(34, 197, 94, 0.18) inset,
+			0 0 0 2px rgba(34, 197, 94, 0.25),
+			0 0 12px rgba(34, 197, 94, 0.28);
+	}
+
+	/* El panel no muestra outline propio al recibir foco programático. */
+	[role='tabpanel'] {
+		outline: none;
+	}
+
+	/* Subtab vacío: panel "del mismo material" que .table-wrap (borde+radius) con texto tenue. */
+	.placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		text-align: center;
+		min-height: 9rem;
+		padding: 2.5rem 1.25rem;
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 10px;
+		background: rgba(255, 255, 255, 0.012);
+	}
+	.ph-title {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.ph-sub {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.4);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.subtab {
+			transition: none;
+		}
 	}
 </style>
