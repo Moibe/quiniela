@@ -183,8 +183,9 @@
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
 	let subtab = $state<SubtabId>('participantes');
-	// 'captura' (captura de resultados) es SOLO para admin; los demás subtabs, para todos.
-	const subtabsVisibles = $derived(SUBTABS.filter((t) => t.id !== 'captura' || data.isAdmin));
+	// Todos los subtabs son públicos (incluido "Partidos"); dentro de Partidos, solo la EDICIÓN de
+	// resultados es de admin.
+	const subtabsVisibles = SUBTABS;
 
 	// Navegación por teclado del tablist (patrón WAI-ARIA tabs): ←/→ ciclan, Home/End saltan.
 	function onTabKey(e: KeyboardEvent, i: number) {
@@ -442,14 +443,16 @@
 		</div>
 	{:else if subtab === 'captura'}
 		<div id="panel-captura" role="tabpanel" aria-labelledby="subtab-captura" tabindex="0">
-			{#if data.isAdmin}
-				<!-- Captura de resultados de Q2 (SOLO admin). Guarda en `q2_resultados`, APARTE de la tabla
-				     `partidos`, así que no toca grupos/bracket. Alimenta el coloreo rosa/guinda de la tabla. -->
-				<div class="cap">
-					<p class="cap-title">Captura de resultados · Q2 <span class="cap-solo">solo admin</span></p>
-					<div class="cap-list">
-						{#each q2Juegos as j (j.etiqueta)}
-							{@const r = resInicial.get(j.etiqueta)}
+			<!-- Todos ven los partidos de Q2 y su marcador; SOLO el admin puede EDITARLOS (inputs +
+			     botones). Se guarda en `q2_resultados`, aparte de la tabla `partidos`. -->
+			<div class="cap">
+				<p class="cap-title">
+					Partidos · Q2{#if data.isAdmin} <span class="cap-solo">captura admin</span>{/if}
+				</p>
+				<div class="cap-list">
+					{#each q2Juegos as j (j.etiqueta)}
+						{@const r = resInicial.get(j.etiqueta)}
+						{#if data.isAdmin}
 							<form method="POST" action="?/setResult" use:enhance={trasGuardar} class="cap-row">
 								<input type="hidden" name="etiqueta" value={j.etiqueta} />
 								<span class="cap-et">{j.etiqueta}</span>
@@ -457,25 +460,9 @@
 									<span class="tname notranslate" translate="no">{j.equipoA}</span>
 									<Bandera equipo={j.equipoA} />
 								</span>
-								<input
-									class="cap-in"
-									type="number"
-									name="golesA"
-									min="0"
-									inputmode="numeric"
-									placeholder="–"
-									value={r?.golesA ?? ''}
-								/>
+								<input class="cap-in" type="number" name="golesA" min="0" inputmode="numeric" placeholder="–" value={r?.golesA ?? ''} />
 								<span class="cap-dash">–</span>
-								<input
-									class="cap-in"
-									type="number"
-									name="golesB"
-									min="0"
-									inputmode="numeric"
-									placeholder="–"
-									value={r?.golesB ?? ''}
-								/>
+								<input class="cap-in" type="number" name="golesB" min="0" inputmode="numeric" placeholder="–" value={r?.golesB ?? ''} />
 								<span class="cap-team b">
 									<Bandera equipo={j.equipoB} />
 									<span class="tname notranslate" translate="no">{j.equipoB}</span>
@@ -485,20 +472,32 @@
 								</span>
 								<span class="cap-btns">
 									<button type="submit" class="cap-btn ok" title="Guardar resultado FINAL" aria-label="Guardar final">✓</button>
-									<button
-										type="submit"
-										formaction="?/setPartial"
-										class="cap-btn partial"
-										title="Guardar EN VIVO (marca en curso · pulsa la tabla)"
-										aria-label="Guardar en vivo">⏱</button
-									>
+									<button type="submit" formaction="?/setPartial" class="cap-btn partial" title="Guardar EN VIVO (marca en curso · pulsa la tabla)" aria-label="Guardar en vivo">⏱</button>
 								</span>
 							</form>
-						{/each}
-					</div>
-					{#if actionError}<p class="cap-error">{actionError.error}</p>{/if}
+						{:else}
+							<div class="cap-row">
+								<span class="cap-et">{j.etiqueta}</span>
+								<span class="cap-team a">
+									<span class="tname notranslate" translate="no">{j.equipoA}</span>
+									<Bandera equipo={j.equipoA} />
+								</span>
+								<span class="cap-marcador" class:pend={!r || r.golesA == null || r.golesB == null}>
+									{#if r && r.golesA != null && r.golesB != null}{r.golesA} – {r.golesB}{:else}– – –{/if}
+								</span>
+								<span class="cap-team b">
+									<Bandera equipo={j.equipoB} />
+									<span class="tname notranslate" translate="no">{j.equipoB}</span>
+								</span>
+								<span class="cap-estado">
+									{#if r?.estado === 'vivo'}<span class="cap-tag vivo">en vivo</span>{:else if r}<span class="cap-tag fin">final</span>{/if}
+								</span>
+							</div>
+						{/if}
+					{/each}
 				</div>
-			{/if}
+				{#if actionError}<p class="cap-error">{actionError.error}</p>{/if}
+			</div>
 		</div>
 	{/if}
 </section>
@@ -1015,6 +1014,19 @@
 	}
 	.cap-dash {
 		color: rgba(255, 255, 255, 0.4);
+	}
+	/* Marcador en SOLO LECTURA (usuarios no-admin): ocupa el lugar de los dos inputs. */
+	.cap-marcador {
+		flex: 0 0 auto;
+		width: 5.5rem;
+		text-align: center;
+		font-variant-numeric: tabular-nums;
+		font-weight: 700;
+		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.9);
+	}
+	.cap-marcador.pend {
+		color: rgba(255, 255, 255, 0.35);
 	}
 	.cap-btns {
 		display: inline-flex;
