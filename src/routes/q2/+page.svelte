@@ -360,7 +360,10 @@
 										class:highlighted={highlighted.has(i)}
 										class:pinned={pinned === i}
 										class:hit-resultado={h === 1}
-										class:hit-exacto={h === 2}>{marcador(p)}</td
+										class:hit-exacto={h === 2}
+										>{#if j.etiqueta === 'J3'}<span class="prono-flag">{marcador(p)}<Bandera
+													equipo="México"
+												/></span>{:else}{marcador(p)}{/if}</td
 									>
 								{/each}
 							</tr>
@@ -703,6 +706,18 @@
 	.prono {
 		color: rgba(255, 255, 255, 0.82);
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* J3: banderita (placeholder) a la derecha del marcador de cada jugador. */
+	.prono-flag {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.3rem;
+		white-space: nowrap;
+	}
+	.prono-flag :global(.bandera) {
+		font-size: 0.62rem;
 	}
 
 	tbody tr:nth-child(even) .prono {
