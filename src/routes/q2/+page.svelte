@@ -360,6 +360,9 @@
 									<Bandera equipo={j.equipoB} />
 									<span class="tname notranslate" translate="no">{j.equipoB}</span>
 								</span>
+								<span class="cap-estado">
+									{#if r?.estado === 'vivo'}<span class="cap-tag vivo">en vivo</span>{:else if r}<span class="cap-tag fin">final</span>{/if}
+								</span>
 								<span class="cap-btns">
 									<button type="submit" class="cap-btn ok" title="Guardar resultado FINAL" aria-label="Guardar final">✓</button>
 									<button
@@ -370,11 +373,6 @@
 										aria-label="Guardar en vivo">⏱</button
 									>
 								</span>
-								{#if r?.estado === 'vivo'}
-									<span class="cap-tag vivo">en vivo</span>
-								{:else if r}
-									<span class="cap-tag fin">final</span>
-								{/if}
 							</form>
 						{/each}
 					</div>
@@ -932,7 +930,17 @@
 		border-color: rgba(56, 189, 248, 0.6);
 		color: #7dd3fc;
 	}
+	/* Slot de ancho fijo para el tag de estado: reservado en TODAS las filas para que
+	   la paloma/reloj queden siempre en la misma posición (con y sin resultado). */
+	.cap-estado {
+		flex: 0 0 auto;
+		width: 3.8rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: flex-end;
+	}
 	.cap-tag {
+		white-space: nowrap;
 		flex: 0 0 auto;
 		padding: 0.08rem 0.4rem;
 		font-size: 0.6rem;
