@@ -179,7 +179,8 @@
 		{ id: 'torneo', label: 'Torneo' },
 		{ id: 'captura', label: 'Partidos' },
 		{ id: 'participantes', label: 'Participantes' },
-		{ id: 'posiciones', label: 'Lugares' }
+		{ id: 'posiciones', label: 'Lugares' },
+		{ id: 'lugaresN', label: 'Lugares N' }
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
 	let subtab = $state<SubtabId>('participantes');
@@ -386,6 +387,27 @@
 					{@render tablaPos(posDer, 'columna derecha')}
 				</div>
 				<!-- Móvil / angosto: una sola tabla continua. -->
+				<div class="pos-cols-mobile">
+					{@render tablaPos(standings, 'tabla completa')}
+				</div>
+			</div>
+		</div>
+	{:else if subtab === 'lugaresN'}
+		<div id="panel-lugaresN" role="tabpanel" aria-labelledby="subtab-lugaresN" tabindex="0">
+			<div class="pos">
+				<p class="pos-sub">
+					3 pts por marcador exacto · 1 pt por resultado correcto ·
+					<strong>{jugados}</strong> de {q2Juegos.length} juegos con resultado
+				</p>
+				{#if jugados === 0}
+					<p class="pos-empty">
+						Aún no hay resultados de Q2. La tabla se irá llenando conforme se capturen los marcadores.
+					</p>
+				{/if}
+				<div class="pos-cols-desktop">
+					{@render tablaPos(posIzq, 'columna izquierda')}
+					{@render tablaPos(posDer, 'columna derecha')}
+				</div>
 				<div class="pos-cols-mobile">
 					{@render tablaPos(standings, 'tabla completa')}
 				</div>
