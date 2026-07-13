@@ -397,6 +397,7 @@
 				se resuelven a equipos reales conforme se capturan los marcadores.
 			</p>
 			<div class="torneo-wrap">
+				<div class="torneo-inner">
 				<div class="br">
 					<div class="br-col">
 						<p class="t-ronda-tit">Cuartos</p>
@@ -417,6 +418,7 @@
 				<div class="br-tercer">
 					<p class="t-ronda-tit t-ronda-tit-3">Tercer lugar</p>
 					<div class="br-tercer-box">{@render tMatch('J4')}</div>
+				</div>
 				</div>
 			</div>
 		</div>
@@ -1338,14 +1340,21 @@
 		background: rgba(255, 255, 255, 0.18);
 	}
 	/* Partido por el 3er lugar: debajo del cuadro, aparte y discreto. */
-	.br-tercer {
+	.torneo-inner {
+		display: flex;
+		flex-direction: column;
 		width: max-content;
+	}
+	/* 3er lugar: debajo de la columna de la Final (alineado a la derecha del cuadro), como en FIFA. */
+	.br-tercer {
+		width: 12.5rem;
+		margin-left: auto;
 		margin-top: 0.7rem;
 		padding-top: 0.8rem;
 		border-top: 1px dashed rgba(255, 255, 255, 0.12);
 	}
 	.t-ronda-tit-3 {
-		text-align: left;
+		text-align: center;
 		margin-bottom: 0.4rem;
 	}
 </style>
