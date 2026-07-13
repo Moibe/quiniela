@@ -139,7 +139,7 @@
 	// --- Subtabs de la Q2 (cada sección vive en su propio subtab; nada permanece como header fijo) ---
 	// Para agregar un subtab: una entrada más en SUBTABS + su bloque {:else if} en el markup.
 	const SUBTABS = [
-		{ id: 'captura', label: 'Captura' },
+		{ id: 'captura', label: 'Partidos' },
 		{ id: 'participantes', label: 'Participantes' },
 		{ id: 'posiciones', label: 'Lugares' }
 	] as const;
