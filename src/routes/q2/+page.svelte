@@ -136,27 +136,29 @@
 	const marcador = (p: Q2Juego['pronos'][number]) =>
 		p[0] == null || p[1] == null ? '' : `${p[0]}-${p[1]}`;
 
-	// --- Subtabs de la Q2 (base para ir agregando secciones de la mini-quiniela) ---
-	// 'participantes' envuelve la tabla de pronósticos; 'proximamente' es un placeholder por ahora.
+	// --- Subtabs de la Q2 (cada sección vive en su propio subtab; nada permanece como header fijo) ---
 	// Para agregar un subtab: una entrada más en SUBTABS + su bloque {:else if} en el markup.
 	const SUBTABS = [
 		{ id: 'participantes', label: 'Participantes' },
-		{ id: 'posiciones', label: 'Posiciones' }
+		{ id: 'posiciones', label: 'Posiciones' },
+		{ id: 'captura', label: 'Captura' }
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
 	let subtab = $state<SubtabId>('participantes');
+	// 'captura' (captura de resultados) es SOLO para admin; los demás subtabs, para todos.
+	const subtabsVisibles = $derived(SUBTABS.filter((t) => t.id !== 'captura' || data.isAdmin));
 
 	// Navegación por teclado del tablist (patrón WAI-ARIA tabs): ←/→ ciclan, Home/End saltan.
 	function onTabKey(e: KeyboardEvent, i: number) {
 		if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
 		e.preventDefault();
-		const last = SUBTABS.length - 1;
+		const last = subtabsVisibles.length - 1;
 		let next = i;
 		if (e.key === 'ArrowRight') next = i === last ? 0 : i + 1;
 		else if (e.key === 'ArrowLeft') next = i === 0 ? last : i - 1;
 		else if (e.key === 'Home') next = 0;
 		else if (e.key === 'End') next = last;
-		subtab = SUBTABS[next].id;
+		subtab = subtabsVisibles[next].id;
 		const tabs = (e.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLElement>('[role="tab"]');
 		tabs?.[next]?.focus();
 	}
@@ -195,94 +197,8 @@
 {/snippet}
 
 <section class="q2">
-	<div class="top">
-		<div class="head">
-			<p class="sub">
-				Quiniela 2 · Pronósticos de los {q2Participantes.length} participantes · {q2Juegos.length} juegos
-			</p>
-			<p class="hint">
-				💡 Clic en participantes resalta sus columnas (varias a la vez; doble clic fija una) · clic en
-				un juego (# o equipos) marca sus filas (varias a la vez).
-			</p>
-			<div class="leyenda" aria-hidden="true">
-				<span class="leg"><span class="sw sw-res"></span> Resultado correcto</span>
-				<span class="leg"><span class="sw sw-exa"></span> Marcador exacto</span>
-				<span class="leg nota">se prenden con el resultado EN VIVO del monitor</span>
-			</div>
-		</div>
-	</div>
-
-	{#if data.isAdmin}
-		<!-- Captura de resultados de Q2 (SOLO admin). Guarda en `q2_resultados`, APARTE de la tabla
-		     `partidos`, así que no toca grupos/bracket. Alimenta el coloreo rosa/guinda de la tabla. -->
-		<div class="cap">
-			<p class="cap-title">Captura de resultados · Q2 <span class="cap-solo">solo admin</span></p>
-			<div class="cap-list">
-				{#each q2Juegos as j (j.etiqueta)}
-					{@const r = resInicial.get(j.etiqueta)}
-					<form method="POST" action="?/setResult" use:enhance={trasGuardar} class="cap-row">
-						<input type="hidden" name="etiqueta" value={j.etiqueta} />
-						<span class="cap-et">{j.etiqueta}</span>
-						<span class="cap-team a">
-							<span class="tname notranslate" translate="no">{j.equipoA}</span>
-							<Bandera equipo={j.equipoA} />
-						</span>
-						<input
-							class="cap-in"
-							type="number"
-							name="golesA"
-							min="0"
-							inputmode="numeric"
-							placeholder="–"
-							value={r?.golesA ?? ''}
-						/>
-						<span class="cap-dash">–</span>
-						<input
-							class="cap-in"
-							type="number"
-							name="golesB"
-							min="0"
-							inputmode="numeric"
-							placeholder="–"
-							value={r?.golesB ?? ''}
-						/>
-						<span class="cap-team b">
-							<Bandera equipo={j.equipoB} />
-							<span class="tname notranslate" translate="no">{j.equipoB}</span>
-						</span>
-						<span class="cap-btns">
-							<button type="submit" class="cap-btn ok" title="Guardar resultado FINAL" aria-label="Guardar final">✓</button>
-							<button
-								type="submit"
-								formaction="?/setPartial"
-								class="cap-btn partial"
-								title="Guardar EN VIVO (marca en curso · pulsa la tabla)"
-								aria-label="Guardar en vivo">⏱</button
-							>
-							{#if r}
-								<button
-									type="submit"
-									formaction="?/clearResult"
-									class="cap-btn clear"
-									title="Limpiar resultado"
-									aria-label="Limpiar">✕</button
-								>
-							{/if}
-						</span>
-						{#if r?.estado === 'vivo'}
-							<span class="cap-tag vivo">en vivo</span>
-						{:else if r}
-							<span class="cap-tag fin">final</span>
-						{/if}
-					</form>
-				{/each}
-			</div>
-			{#if actionError}<p class="cap-error">{actionError.error}</p>{/if}
-		</div>
-	{/if}
-
 	<div class="subtabs" role="tablist" aria-label="Secciones de la Quiniela 2">
-		{#each SUBTABS as t, i (t.id)}
+		{#each subtabsVisibles as t, i (t.id)}
 			<button
 				id="subtab-{t.id}"
 				class="subtab"
@@ -302,6 +218,22 @@
 
 	{#if subtab === 'participantes'}
 		<div id="panel-participantes" role="tabpanel" aria-labelledby="subtab-participantes" tabindex="0">
+			<div class="top">
+				<div class="head">
+					<p class="sub">
+						Quiniela 2 · Pronósticos de los {q2Participantes.length} participantes · {q2Juegos.length} juegos
+					</p>
+					<p class="hint">
+						💡 Clic en participantes resalta sus columnas (varias a la vez; doble clic fija una) · clic en
+						un juego (# o equipos) marca sus filas (varias a la vez).
+					</p>
+					<div class="leyenda" aria-hidden="true">
+						<span class="leg"><span class="sw sw-res"></span> Resultado correcto</span>
+						<span class="leg"><span class="sw sw-exa"></span> Marcador exacto</span>
+						<span class="leg nota">se prenden con el resultado EN VIVO del monitor</span>
+					</div>
+				</div>
+			</div>
 			<div class="table-wrap">
 				<table>
 					<caption class="sr-only">
@@ -387,6 +319,77 @@
 					{@render tablaPos(standings, 'tabla completa')}
 				</div>
 			</div>
+		</div>
+	{:else if subtab === 'captura'}
+		<div id="panel-captura" role="tabpanel" aria-labelledby="subtab-captura" tabindex="0">
+			{#if data.isAdmin}
+				<!-- Captura de resultados de Q2 (SOLO admin). Guarda en `q2_resultados`, APARTE de la tabla
+				     `partidos`, así que no toca grupos/bracket. Alimenta el coloreo rosa/guinda de la tabla. -->
+				<div class="cap">
+					<p class="cap-title">Captura de resultados · Q2 <span class="cap-solo">solo admin</span></p>
+					<div class="cap-list">
+						{#each q2Juegos as j (j.etiqueta)}
+							{@const r = resInicial.get(j.etiqueta)}
+							<form method="POST" action="?/setResult" use:enhance={trasGuardar} class="cap-row">
+								<input type="hidden" name="etiqueta" value={j.etiqueta} />
+								<span class="cap-et">{j.etiqueta}</span>
+								<span class="cap-team a">
+									<span class="tname notranslate" translate="no">{j.equipoA}</span>
+									<Bandera equipo={j.equipoA} />
+								</span>
+								<input
+									class="cap-in"
+									type="number"
+									name="golesA"
+									min="0"
+									inputmode="numeric"
+									placeholder="–"
+									value={r?.golesA ?? ''}
+								/>
+								<span class="cap-dash">–</span>
+								<input
+									class="cap-in"
+									type="number"
+									name="golesB"
+									min="0"
+									inputmode="numeric"
+									placeholder="–"
+									value={r?.golesB ?? ''}
+								/>
+								<span class="cap-team b">
+									<Bandera equipo={j.equipoB} />
+									<span class="tname notranslate" translate="no">{j.equipoB}</span>
+								</span>
+								<span class="cap-btns">
+									<button type="submit" class="cap-btn ok" title="Guardar resultado FINAL" aria-label="Guardar final">✓</button>
+									<button
+										type="submit"
+										formaction="?/setPartial"
+										class="cap-btn partial"
+										title="Guardar EN VIVO (marca en curso · pulsa la tabla)"
+										aria-label="Guardar en vivo">⏱</button
+									>
+									{#if r}
+										<button
+											type="submit"
+											formaction="?/clearResult"
+											class="cap-btn clear"
+											title="Limpiar resultado"
+											aria-label="Limpiar">✕</button
+										>
+									{/if}
+								</span>
+								{#if r?.estado === 'vivo'}
+									<span class="cap-tag vivo">en vivo</span>
+								{:else if r}
+									<span class="cap-tag fin">final</span>
+								{/if}
+							</form>
+						{/each}
+					</div>
+					{#if actionError}<p class="cap-error">{actionError.error}</p>{/if}
+				</div>
+			{/if}
 		</div>
 	{/if}
 </section>
