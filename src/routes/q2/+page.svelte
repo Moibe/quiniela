@@ -398,27 +398,45 @@
 			</p>
 			<div class="torneo-wrap">
 				<div class="torneo-inner">
-				<div class="br">
-					<div class="br-col">
-						<p class="t-ronda-tit">Cuartos</p>
-						<div class="br-body br-cuartos">{@render tMatch('J1')}</div>
-					</div>
-					<div class="br-col">
-						<p class="t-ronda-tit">Semifinales</p>
-						<div class="br-body br-semis">
-							{@render tMatch('J2')}
-							{@render tMatch('J3')}
+					<div class="br">
+						<div class="br-col">
+							<p class="t-ronda-tit">Cuartos</p>
+							<div class="br-cells">
+								<div class="br-cell"></div>
+								<div class="br-cell">{@render tMatch('J1')}</div>
+							</div>
+						</div>
+						<div class="br-concol">
+							<p class="t-ronda-tit tit-vacio">&nbsp;</p>
+							<div class="br-cells">
+								<div class="br-cell"></div>
+								<div class="br-cell br-linea"></div>
+							</div>
+						</div>
+						<div class="br-col">
+							<p class="t-ronda-tit">Semifinales</p>
+							<div class="br-cells">
+								<div class="br-cell">{@render tMatch('J2')}</div>
+								<div class="br-cell">{@render tMatch('J3')}</div>
+							</div>
+						</div>
+						<div class="br-concol">
+							<p class="t-ronda-tit tit-vacio">&nbsp;</p>
+							<div class="br-cells">
+								<div class="br-cell br-llave"></div>
+							</div>
+						</div>
+						<div class="br-col">
+							<p class="t-ronda-tit">Final</p>
+							<div class="br-cells">
+								<div class="br-cell">{@render tMatch('J5')}</div>
+							</div>
 						</div>
 					</div>
-					<div class="br-col">
-						<p class="t-ronda-tit">Final</p>
-						<div class="br-body br-final">{@render tMatch('J5')}</div>
+					<div class="br-tercer">
+						<p class="t-ronda-tit t-ronda-tit-3">Tercer lugar</p>
+						<div class="br-tercer-box">{@render tMatch('J4')}</div>
 					</div>
-				</div>
-				<div class="br-tercer">
-					<p class="t-ronda-tit t-ronda-tit-3">Tercer lugar</p>
-					<div class="br-tercer-box">{@render tMatch('J4')}</div>
-				</div>
 				</div>
 			</div>
 		</div>
@@ -1204,7 +1222,7 @@
 			inset 0 0 0 100px rgba(34, 197, 94, 0.12);
 	}
 
-	/* ---- Subtab "Torneo": bracket de Q2 (estilo FIFA): Cuartos → Semifinales → Final + 3er lugar ---- */
+	/* ---- Subtab "Torneo": bracket estilo FIFA con ramificaciones (llaves como Segunda Ronda) ---- */
 	.t-sub {
 		margin: 0 0 0.8rem;
 		font-size: 0.82rem;
@@ -1215,6 +1233,11 @@
 		-webkit-overflow-scrolling: touch;
 		padding-bottom: 0.4rem;
 	}
+	.torneo-inner {
+		display: flex;
+		flex-direction: column;
+		width: max-content;
+	}
 	.t-ronda-tit {
 		margin: 0 0 0.6rem;
 		text-align: center;
@@ -1224,33 +1247,69 @@
 		text-transform: uppercase;
 		color: rgba(255, 255, 255, 0.5);
 	}
-	/* Columnas del bracket, misma altura; alineación vertical: J1 con J3 (abajo), J5 centrado. */
+	.tit-vacio {
+		visibility: hidden;
+	}
+	/* Columnas de ronda (con tarjetas) y columnas conectoras (con las llaves). Las celdas usan
+	   flex:1 para que sus centros se alineen entre rondas (J1 con J3; J5 entre J2 y J3). */
 	.br {
+		--linea: rgba(34, 197, 94, 0.5);
+		--concol: 2.4rem;
 		display: flex;
 		align-items: stretch;
-		gap: 2.4rem;
 		width: max-content;
 		padding: 1.2rem 0.2rem 0.4rem;
 	}
 	.br-col {
 		display: flex;
 		flex-direction: column;
-		flex: 0 0 auto;
 	}
-	.br-body {
+	.br-concol {
+		display: flex;
+		flex-direction: column;
+		flex: 0 0 var(--concol);
+		width: var(--concol);
+	}
+	.br-cells {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
 	}
-	.br-cuartos {
-		justify-content: flex-end;
+	.br-cell {
+		flex: 1 1 0;
+		display: flex;
+		align-items: center;
+		position: relative;
+		min-height: 3.1rem;
 	}
-	.br-semis {
-		justify-content: space-between;
-		gap: 1.6rem;
+	/* J1 → J3 (pase directo 1→1): línea horizontal a través del conector. */
+	.br-linea::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 50%;
+		border-top: 2px solid var(--linea);
 	}
-	.br-final {
-		justify-content: center;
+	/* Llave semifinales → final (2→1): brazos a J2 (25%) y J3 (75%) + espina + salida a J5 (50%). */
+	.br-llave::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		width: 50%;
+		top: 25%;
+		bottom: 25%;
+		border-right: 2px solid var(--linea);
+		border-top: 2px solid var(--linea);
+		border-bottom: 2px solid var(--linea);
+	}
+	.br-llave::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		right: 0;
+		top: 50%;
+		border-top: 2px solid var(--linea);
 	}
 	/* Tarjeta de partido */
 	.t-match {
@@ -1326,24 +1385,6 @@
 	.t-lado.t-gana .t-nm,
 	.t-lado.t-gana .t-g {
 		color: #86efac;
-	}
-	/* Conectores: línea horizontal que sale hacia la derecha de los juegos que alimentan al siguiente
-	   (J1 → semifinal; semifinales → final). Cruza el gap de 2.4rem hasta la columna de la derecha. */
-	.br-cuartos .t-match::after,
-	.br-semis .t-match::after {
-		content: '';
-		position: absolute;
-		left: 100%;
-		top: 50%;
-		width: 2.4rem;
-		height: 1px;
-		background: rgba(255, 255, 255, 0.18);
-	}
-	/* Partido por el 3er lugar: debajo del cuadro, aparte y discreto. */
-	.torneo-inner {
-		display: flex;
-		flex-direction: column;
-		width: max-content;
 	}
 	/* 3er lugar: debajo de la columna de la Final (alineado a la derecha del cuadro), como en FIFA. */
 	.br-tercer {
