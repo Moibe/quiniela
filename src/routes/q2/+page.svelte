@@ -210,9 +210,11 @@
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
 	let subtab = $state<SubtabId>('participantes');
-	// Todos los subtabs son públicos (incluido "Partidos"); dentro de Partidos, solo la EDICIÓN de
-	// resultados es de admin.
-	const subtabsVisibles = SUBTABS;
+	// Lugares y Lugares N son SOLO admin por ahora (no visibles al público). El resto de subtabs son
+	// públicos; en "Partidos" todos ven los marcadores pero solo el admin los edita.
+	const subtabsVisibles = $derived(
+		SUBTABS.filter((t) => (t.id !== 'posiciones' && t.id !== 'lugaresN') || data.isAdmin)
+	);
 
 	// Navegación por teclado del tablist (patrón WAI-ARIA tabs): ←/→ ciclan, Home/End saltan.
 	function onTabKey(e: KeyboardEvent, i: number) {
