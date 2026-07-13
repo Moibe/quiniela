@@ -57,6 +57,16 @@
 
 	const enVivoJuego = (etiqueta: string) => resPorJuego.get(etiqueta)?.estado === 'vivo';
 
+	// Bandera de J3 por participante = el equipo que declaró GANADOR en SU pronóstico de J1 (Argentina
+	// vs Suiza). Empate en su pronóstico → null (no declaró ganador). Estático: sale del pronóstico,
+	// no del resultado real de J1.
+	const j1Q2 = q2Juegos.find((j) => j.etiqueta === 'J1');
+	const banderaJ3PorParticipante = q2Participantes.map((_, i) => {
+		const pr = j1Q2?.pronos[i];
+		if (!pr || pr[0] == null || pr[1] == null || pr[0] === pr[1]) return null;
+		return pr[0] > pr[1] ? j1Q2!.equipoA : j1Q2!.equipoB;
+	});
+
 	// --- Posiciones de Q2 (subtab equivalente a Lugares) ---
 	// Se calcula EN EL CLIENTE con computeStandings (mismo 3/1 que el resto de la app), sobre los
 	// pronósticos de q2Data y los resultados EFECTIVOS (resPorJuego, ya con overlay del monitor). Así
@@ -361,9 +371,7 @@
 										class:pinned={pinned === i}
 										class:hit-resultado={h === 1}
 										class:hit-exacto={h === 2}
-										>{#if j.etiqueta === 'J3'}<span class="prono-flag">{marcador(p)}<Bandera
-													equipo="México"
-												/></span>{:else}{marcador(p)}{/if}</td
+										>{#if j.etiqueta === 'J3'}{@const bj3 = banderaJ3PorParticipante[i]}<span class="prono-flag">{marcador(p)}{#if bj3}<Bandera equipo={bj3} />{/if}</span>{:else}{marcador(p)}{/if}</td
 									>
 								{/each}
 							</tr>
