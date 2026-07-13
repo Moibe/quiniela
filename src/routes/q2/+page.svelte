@@ -96,6 +96,49 @@
 	const posIzq = $derived(standings.slice(0, mitadPos));
 	const posDer = $derived(standings.slice(mitadPos));
 
+	// --- Torneo (bracket de Q2, estilo Segunda Ronda) ---
+	// Los juegos traen placeholders ("G J1" = ganador de J1, "P J2" = perdedor de J2, etc.). Aquí los
+	// RESOLVEMOS a equipos reales conforme se capturan los marcadores, para que el cuadro se vaya
+	// dibujando. Rondas por dependencia: J1/J2 → J3 → J4 → J5 (final).
+	const juegoPorEtiqueta = new Map(q2Juegos.map((j) => [j.etiqueta, j] as const));
+	const TORNEO_RONDAS = [
+		{ titulo: 'Ronda 1', juegos: ['J1', 'J2'] },
+		{ titulo: 'Ronda 2', juegos: ['J3'] },
+		{ titulo: 'Ronda 3', juegos: ['J4'] },
+		{ titulo: 'Final', juegos: ['J5'] }
+	];
+	const rePlace = /^([GP])\s?J(\d)$/i;
+
+	// Lado ganador de un juego ('a' | 'b' | null si empate o sin jugar).
+	function ladoGanador(et: string): 'a' | 'b' | null {
+		const r = resPorJuego.get(et);
+		if (!r || r.golesA == null || r.golesB == null || r.golesA === r.golesB) return null;
+		return r.golesA > r.golesB ? 'a' : 'b';
+	}
+	// Resuelve una etiqueta de equipo: si es real la devuelve; si es "G Jn"/"P Jn" devuelve el equipo
+	// ganador/perdedor de ese juego (recursivo), o null si todavía no se sabe.
+	function resolverEquipo(label: string): string | null {
+		const m = label.match(rePlace);
+		if (!m) return label; // equipo real
+		const et = 'J' + m[2];
+		const j = juegoPorEtiqueta.get(et);
+		const lado = ladoGanador(et);
+		if (!j || !lado) return null;
+		const quiereGanador = m[1].toUpperCase() === 'G';
+		const objetivo = quiereGanador ? lado : lado === 'a' ? 'b' : 'a';
+		return resolverEquipo(objetivo === 'a' ? j.equipoA : j.equipoB);
+	}
+	// Texto amable para un placeholder aún sin resolver: "Ganador J1" / "Perdedor J3".
+	function textoPlaceholder(label: string): string {
+		const m = label.match(rePlace);
+		if (!m) return label;
+		return (m[1].toUpperCase() === 'G' ? 'Ganador' : 'Perdedor') + ' J' + m[2];
+	}
+	const marcadorTorneo = (et: string) => {
+		const r = resPorJuego.get(et);
+		return r && r.golesA != null && r.golesB != null ? { a: r.golesA, b: r.golesB } : null;
+	};
+
 	// Mismas interacciones que Participantes: VARIAS columnas resaltadas (1 clic), UNA fijada (doble
 	// clic), VARIAS filas marcadas (clic en la identidad del juego).
 	let highlighted = $state<Set<number>>(new Set());
@@ -141,6 +184,7 @@
 	const SUBTABS = [
 		{ id: 'captura', label: 'Partidos' },
 		{ id: 'participantes', label: 'Participantes' },
+		{ id: 'torneo', label: 'Torneo' },
 		{ id: 'posiciones', label: 'Lugares' }
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
@@ -194,6 +238,38 @@
 			</tbody>
 		</table>
 	</div>
+{/snippet}
+
+{#snippet tMatch(et: string)}
+	{@const j = juegoPorEtiqueta.get(et)}
+	{#if j}
+		{@const mc = marcadorTorneo(et)}
+		{@const lg = ladoGanador(et)}
+		{@const ra = resolverEquipo(j.equipoA)}
+		{@const rb = resolverEquipo(j.equipoB)}
+		<div class="t-match" class:t-jugado={!!mc} class:t-final={et === 'J5'}>
+			{#if et === 'J5'}<span class="t-trofeo" aria-hidden="true">🏆</span>{/if}
+			<span class="t-num">{et}</span>
+			<div class="t-lado" class:t-gana={lg === 'a'}>
+				{#if ra}
+					<Bandera equipo={ra} />
+					<span class="t-nm notranslate" translate="no" title={ra}>{ra}</span>
+				{:else}
+					<span class="t-ph">{textoPlaceholder(j.equipoA)}</span>
+				{/if}
+				<span class="t-g">{mc ? mc.a : '–'}</span>
+			</div>
+			<div class="t-lado" class:t-gana={lg === 'b'}>
+				{#if rb}
+					<Bandera equipo={rb} />
+					<span class="t-nm notranslate" translate="no" title={rb}>{rb}</span>
+				{:else}
+					<span class="t-ph">{textoPlaceholder(j.equipoB)}</span>
+				{/if}
+				<span class="t-g">{mc ? mc.b : '–'}</span>
+			</div>
+		</div>
+	{/if}
 {/snippet}
 
 <section class="q2">
@@ -317,6 +393,27 @@
 				<!-- Móvil / angosto: una sola tabla continua. -->
 				<div class="pos-cols-mobile">
 					{@render tablaPos(standings, 'tabla completa')}
+				</div>
+			</div>
+		</div>
+	{:else if subtab === 'torneo'}
+		<div id="panel-torneo" role="tabpanel" aria-labelledby="subtab-torneo" tabindex="0">
+			<p class="t-sub">
+				El cuadro de Q2 (J1–J5). Los cruces (Ganador/Perdedor) se resuelven a equipos reales conforme
+				se capturan los marcadores.
+			</p>
+			<div class="torneo-wrap">
+				<div class="torneo">
+					{#each TORNEO_RONDAS as ronda (ronda.titulo)}
+						<div class="t-ronda">
+							<p class="t-ronda-tit">{ronda.titulo}</p>
+							<div class="t-juegos">
+								{#each ronda.juegos as et (et)}
+									{@render tMatch(et)}
+								{/each}
+							</div>
+						</div>
+					{/each}
 				</div>
 			</div>
 		</div>
@@ -1100,5 +1197,133 @@
 			inset 2px 0 0 rgba(134, 239, 172, 0.45),
 			inset -2px 0 0 rgba(134, 239, 172, 0.45),
 			inset 0 0 0 100px rgba(34, 197, 94, 0.12);
+	}
+
+	/* ---- Subtab "Torneo": cuadro de Q2 (estilo Segunda Ronda, columnas por ronda) ---- */
+	.t-sub {
+		margin: 0 0 0.8rem;
+		font-size: 0.82rem;
+		color: rgba(255, 255, 255, 0.8);
+	}
+	/* Scroll horizontal en pantallas angostas; centrado (safe) en anchas sin cortar el inicio. */
+	.torneo-wrap {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 0.4rem;
+	}
+	.torneo {
+		display: flex;
+		align-items: stretch;
+		justify-content: safe center;
+		gap: 1.6rem;
+		min-width: min-content;
+		padding: 1.1rem 0.2rem 0.4rem; /* aire arriba para el trofeo de la final */
+	}
+	.t-ronda {
+		display: flex;
+		flex-direction: column;
+		flex: 0 0 auto;
+	}
+	.t-ronda-tit {
+		margin: 0 0 0.5rem;
+		text-align: center;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.5);
+	}
+	/* Los juegos de una ronda se centran verticalmente respecto a la columna más alta (Ronda 1). */
+	.t-juegos {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 1rem;
+	}
+	.t-match {
+		position: relative;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		gap: 0.28rem;
+		width: 12.5rem;
+		padding: 0.45rem 0.6rem 0.45rem 1.15rem;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 8px;
+	}
+	/* Conector: los juegos que NO son de Ronda 1 reciben su(s) equipo(s) de la izquierda; una línea
+	   corta hacia la izquierda lo sugiere (direccionalmente correcto, sin prometer un cruce exacto). */
+	.t-ronda:not(:first-child) .t-match::before {
+		content: '';
+		position: absolute;
+		right: 100%;
+		top: 50%;
+		width: 1.6rem;
+		height: 1px;
+		background: rgba(255, 255, 255, 0.18);
+	}
+	/* Jugado: marco dorado tenue (como los cruces confirmados de Segunda Ronda). */
+	.t-match.t-jugado {
+		border-color: rgba(250, 204, 21, 0.5);
+		box-shadow:
+			0 0 0 1px rgba(250, 204, 21, 0.25),
+			0 0 10px rgba(250, 204, 21, 0.18);
+	}
+	.t-match.t-final {
+		border-color: rgba(250, 204, 21, 0.55);
+	}
+	.t-trofeo {
+		position: absolute;
+		top: -0.95rem;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 1.15rem;
+		filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.5));
+		z-index: 2;
+	}
+	.t-num {
+		position: absolute;
+		left: 0.4rem;
+		top: 50%;
+		transform: translateY(-50%);
+		font-size: 0.6rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.35);
+	}
+	.t-lado {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-width: 0;
+	}
+	.t-nm {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-weight: 600;
+		font-size: 0.8rem;
+	}
+	.t-ph {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.74rem;
+		font-style: italic;
+		color: rgba(255, 255, 255, 0.5);
+	}
+	.t-g {
+		margin-left: auto;
+		flex-shrink: 0;
+		font-variant-numeric: tabular-nums;
+		font-weight: 700;
+		font-size: 0.85rem;
+		color: rgba(255, 255, 255, 0.55);
+	}
+	/* Ganador del juego resaltado en verde. */
+	.t-lado.t-gana .t-nm,
+	.t-lado.t-gana .t-g {
+		color: #86efac;
 	}
 </style>
