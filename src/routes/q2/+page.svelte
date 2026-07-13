@@ -369,15 +369,6 @@
 										title="Guardar EN VIVO (marca en curso · pulsa la tabla)"
 										aria-label="Guardar en vivo">⏱</button
 									>
-									{#if r}
-										<button
-											type="submit"
-											formaction="?/clearResult"
-											class="cap-btn clear"
-											title="Limpiar resultado"
-											aria-label="Limpiar">✕</button
-										>
-									{/if}
 								</span>
 								{#if r?.estado === 'vivo'}
 									<span class="cap-tag vivo">en vivo</span>
@@ -940,10 +931,6 @@
 	.cap-btn.partial:hover {
 		border-color: rgba(56, 189, 248, 0.6);
 		color: #7dd3fc;
-	}
-	.cap-btn.clear:hover {
-		border-color: rgba(248, 113, 113, 0.6);
-		color: #fca5a5;
 	}
 	.cap-tag {
 		flex: 0 0 auto;
