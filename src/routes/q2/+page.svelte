@@ -176,9 +176,9 @@
 	// --- Subtabs de la Q2 (cada sección vive en su propio subtab; nada permanece como header fijo) ---
 	// Para agregar un subtab: una entrada más en SUBTABS + su bloque {:else if} en el markup.
 	const SUBTABS = [
+		{ id: 'torneo', label: 'Torneo' },
 		{ id: 'captura', label: 'Partidos' },
 		{ id: 'participantes', label: 'Participantes' },
-		{ id: 'torneo', label: 'Torneo' },
 		{ id: 'posiciones', label: 'Lugares' }
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
@@ -1337,9 +1337,10 @@
 	}
 	.t-trofeo {
 		position: absolute;
-		top: -0.95rem;
+		bottom: 100%; /* ARRIBA de la tarjeta (afuera), no encima del borde */
 		left: 50%;
 		transform: translateX(-50%);
+		margin-bottom: 0.25rem;
 		font-size: 1.15rem;
 		filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.5));
 		z-index: 2;
