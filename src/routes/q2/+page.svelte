@@ -101,12 +101,6 @@
 	// RESOLVEMOS a equipos reales conforme se capturan los marcadores, para que el cuadro se vaya
 	// dibujando. Rondas por dependencia: J1/J2 → J3 → J4 → J5 (final).
 	const juegoPorEtiqueta = new Map(q2Juegos.map((j) => [j.etiqueta, j] as const));
-	const TORNEO_RONDAS = [
-		{ titulo: 'Ronda 1', juegos: ['J1', 'J2'] },
-		{ titulo: 'Ronda 2', juegos: ['J3'] },
-		{ titulo: 'Ronda 3', juegos: ['J4'] },
-		{ titulo: 'Final', juegos: ['J5'] }
-	];
 	const rePlace = /^([GP])\s?J(\d)$/i;
 
 	// Lado ganador de un juego ('a' | 'b' | null si empate o sin jugar).
@@ -399,21 +393,30 @@
 	{:else if subtab === 'torneo'}
 		<div id="panel-torneo" role="tabpanel" aria-labelledby="subtab-torneo" tabindex="0">
 			<p class="t-sub">
-				El cuadro de Q2 (J1–J5). Los cruces (Ganador/Perdedor) se resuelven a equipos reales conforme
-				se capturan los marcadores.
+				El cuadro de Q2: Cuartos → Semifinales → Final, más el partido por el 3er lugar. Los cruces
+				se resuelven a equipos reales conforme se capturan los marcadores.
 			</p>
 			<div class="torneo-wrap">
-				<div class="torneo">
-					{#each TORNEO_RONDAS as ronda (ronda.titulo)}
-						<div class="t-ronda">
-							<p class="t-ronda-tit">{ronda.titulo}</p>
-							<div class="t-juegos">
-								{#each ronda.juegos as et (et)}
-									{@render tMatch(et)}
-								{/each}
-							</div>
+				<div class="br">
+					<div class="br-col">
+						<p class="t-ronda-tit">Cuartos</p>
+						<div class="br-body br-cuartos">{@render tMatch('J1')}</div>
+					</div>
+					<div class="br-col">
+						<p class="t-ronda-tit">Semifinales</p>
+						<div class="br-body br-semis">
+							{@render tMatch('J2')}
+							{@render tMatch('J3')}
 						</div>
-					{/each}
+					</div>
+					<div class="br-col">
+						<p class="t-ronda-tit">Final</p>
+						<div class="br-body br-final">{@render tMatch('J5')}</div>
+					</div>
+				</div>
+				<div class="br-tercer">
+					<p class="t-ronda-tit t-ronda-tit-3">Tercer lugar</p>
+					<div class="br-tercer-box">{@render tMatch('J4')}</div>
 				</div>
 			</div>
 		</div>
@@ -1199,33 +1202,19 @@
 			inset 0 0 0 100px rgba(34, 197, 94, 0.12);
 	}
 
-	/* ---- Subtab "Torneo": cuadro de Q2 (estilo Segunda Ronda, columnas por ronda) ---- */
+	/* ---- Subtab "Torneo": bracket de Q2 (estilo FIFA): Cuartos → Semifinales → Final + 3er lugar ---- */
 	.t-sub {
 		margin: 0 0 0.8rem;
 		font-size: 0.82rem;
 		color: rgba(255, 255, 255, 0.8);
 	}
-	/* Scroll horizontal en pantallas angostas; centrado (safe) en anchas sin cortar el inicio. */
 	.torneo-wrap {
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 		padding-bottom: 0.4rem;
 	}
-	.torneo {
-		display: flex;
-		align-items: stretch;
-		justify-content: safe center;
-		gap: 1.6rem;
-		min-width: min-content;
-		padding: 1.1rem 0.2rem 0.4rem; /* aire arriba para el trofeo de la final */
-	}
-	.t-ronda {
-		display: flex;
-		flex-direction: column;
-		flex: 0 0 auto;
-	}
 	.t-ronda-tit {
-		margin: 0 0 0.5rem;
+		margin: 0 0 0.6rem;
 		text-align: center;
 		font-size: 0.68rem;
 		font-weight: 700;
@@ -1233,38 +1222,49 @@
 		text-transform: uppercase;
 		color: rgba(255, 255, 255, 0.5);
 	}
-	/* Los juegos de una ronda se centran verticalmente respecto a la columna más alta (Ronda 1). */
-	.t-juegos {
+	/* Columnas del bracket, misma altura; alineación vertical: J1 con J3 (abajo), J5 centrado. */
+	.br {
+		display: flex;
+		align-items: stretch;
+		gap: 2.4rem;
+		width: max-content;
+		padding: 1.2rem 0.2rem 0.4rem;
+	}
+	.br-col {
+		display: flex;
+		flex-direction: column;
+		flex: 0 0 auto;
+	}
+	.br-body {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
-		gap: 1rem;
 	}
+	.br-cuartos {
+		justify-content: flex-end;
+	}
+	.br-semis {
+		justify-content: space-between;
+		gap: 1.6rem;
+	}
+	.br-final {
+		justify-content: center;
+	}
+	/* Tarjeta de partido */
 	.t-match {
 		position: relative;
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
+		justify-content: center;
 		gap: 0.28rem;
 		width: 12.5rem;
+		min-height: 2.9rem;
 		padding: 0.45rem 0.6rem 0.45rem 1.15rem;
 		background: rgba(255, 255, 255, 0.04);
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 8px;
 	}
-	/* Conector: los juegos que NO son de Ronda 1 reciben su(s) equipo(s) de la izquierda; una línea
-	   corta hacia la izquierda lo sugiere (direccionalmente correcto, sin prometer un cruce exacto). */
-	.t-ronda:not(:first-child) .t-match::before {
-		content: '';
-		position: absolute;
-		right: 100%;
-		top: 50%;
-		width: 1.6rem;
-		height: 1px;
-		background: rgba(255, 255, 255, 0.18);
-	}
-	/* Jugado: marco dorado tenue (como los cruces confirmados de Segunda Ronda). */
 	.t-match.t-jugado {
 		border-color: rgba(250, 204, 21, 0.5);
 		box-shadow:
@@ -1321,9 +1321,31 @@
 		font-size: 0.85rem;
 		color: rgba(255, 255, 255, 0.55);
 	}
-	/* Ganador del juego resaltado en verde. */
 	.t-lado.t-gana .t-nm,
 	.t-lado.t-gana .t-g {
 		color: #86efac;
+	}
+	/* Conectores: línea horizontal que sale hacia la derecha de los juegos que alimentan al siguiente
+	   (J1 → semifinal; semifinales → final). Cruza el gap de 2.4rem hasta la columna de la derecha. */
+	.br-cuartos .t-match::after,
+	.br-semis .t-match::after {
+		content: '';
+		position: absolute;
+		left: 100%;
+		top: 50%;
+		width: 2.4rem;
+		height: 1px;
+		background: rgba(255, 255, 255, 0.18);
+	}
+	/* Partido por el 3er lugar: debajo del cuadro, aparte y discreto. */
+	.br-tercer {
+		width: max-content;
+		margin-top: 0.7rem;
+		padding-top: 0.8rem;
+		border-top: 1px dashed rgba(255, 255, 255, 0.12);
+	}
+	.t-ronda-tit-3 {
+		text-align: left;
+		margin-bottom: 0.4rem;
 	}
 </style>

@@ -297,7 +297,7 @@ export const q2Juegos: Q2Juego[] = [
  {
   "etiqueta": "J5",
   "equipoA": "G J3",
-  "equipoB": "G J4",
+  "equipoB": "G J2",
   "pronos": [
    [
     1,
