@@ -2,16 +2,11 @@
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import Bandera from '$lib/Bandera.svelte';
-	import { q2Juegos } from '$lib/q2Data';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const actionError = $derived(form && 'error' in form ? form : null);
-
-	// Resultado efectivo de los juegos de Q2 (persistido + monitor), por etiqueta. Solo lectura aquí;
-	// la captura de Q2 vive en /q2.
-	const q2map = $derived(new Map((data.q2 ?? []).map((r) => [r.etiqueta, r] as const)));
 
 	// Tras enviar, aplica el resultado e invalida (re-render con datos frescos)
 	// pero SIN resetear el <form>: si no, form.reset() vacía un input del marcador
@@ -202,40 +197,6 @@
 				{/if}
 		</div>
 	{/snippet}
-
-	<!-- Juegos de la Quiniela 2 (bracket J1-J5): SOLO lectura, tomados de q2Data. No entran a la tabla
-	     `partidos` porque comparten equipos con la fase de grupos (y traen placeholders) y romperían la
-	     derivación de grupos/bracket. -->
-	{#snippet filaQ2(j: (typeof q2Juegos)[number])}
-		{@const r = q2map.get(j.etiqueta)}
-		{@const jugado = !!r && r.golesA !== null && r.golesB !== null}
-		<div class="partido q2-row" class:jugado class:encurso={r?.estado === 'vivo'}>
-			<span class="num">{j.etiqueta}</span>
-			<div class="cuerpo">
-				<span class="team a">
-					<span class="tname notranslate" translate="no">{j.equipoA}</span>
-					<Bandera equipo={j.equipoA} />
-				</span>
-				{#if jugado}
-					<span class="score-box">{r?.golesA}<span class="sep">–</span>{r?.golesB}</span>
-				{:else}
-					<span class="score-box pending">–<span class="sep">–</span>–</span>
-				{/if}
-				<span class="team b">
-					<Bandera equipo={j.equipoB} />
-					<span class="tname notranslate" translate="no">{j.equipoB}</span>
-				</span>
-			</div>
-			<span class="meta">
-				{#if r?.estado === 'vivo'}
-					<span class="encurso-badge"><span class="dot-live" aria-hidden="true"></span> En Curso</span>
-				{:else if !jugado}
-					<span class="pendiente">pendiente</span>
-				{/if}
-			</span>
-		</div>
-	{/snippet}
-
 	<div class="list">
 		{#each bloques as bl (bl.a.id)}
 			{#if bl.b && bl.a.id === siguienteParKey}
@@ -249,11 +210,6 @@
 				{@render fila(bl.a)}
 				{#if bl.b}{@render fila(bl.b)}{/if}
 			{/if}
-		{/each}
-
-		<div class="q2-divider">Quiniela 2</div>
-		{#each q2Juegos as j (j.etiqueta)}
-			{@render filaQ2(j)}
 		{/each}
 	</div>
 </section>
@@ -278,18 +234,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
-	}
-
-	/* Separador antes de los juegos de la Quiniela 2 (van al final de la lista). */
-	.q2-divider {
-		margin: 0.9rem 0 0.1rem;
-		padding-top: 0.7rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.14);
-		text-align: center;
-		font-size: 0.8rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		color: rgba(255, 255, 255, 0.8);
 	}
 
 	/* Par de partidos PENDIENTES que se juegan al mismo tiempo: enmarcados juntos en un cuadro
