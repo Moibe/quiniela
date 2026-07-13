@@ -10,6 +10,15 @@ function destino(target: string | null): string {
 	return target && target.startsWith('/') && !target.startsWith('//') ? target : '/';
 }
 
+// Dominio de la cookie de admin: el dominio registrable (ej. noxoroxo.com) para que la sesion valga
+// en el apex Y en los subdominios (administracion.noxoroxo.com) con un solo login. En localhost/IP
+// se deja host-only (sin domain).
+function cookieDomain(url: URL): string | undefined {
+	const h = url.hostname;
+	if (h === 'localhost' || /^[\d.]+$/.test(h) || !h.includes('.')) return undefined;
+	return h.split('.').slice(-2).join('.');
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
 	// Si ya es admin, no tiene caso mostrar el login.
 	if (locals.isAdmin) redirect(303, destino(url.searchParams.get('redirectTo')));
@@ -44,14 +53,15 @@ export const actions: Actions = {
 			httpOnly: true,
 			sameSite: 'strict',
 			secure: !dev,
-			maxAge: 60 * 60 * 24 * 30 // 30 días
+			maxAge: 60 * 60 * 24 * 30, // 30 días
+			domain: cookieDomain(url)
 		});
 
 		redirect(303, redirectTo);
 	},
 
 	logout: async ({ cookies, url }) => {
-		cookies.delete(ADMIN_COOKIE, { path: '/' });
+		cookies.delete(ADMIN_COOKIE, { path: '/', domain: cookieDomain(url) });
 		redirect(303, destino(url.searchParams.get('redirectTo')));
 	}
 };
