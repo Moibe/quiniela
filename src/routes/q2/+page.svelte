@@ -57,16 +57,6 @@
 
 	const enVivoJuego = (etiqueta: string) => resPorJuego.get(etiqueta)?.estado === 'vivo';
 
-	// Bandera de J3 por participante = el equipo que declaró GANADOR en SU pronóstico de J1 (Argentina
-	// vs Suiza). Empate en su pronóstico → null (no declaró ganador). Estático: sale del pronóstico,
-	// no del resultado real de J1.
-	const j1Q2 = q2Juegos.find((j) => j.etiqueta === 'J1');
-	const banderaJ3PorParticipante = q2Participantes.map((_, i) => {
-		const pr = j1Q2?.pronos[i];
-		if (!pr || pr[0] == null || pr[1] == null || pr[0] === pr[1]) return null;
-		return pr[0] > pr[1] ? j1Q2!.equipoA : j1Q2!.equipoB;
-	});
-
 	// --- Posiciones de Q2 (subtab equivalente a Lugares) ---
 	// Se calcula EN EL CLIENTE con computeStandings (mismo 3/1 que el resto de la app), sobre los
 	// pronósticos de q2Data y los resultados EFECTIVOS (resPorJuego, ya con overlay del monitor). Así
@@ -142,6 +132,32 @@
 		const r = resPorJuego.get(et);
 		return r && r.golesA != null && r.golesB != null ? { a: r.golesA, b: r.golesB } : null;
 	};
+
+	// Resuelve un slot (G Jn / P Jn) al equipo según el PRONÓSTICO del participante i (recursivo): el
+	// ganador/perdedor que ÉL declaró en ese juego. Empate en su pronóstico → null (no declaró).
+	function equipoDeclarado(label: string, i: number): string | null {
+		const m = label.match(rePlace);
+		if (!m) return label; // equipo real
+		const juego = juegoPorEtiqueta.get('J' + m[2]);
+		const pr = juego?.pronos[i];
+		if (!juego || !pr || pr[0] == null || pr[1] == null || pr[0] === pr[1]) return null;
+		const ganaA = pr[0] > pr[1];
+		const ladoA = m[1].toUpperCase() === 'G' ? ganaA : !ganaA;
+		return equipoDeclarado(ladoA ? juego.equipoA : juego.equipoB, i);
+	}
+	// Banderas del participante i en la fila de un juego: una por cada slot PLACEHOLDER (J3=1; J4/J5=2),
+	// con el equipo que resulta de SUS pronósticos. Los slots de equipo real no llevan bandera.
+	function banderasParticipante(etiqueta: string, i: number): string[] {
+		const juego = juegoPorEtiqueta.get(etiqueta);
+		if (!juego) return [];
+		const out: string[] = [];
+		for (const label of [juego.equipoA, juego.equipoB]) {
+			if (!rePlace.test(label)) continue;
+			const t = equipoDeclarado(label, i);
+			if (t) out.push(t);
+		}
+		return out;
+	}
 
 	// Mismas interacciones que Participantes: VARIAS columnas resaltadas (1 clic), UNA fijada (doble
 	// clic), VARIAS filas marcadas (clic en la identidad del juego).
@@ -365,13 +381,14 @@
 								</td>
 								{#each j.pronos as p, i (i)}
 									{@const h = hitDe(p, j.etiqueta)}
+									{@const flags = banderasParticipante(j.etiqueta, i)}
 									<td
 										class="prono"
 										class:highlighted={highlighted.has(i)}
 										class:pinned={pinned === i}
 										class:hit-resultado={h === 1}
 										class:hit-exacto={h === 2}
-										>{#if j.etiqueta === 'J3'}{@const bj3 = banderaJ3PorParticipante[i]}<span class="prono-flag">{marcador(p)}{#if bj3}<Bandera equipo={bj3} />{/if}</span>{:else}{marcador(p)}{/if}</td
+										>{#if flags.length}<span class="prono-flag">{marcador(p)}{#each flags as f, fi (fi)}<Bandera equipo={f} />{/each}</span>{:else}{marcador(p)}{/if}</td
 									>
 								{/each}
 							</tr>
