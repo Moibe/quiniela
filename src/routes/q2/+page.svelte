@@ -4,7 +4,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import Bandera from '$lib/Bandera.svelte';
 	import { q2Participantes, q2Juegos, type Q2Juego } from '$lib/q2Data';
-	import { puntosDe, PUNTOS_EXACTO, PUNTOS_RESULTADO } from '$lib/scoring';
+	import { puntosDe, PUNTOS_EXACTO, PUNTOS_RESULTADO, computeStandings } from '$lib/scoring';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -57,6 +57,45 @@
 
 	const enVivoJuego = (etiqueta: string) => resPorJuego.get(etiqueta)?.estado === 'vivo';
 
+	// --- Posiciones de Q2 (subtab equivalente a Lugares) ---
+	// Se calcula EN EL CLIENTE con computeStandings (mismo 3/1 que el resto de la app), sobre los
+	// pronósticos de q2Data y los resultados EFECTIVOS (resPorJuego, ya con overlay del monitor). Así
+	// la tabla de posiciones se actualiza en vivo con el poll, sin ida al server.
+	const q2Standings = $derived.by(() => {
+		const parts = q2Participantes.map((nombre, id) => ({ id, nombre }));
+		const mats = q2Juegos.map((j, id) => {
+			const r = resPorJuego.get(j.etiqueta);
+			return { id, golesA: r?.golesA ?? null, golesB: r?.golesB ?? null };
+		});
+		const pros: { partidoId: number; participanteId: number; golesA: number; golesB: number }[] = [];
+		q2Juegos.forEach((j, gid) => {
+			j.pronos.forEach((p, pid) => {
+				if (p[0] == null || p[1] == null) return; // pronóstico sin capturar → no cuenta
+				pros.push({ partidoId: gid, participanteId: pid, golesA: p[0], golesB: p[1] });
+			});
+		});
+		return computeStandings(parts, mats, pros);
+	});
+	const standings = $derived(q2Standings.standings);
+	const jugados = $derived(q2Standings.partidosJugados);
+
+	// Medallas por NIVEL de puntaje (no por rank): los empatados en puntos comparten medalla.
+	const top3 = $derived(
+		[...new Set(standings.map((s) => s.puntos))]
+			.filter((p) => p > 0)
+			.sort((a, b) => b - a)
+			.slice(0, 3)
+	);
+	const esPodio = (puntos: number) => puntos > 0 && top3.includes(puntos);
+	const medalla = (puntos: number) => {
+		const i = puntos > 0 ? top3.indexOf(puntos) : -1;
+		return i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+	};
+	// Dos columnas en desktop (1→mitad / resto); una sola tabla en móvil.
+	const mitadPos = $derived(Math.ceil(standings.length / 2));
+	const posIzq = $derived(standings.slice(0, mitadPos));
+	const posDer = $derived(standings.slice(mitadPos));
+
 	// Mismas interacciones que Participantes: VARIAS columnas resaltadas (1 clic), UNA fijada (doble
 	// clic), VARIAS filas marcadas (clic en la identidad del juego).
 	let highlighted = $state<Set<number>>(new Set());
@@ -102,7 +141,7 @@
 	// Para agregar un subtab: una entrada más en SUBTABS + su bloque {:else if} en el markup.
 	const SUBTABS = [
 		{ id: 'participantes', label: 'Participantes' },
-		{ id: 'proximamente', label: 'Próximamente' }
+		{ id: 'posiciones', label: 'Posiciones' }
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
 	let subtab = $state<SubtabId>('participantes');
@@ -122,6 +161,38 @@
 		tabs?.[next]?.focus();
 	}
 </script>
+
+{#snippet tablaPos(filas: typeof standings, lado: string)}
+	<div class="pos-wrap">
+		<table class="pos-table">
+			<caption class="sr-only">Posiciones de Q2 ({lado}), ordenadas por puntos.</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="pc-pos">#</th>
+					<th scope="col" class="pc-name">Participante</th>
+					<th scope="col" class="pc-pts">Pts</th>
+					<th scope="col" class="pc-n" title="Marcadores exactos (3 pts c/u)">Exactos</th>
+					<th scope="col" class="pc-n" title="Resultados correctos (1 pt c/u)">Resultado</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each filas as s (s.participanteId)}
+					<tr class:pos-podio={esPodio(s.puntos)}>
+						<td class="pc-pos"
+							><span class="pc-slot medal" aria-hidden="true">{medalla(s.puntos)}</span><span
+								class="pc-slot rank">{s.rank}</span
+							></td
+						>
+						<th scope="row" class="pc-name notranslate" translate="no">{s.nombre}</th>
+						<td class="pc-pts">{s.puntos}</td>
+						<td class="pc-n">{s.exactos}</td>
+						<td class="pc-n">{s.resultados}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{/snippet}
 
 <section class="q2">
 	<div class="top">
@@ -294,11 +365,27 @@
 				</table>
 			</div>
 		</div>
-	{:else if subtab === 'proximamente'}
-		<div id="panel-proximamente" role="tabpanel" aria-labelledby="subtab-proximamente" tabindex="0">
-			<div class="placeholder">
-				<p class="ph-title">Próximamente</p>
-				<p class="ph-sub">Esta sección aún no está disponible.</p>
+	{:else if subtab === 'posiciones'}
+		<div id="panel-posiciones" role="tabpanel" aria-labelledby="subtab-posiciones" tabindex="0">
+			<div class="pos">
+				<p class="pos-sub">
+					3 pts por marcador exacto · 1 pt por resultado correcto ·
+					<strong>{jugados}</strong> de {q2Juegos.length} juegos con resultado
+				</p>
+				{#if jugados === 0}
+					<p class="pos-empty">
+						Aún no hay resultados de Q2. La tabla se irá llenando conforme se capturen los marcadores.
+					</p>
+				{/if}
+				<!-- Pantallas anchas: dos columnas (1→8 / 9→16). -->
+				<div class="pos-cols-desktop">
+					{@render tablaPos(posIzq, 'columna izquierda')}
+					{@render tablaPos(posDer, 'columna derecha')}
+				</div>
+				<!-- Móvil / angosto: una sola tabla continua. -->
+				<div class="pos-cols-mobile">
+					{@render tablaPos(standings, 'tabla completa')}
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -728,33 +815,6 @@
 		outline: none;
 	}
 
-	/* Subtab vacío: panel "del mismo material" que .table-wrap (borde+radius) con texto tenue. */
-	.placeholder {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.35rem;
-		text-align: center;
-		min-height: 9rem;
-		padding: 2.5rem 1.25rem;
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		border-radius: 10px;
-		background: rgba(255, 255, 255, 0.012);
-	}
-	.ph-title {
-		margin: 0;
-		font-size: 0.95rem;
-		font-weight: 700;
-		color: rgba(255, 255, 255, 0.6);
-	}
-	.ph-sub {
-		margin: 0;
-		font-size: 0.78rem;
-		font-weight: 400;
-		color: rgba(255, 255, 255, 0.4);
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.subtab {
 			transition: none;
@@ -912,5 +972,135 @@
 			min-width: 3.5rem;
 			font-size: 0.75rem;
 		}
+	}
+
+	/* ---- Subtab "Posiciones" (equivalente a Lugares, adaptado a Q2) ----
+	   Ojo: los selectores genéricos de arriba (th/td/thead th) también tocan esta
+	   tabla, por eso .pos-table los re-declara (sin sticky, sin border-right). */
+	.pos {
+		display: flex;
+		flex-direction: column;
+	}
+	.pos-sub {
+		margin: 0 0 0.7rem;
+		font-size: 0.85rem;
+		color: #fff;
+	}
+	.pos-sub strong {
+		font-weight: 700;
+	}
+	.pos-empty {
+		margin: 0 0 1rem;
+		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.7);
+	}
+	.pos-cols-desktop {
+		display: flex;
+		flex-wrap: nowrap;
+		justify-content: center;
+		align-items: flex-start;
+		gap: 1.25rem;
+	}
+	.pos-cols-mobile {
+		display: none;
+	}
+	@media (max-width: 60rem) {
+		.pos-cols-desktop {
+			display: none;
+		}
+		.pos-cols-mobile {
+			display: block;
+		}
+	}
+	.pos-wrap {
+		flex: 1 1 26rem;
+		min-width: 0;
+		max-width: 34rem;
+		overflow: hidden;
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 10px;
+	}
+	.pos-cols-mobile .pos-wrap {
+		max-width: none;
+	}
+	.pos-table {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+		font-size: 0.9rem;
+		white-space: nowrap;
+	}
+	.pos-table th,
+	.pos-table td {
+		box-sizing: border-box;
+		padding: 0.55rem 0.8rem;
+		border-right: 0;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+		text-align: center;
+	}
+	.pos-table thead th {
+		position: static;
+		z-index: auto;
+		background: #0a2a19;
+		font-weight: 700;
+		font-size: 0.78rem;
+		color: rgba(255, 255, 255, 0.9);
+	}
+	.pc-pos {
+		width: 4.2rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+	.pc-slot {
+		display: inline-block;
+	}
+	.pc-slot.medal {
+		width: 1.3rem;
+		text-align: right;
+	}
+	.pc-slot.rank {
+		width: 1.5rem;
+		padding-left: 0.35rem;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.pc-name {
+		text-align: left;
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.95);
+	}
+	.pc-pts {
+		width: 4rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.pc-n {
+		width: 5.5rem;
+		color: rgba(255, 255, 255, 0.7);
+		font-variant-numeric: tabular-nums;
+	}
+	.pos-table tbody tr:hover td,
+	.pos-table tbody tr:hover .pc-name {
+		background: rgba(255, 255, 255, 0.05);
+	}
+	.pos-table tbody tr.pos-podio {
+		background: rgba(34, 197, 94, 0.07);
+	}
+	.pos-table tbody tr.pos-podio .pc-pts {
+		color: #86efac;
+	}
+	.pos-table thead th.pc-pts {
+		color: #bbf7d0;
+		background: #0c3d24;
+		box-shadow:
+			inset 2px 0 0 rgba(134, 239, 172, 0.55),
+			inset -2px 0 0 rgba(134, 239, 172, 0.55);
+	}
+	.pos-table tbody td.pc-pts {
+		color: #bbf7d0;
+		box-shadow:
+			inset 2px 0 0 rgba(134, 239, 172, 0.45),
+			inset -2px 0 0 rgba(134, 239, 172, 0.45),
+			inset 0 0 0 100px rgba(34, 197, 94, 0.12);
 	}
 </style>
