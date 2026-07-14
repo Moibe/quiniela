@@ -1381,7 +1381,7 @@
 		display: flex;
 		align-items: center;
 		position: relative;
-		min-height: 3.1rem;
+		min-height: 4.2rem; /* más alto = más aire entre las dos semifinales (centros 25%/75% intactos) */
 	}
 	/* J1 → J3 (pase directo 1→1): línea horizontal a través del conector. */
 	.br-linea::before {
@@ -1469,9 +1469,8 @@
 		font-size: 0.8rem;
 	}
 	.t-ph {
-		overflow: hidden;
-		text-overflow: ellipsis;
 		white-space: nowrap;
+		padding-right: 0.2rem; /* aire para que la itálica no se recorte a la derecha */
 		font-size: 0.74rem;
 		font-style: italic;
 		color: rgba(255, 255, 255, 0.5);
