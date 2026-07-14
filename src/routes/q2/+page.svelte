@@ -305,14 +305,17 @@
 		{ id: 'captura', label: 'Partidos' },
 		{ id: 'participantes', label: 'Participantes' },
 		{ id: 'posiciones', label: 'Lugares' },
-		{ id: 'lugaresN', label: 'Lugares N' }
+		{ id: 'lugaresN', label: 'Lugares N' },
+		{ id: 'lugaresA', label: 'Lugares A' }
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
 	let subtab = $state<SubtabId>('participantes');
-	// Lugares y Lugares N son SOLO admin por ahora (no visibles al público). El resto de subtabs son
+	// Lugares, Lugares N y Lugares A son SOLO admin por ahora (no visibles al público). El resto de subtabs son
 	// públicos; en "Partidos" todos ven los marcadores pero solo el admin los edita.
 	const subtabsVisibles = $derived(
-		SUBTABS.filter((t) => (t.id !== 'posiciones' && t.id !== 'lugaresN') || data.isAdmin)
+		SUBTABS.filter(
+			(t) => (t.id !== 'posiciones' && t.id !== 'lugaresN' && t.id !== 'lugaresA') || data.isAdmin
+		)
 	);
 
 	// Navegación por teclado del tablist (patrón WAI-ARIA tabs): ←/→ ciclan, Home/End saltan.
@@ -527,6 +530,27 @@
 		</div>
 	{:else if subtab === 'lugaresN'}
 		<div id="panel-lugaresN" role="tabpanel" aria-labelledby="subtab-lugaresN" tabindex="0">
+			<div class="pos">
+				<p class="pos-sub">
+					Marcador exacto: 3 con países / 2 sin · Resultado: 2 con países / 1 sin ·
+					<strong>{jugados}</strong> de {q2Juegos.length} juegos con resultado
+				</p>
+				{#if jugados === 0}
+					<p class="pos-empty">
+						Aún no hay resultados de Q2. La tabla se irá llenando conforme se capturen los marcadores.
+					</p>
+				{/if}
+				<div class="pos-cols-desktop">
+					{@render tablaPos(posIzqN, 'columna izquierda', cfgN)}
+					{@render tablaPos(posDerN, 'columna derecha', cfgN)}
+				</div>
+				<div class="pos-cols-mobile">
+					{@render tablaPos(standingsN, 'tabla completa', cfgN)}
+				</div>
+			</div>
+		</div>
+	{:else if subtab === 'lugaresA'}
+		<div id="panel-lugaresA" role="tabpanel" aria-labelledby="subtab-lugaresA" tabindex="0">
 			<div class="pos">
 				<p class="pos-sub">
 					Marcador exacto: 3 con países / 2 sin · Resultado: 2 con países / 1 sin ·
