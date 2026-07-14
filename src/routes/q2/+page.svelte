@@ -86,15 +86,21 @@
 			.sort((a, b) => b - a)
 			.slice(0, 3)
 	);
-	const esPodio = (puntos: number) => puntos > 0 && top3.includes(puntos);
-	const medalla = (puntos: number) => {
-		const i = puntos > 0 ? top3.indexOf(puntos) : -1;
+	const esPodioDe = (puntos: number, t3: number[]) => puntos > 0 && t3.includes(puntos);
+	const medallaDe = (puntos: number, t3: number[]) => {
+		const i = puntos > 0 ? t3.indexOf(puntos) : -1;
 		return i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
 	};
 	// Dos columnas en desktop (1→mitad / resto); una sola tabla en móvil.
 	const mitadPos = $derived(Math.ceil(standings.length / 2));
 	const posIzq = $derived(standings.slice(0, mitadPos));
 	const posDer = $derived(standings.slice(mitadPos));
+	// Config del snippet de tabla para Lugares (reglas ORIGINALES 3/1): su top3 y tooltips.
+	const cfgL = $derived({
+		t3: top3,
+		tipExacto: 'Marcadores exactos (3 pts c/u)',
+		tipResultado: 'Resultados correctos (1 pt c/u)'
+	});
 
 	// --- Torneo (bracket de Q2, estilo Segunda Ronda) ---
 	// Los juegos traen placeholders ("G J1" = ganador de J1, "P J2" = perdedor de J2, etc.). Aquí los
@@ -172,6 +178,86 @@
 			: { nombre: label, bandera: null, nota: null };
 	}
 
+	// --- Lugares N: reglas VARIANTES (matriz marcador × países) ---
+	// Por juego: base (exacto 2 · solo resultado 1 · nada 0) + bono (+1 si los "países" son correctos,
+	// solo cuando base >= 1). "Países correctos" = TODO O NADA: el participante debió declarar (vía SUS
+	// pronósticos) el/los equipo(s) que realmente llegaron a cada slot placeholder; los slots fijos
+	// (J1/J2, e Inglaterra en J3) siempre cuentan. Lugares queda intacto con 3/1; esto es solo Lugares N.
+	function paisesCorrectosN(j: Q2Juego, i: number): boolean {
+		for (const label of [j.equipoA, j.equipoB]) {
+			if (!rePlace.test(label)) continue; // slot fijo → siempre correcto
+			const real = resolverEquipo(label); // equipo real que llegó a ese slot
+			const decl = equipoDeclarado(label, i); // el que el participante declaró
+			if (!real || !decl || real !== decl) return false;
+		}
+		return true;
+	}
+	const q2StandingsN = $derived.by(() => {
+		const acc = new Map<number, { puntos: number; exactos: number; resultados: number; fallados: number }>();
+		for (let id = 0; id < q2Participantes.length; id++) acc.set(id, { puntos: 0, exactos: 0, resultados: 0, fallados: 0 });
+		q2Juegos.forEach((j) => {
+			const r = resPorJuego.get(j.etiqueta);
+			if (!r || r.golesA == null || r.golesB == null) return; // juego sin resultado
+			const gA = r.golesA;
+			const gB = r.golesB;
+			j.pronos.forEach((p, i) => {
+				if (p[0] == null || p[1] == null) return; // sin pronóstico
+				const a = acc.get(i);
+				if (!a) return;
+				let base = 0;
+				if (p[0] === gA && p[1] === gB) {
+					base = 2;
+					a.exactos++;
+				} else if (Math.sign(p[0] - p[1]) === Math.sign(gA - gB)) {
+					base = 1;
+					a.resultados++;
+				} else {
+					a.fallados++;
+				}
+				a.puntos += base + (base >= 1 && paisesCorrectosN(j, i) ? 1 : 0);
+			});
+		});
+		const filas = q2Participantes.map((nombre, id) => {
+			const a = acc.get(id)!;
+			return {
+				participanteId: id,
+				nombre,
+				puntos: a.puntos,
+				exactos: a.exactos,
+				resultados: a.resultados,
+				fallados: a.fallados,
+				rank: 0
+			};
+		});
+		filas.sort(
+			(x, y) =>
+				y.puntos - x.puntos ||
+				y.exactos - x.exactos ||
+				y.resultados - x.resultados ||
+				x.nombre.localeCompare(y.nombre, 'es')
+		);
+		filas.forEach((s, i) => {
+			s.rank = i > 0 && s.puntos === filas[i - 1].puntos ? filas[i - 1].rank : i + 1;
+		});
+		return filas;
+	});
+	const standingsN = $derived(q2StandingsN);
+	const top3N = $derived(
+		[...new Set(standingsN.map((s) => s.puntos))]
+			.filter((p) => p > 0)
+			.sort((a, b) => b - a)
+			.slice(0, 3)
+	);
+	const mitadPosN = $derived(Math.ceil(standingsN.length / 2));
+	const posIzqN = $derived(standingsN.slice(0, mitadPosN));
+	const posDerN = $derived(standingsN.slice(mitadPosN));
+	// Config del snippet para Lugares N (matriz): su propio top3 y tooltips.
+	const cfgN = $derived({
+		t3: top3N,
+		tipExacto: 'Marcador exacto: 3 pts con países correctos, 2 sin',
+		tipResultado: 'Resultado (sin marcador): 2 pts con países, 1 sin'
+	});
+
 	// Mismas interacciones que Participantes: VARIAS columnas resaltadas (1 clic), UNA fijada (doble
 	// clic), VARIAS filas marcadas (clic en la identidad del juego).
 	let highlighted = $state<Set<number>>(new Set());
@@ -245,7 +331,7 @@
 	}
 </script>
 
-{#snippet tablaPos(filas: typeof standings, lado: string)}
+{#snippet tablaPos(filas: typeof standings, lado: string, cfg: { t3: number[]; tipExacto: string; tipResultado: string })}
 	<div class="pos-wrap">
 		<table class="pos-table">
 			<caption class="sr-only">Posiciones de Q2 ({lado}), ordenadas por puntos.</caption>
@@ -254,15 +340,15 @@
 					<th scope="col" class="pc-pos">#</th>
 					<th scope="col" class="pc-name">Participante</th>
 					<th scope="col" class="pc-pts">Pts</th>
-					<th scope="col" class="pc-n" title="Marcadores exactos (3 pts c/u)">Exactos</th>
-					<th scope="col" class="pc-n" title="Resultados correctos (1 pt c/u)">Resultado</th>
+					<th scope="col" class="pc-n" title={cfg.tipExacto}>Exactos</th>
+					<th scope="col" class="pc-n" title={cfg.tipResultado}>Resultado</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each filas as s (s.participanteId)}
-					<tr class:pos-podio={esPodio(s.puntos)}>
+					<tr class:pos-podio={esPodioDe(s.puntos, cfg.t3)}>
 						<td class="pc-pos"
-							><span class="pc-slot medal" aria-hidden="true">{medalla(s.puntos)}</span><span
+							><span class="pc-slot medal" aria-hidden="true">{medallaDe(s.puntos, cfg.t3)}</span><span
 								class="pc-slot rank">{s.rank}</span
 							></td
 						>
@@ -430,12 +516,12 @@
 				{/if}
 				<!-- Pantallas anchas: dos columnas (1→8 / 9→16). -->
 				<div class="pos-cols-desktop">
-					{@render tablaPos(posIzq, 'columna izquierda')}
-					{@render tablaPos(posDer, 'columna derecha')}
+					{@render tablaPos(posIzq, 'columna izquierda', cfgL)}
+					{@render tablaPos(posDer, 'columna derecha', cfgL)}
 				</div>
 				<!-- Móvil / angosto: una sola tabla continua. -->
 				<div class="pos-cols-mobile">
-					{@render tablaPos(standings, 'tabla completa')}
+					{@render tablaPos(standings, 'tabla completa', cfgL)}
 				</div>
 			</div>
 		</div>
@@ -443,7 +529,7 @@
 		<div id="panel-lugaresN" role="tabpanel" aria-labelledby="subtab-lugaresN" tabindex="0">
 			<div class="pos">
 				<p class="pos-sub">
-					3 pts por marcador exacto · 1 pt por resultado correcto ·
+					Marcador exacto: 3 con países / 2 sin · Resultado: 2 con países / 1 sin ·
 					<strong>{jugados}</strong> de {q2Juegos.length} juegos con resultado
 				</p>
 				{#if jugados === 0}
@@ -452,11 +538,11 @@
 					</p>
 				{/if}
 				<div class="pos-cols-desktop">
-					{@render tablaPos(posIzq, 'columna izquierda')}
-					{@render tablaPos(posDer, 'columna derecha')}
+					{@render tablaPos(posIzqN, 'columna izquierda', cfgN)}
+					{@render tablaPos(posDerN, 'columna derecha', cfgN)}
 				</div>
 				<div class="pos-cols-mobile">
-					{@render tablaPos(standings, 'tabla completa')}
+					{@render tablaPos(standingsN, 'tabla completa', cfgN)}
 				</div>
 			</div>
 		</div>
