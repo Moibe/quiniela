@@ -13,8 +13,8 @@ import { db } from '$lib/server/db';
 import { partidos } from '$lib/server/db/schema';
 import { setMonitorScore, getAllMonitorScores } from '$lib/server/monitorScores';
 import { canonEquipo, clavePartido } from '$lib/server/equipos';
-import { q2Juegos } from '$lib/q2Data';
-import { Q2_ID_BASE, q2PorClave } from '$lib/server/q2Live';
+import { Q2_ID_BASE } from '$lib/server/q2Live';
+import { q2ClavesResueltas } from '$lib/server/enVivo';
 import { marcarLatido } from '$lib/server/monitorHeartbeat';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
@@ -69,6 +69,9 @@ export const POST: RequestHandler = async ({ request }) => {
 	const idsEnPush = new Set<number>(); // partidos presentes en ESTE push (siguen in-play)
 	let emparejados = 0;
 	const sinEmparejar: { nombreA: string; nombreB: string }[] = [];
+	// Claves de Q2 con equipos ya RESUELTOS (J1/J2 reales; J3/J4/J5 cuando sus juegos previos ya
+	// tienen resultado). Se ignora el placeholder: emparejamos por los equipos reales del partido.
+	const q2Claves = await q2ClavesResueltas(ahora);
 	for (const m of matches) {
 		const gA = Number(m.gA);
 		const gB = Number(m.gB);
@@ -78,13 +81,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		const porUrl = m.id != null ? porId.get(String(m.id)) : undefined;
 		const p = porUrl ?? porClave.get(clavePartido(nombreA, nombreB));
 		if (!p) {
-			// ¿Es un juego de la Quiniela 2? (fuera de `partidos`; marcador solo en el sandbox, id sintético).
-			const qi = q2PorClave.get(clavePartido(nombreA, nombreB));
-			if (qi != null) {
-				const jq = q2Juegos[qi];
-				const aEsLocal = canonEquipo(jq.equipoA) === canonEquipo(nombreA);
+			// ¿Es un juego de la Quiniela 2? Emparejado por sus EQUIPOS RESUELTOS (J3/J4/J5 se resuelven a
+			// equipos reales conforme se definen los previos; el placeholder se ignora). Solo al sandbox.
+			const hit = q2Claves.get(clavePartido(nombreA, nombreB));
+			if (hit) {
+				const aEsLocal = canonEquipo(hit.equipoA) === canonEquipo(nombreA);
 				setMonitorScore(
-					Q2_ID_BASE + qi,
+					Q2_ID_BASE + hit.index,
 					aEsLocal ? gA : gB,
 					aEsLocal ? gB : gA,
 					Boolean(m.minuto),

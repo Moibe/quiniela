@@ -21,6 +21,7 @@ import { latidoRunner } from '$lib/server/monitorHeartbeat';
 import { computeGrupos, type Grupo, type EquipoStanding } from '$lib/grupos';
 import { q2Juegos } from '$lib/q2Data';
 import { Q2_ID_BASE } from '$lib/server/q2Live';
+import { clavePartido } from '$lib/server/equipos';
 
 export type FuenteEnVivo = 'monitor' | 'manual';
 export type EstadoEnVivo = 'vivo' | 'desconectado' | 'terminado' | 'porEmpezar';
@@ -282,5 +283,36 @@ export async function q2Efectivo(ahora: number): Promise<Q2EnVivo[]> {
 			minuto: null
 		});
 	}
+	return out;
+}
+
+// Para el monitor: claves (par de equipos canónico) → { índice, equipos resueltos } de los juegos de
+// Q2 cuyos DOS equipos ya son REALES según los resultados. Permite emparejar J3/J4/J5 por sus equipos
+// reales una vez definidos los juegos previos (ignorando el placeholder "G J1"/"P J2"…).
+export async function q2ClavesResueltas(
+	ahora: number
+): Promise<Map<string, { index: number; equipoA: string; equipoB: string }>> {
+	const efectivo = await q2Efectivo(ahora);
+	const resPorEt = new Map(efectivo.map((r) => [r.etiqueta, r] as const));
+	const lado = (et: string): 'a' | 'b' | null => {
+		const r = resPorEt.get(et);
+		if (!r || r.golesA == null || r.golesB == null || r.golesA === r.golesB) return null;
+		return r.golesA > r.golesB ? 'a' : 'b';
+	};
+	const resolver = (label: string): string | null => {
+		const m = label.match(/^([GP])\s?J(\d)$/i);
+		if (!m) return label; // equipo real
+		const j = q2Juegos.find((x) => x.etiqueta === 'J' + m[2]);
+		const l = lado('J' + m[2]);
+		if (!j || !l) return null;
+		const obj = m[1].toUpperCase() === 'G' ? l : l === 'a' ? 'b' : 'a';
+		return resolver(obj === 'a' ? j.equipoA : j.equipoB);
+	};
+	const out = new Map<string, { index: number; equipoA: string; equipoB: string }>();
+	q2Juegos.forEach((j, index) => {
+		const a = resolver(j.equipoA);
+		const b = resolver(j.equipoB);
+		if (a && b) out.set(clavePartido(a, b), { index, equipoA: a, equipoB: b });
+	});
 	return out;
 }
