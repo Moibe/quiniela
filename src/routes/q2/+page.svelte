@@ -160,6 +160,17 @@
 		}
 		return out;
 	}
+	// Para el ENCABEZADO del juego en la cuadrícula: si el slot es placeholder y el juego del que
+	// depende YA tiene resultado, se muestra el equipo REAL (nombre + bandera) con el placeholder entre
+	// paréntesis (ej. "Argentina (G J1)"); si aún no, el placeholder tal cual. Usa el resultado real.
+	function slotEquipo(label: string): { nombre: string; bandera: string | null; nota: string | null } {
+		if (!rePlace.test(label)) return { nombre: label, bandera: label, nota: null };
+		const r = resolverEquipo(label);
+		// Normaliza el placeholder para el paréntesis (ej. "PJ3" → "P J3"), consistente con "G J1".
+		return r
+			? { nombre: r, bandera: r, nota: label.replace(/^([GP])\s*J/, '$1 J') }
+			: { nombre: label, bandera: null, nota: null };
+	}
 
 	// Mismas interacciones que Participantes: VARIAS columnas resaltadas (1 clic), UNA fijada (doble
 	// clic), VARIAS filas marcadas (clic en la identidad del juego).
@@ -364,6 +375,8 @@
 					</thead>
 					<tbody>
 						{#each q2Juegos as j, ri (ri)}
+							{@const sa = slotEquipo(j.equipoA)}
+							{@const sb = slotEquipo(j.equipoB)}
 							<tr class:fila-marcada={filaMarcada.has(ri)} class:envivo={enVivoJuego(j.etiqueta)}>
 								<th
 									scope="row"
@@ -373,14 +386,16 @@
 								>
 								<td class="col-team col-a fila-handle" onclick={() => toggleFila(ri)}>
 									<div class="ti ti-a">
-										<span class="tname notranslate" translate="no" title={j.equipoA}>{j.equipoA}</span>
-										<Bandera equipo={j.equipoA} />
+										{#if sa.nota}<span class="ph-nota">({sa.nota})</span>{/if}
+										<span class="tname notranslate" translate="no" title={sa.nombre}>{sa.nombre}</span>
+										{#if sa.bandera}<Bandera equipo={sa.bandera} />{/if}
 									</div>
 								</td>
 								<td class="col-team col-b fila-handle" onclick={() => toggleFila(ri)}>
 									<div class="ti ti-b">
-										<Bandera equipo={j.equipoB} />
-										<span class="tname notranslate" translate="no" title={j.equipoB}>{j.equipoB}</span>
+										{#if sb.bandera}<Bandera equipo={sb.bandera} />{/if}
+										<span class="tname notranslate" translate="no" title={sb.nombre}>{sb.nombre}</span>
+										{#if sb.nota}<span class="ph-nota">({sb.nota})</span>{/if}
 									</div>
 								</td>
 								{#each j.pronos as p, i (i)}
@@ -563,7 +578,7 @@
 		color: rgba(255, 255, 255, 0.95);
 		/* Anchos border-box (incluyen padding) para que el offset de las columnas pegadas sea exacto. */
 		--w-num: 3rem;
-		--w-team: 7.5rem;
+		--w-team: 9rem;
 	}
 
 	.top {
@@ -716,6 +731,14 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		min-width: 0;
+	}
+
+	/* Placeholder original entre paréntesis junto al equipo resuelto (ej. "(G J1)"). */
+	.ph-nota {
+		flex-shrink: 0;
+		font-size: 0.6rem;
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.45);
 	}
 
 	/* Esquinas (header + columna pegada): por encima de ambos. */
@@ -893,7 +916,7 @@
 
 	@media (max-width: 600px) {
 		.q2 {
-			--w-team: 6.5rem;
+			--w-team: 7.5rem;
 		}
 	}
 
