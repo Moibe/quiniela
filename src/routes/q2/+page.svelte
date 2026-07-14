@@ -145,14 +145,16 @@
 		const ladoA = m[1].toUpperCase() === 'G' ? ganaA : !ganaA;
 		return equipoDeclarado(ladoA ? juego.equipoA : juego.equipoB, i);
 	}
-	// Banderas del participante i en la fila de un juego: una por cada slot PLACEHOLDER (J3=1; J4/J5=2),
-	// con el equipo que resulta de SUS pronósticos. Los slots de equipo real no llevan bandera.
+	// Banderas del participante i en la fila de un juego: SOLO en juegos con algún slot placeholder
+	// (J3/J4/J5) → 2 banderas (una por slot). J1/J2 no llevan. Cada slot: equipo real → su bandera fija
+	// (ej. Inglaterra en J3, izquierda); placeholder → el equipo que ÉL declaró. Empate → ese slot sin bandera.
 	function banderasParticipante(etiqueta: string, i: number): string[] {
 		const juego = juegoPorEtiqueta.get(etiqueta);
 		if (!juego) return [];
+		const slots = [juego.equipoA, juego.equipoB];
+		if (!slots.some((s) => rePlace.test(s))) return []; // J1/J2 (sin placeholders) → sin banderas
 		const out: string[] = [];
-		for (const label of [juego.equipoA, juego.equipoB]) {
-			if (!rePlace.test(label)) continue;
+		for (const label of slots) {
 			const t = equipoDeclarado(label, i);
 			if (t) out.push(t);
 		}
