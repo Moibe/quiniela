@@ -182,8 +182,8 @@ export const q2Juegos: Q2Juego[] = [
     2
    ],
    [
-    0,
-    1
+    1,
+    0
    ],
    [
     1,
