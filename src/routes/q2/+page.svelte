@@ -327,6 +327,77 @@
 		tipResultado: 'Resultado (sin marcador): 2 pts con países, 1 sin'
 	});
 
+	// --- Lugares 0: si el país NO es correcto, 0 puntos (sin importar el marcador). Si el país SÍ
+	// es correcto, regla tradicional: 3 por marcador exacto, 1 por resultado. Mismo "países correctos"
+	// (todo o nada) que Lugares N/A → reutiliza paisesCorrectosN.
+	const q2Standings0 = $derived.by(() => {
+		const acc = new Map<number, { puntos: number; exactos: number; resultados: number; fallados: number }>();
+		for (let id = 0; id < q2Participantes.length; id++) acc.set(id, { puntos: 0, exactos: 0, resultados: 0, fallados: 0 });
+		q2Juegos.forEach((j) => {
+			const r = resPorJuego.get(j.etiqueta);
+			if (!r || r.golesA == null || r.golesB == null) return; // juego sin resultado
+			const gA = r.golesA;
+			const gB = r.golesB;
+			j.pronos.forEach((p, i) => {
+				if (p[0] == null || p[1] == null) return; // sin pronóstico
+				const a = acc.get(i);
+				if (!a) return;
+				if (!paisesCorrectosN(j, i)) {
+					a.fallados++; // sin el país correcto: 0 puntos, sin importar el marcador
+					return;
+				}
+				if (p[0] === gA && p[1] === gB) {
+					a.puntos += 3;
+					a.exactos++;
+				} else if (Math.sign(p[0] - p[1]) === Math.sign(gA - gB)) {
+					a.puntos += 1;
+					a.resultados++;
+				} else {
+					a.fallados++;
+				}
+			});
+		});
+		const filas = q2Participantes.map((nombre, id) => {
+			const a = acc.get(id)!;
+			return {
+				participanteId: id,
+				nombre,
+				puntos: a.puntos,
+				exactos: a.exactos,
+				resultados: a.resultados,
+				fallados: a.fallados,
+				rank: 0
+			};
+		});
+		filas.sort(
+			(x, y) =>
+				y.puntos - x.puntos ||
+				y.exactos - x.exactos ||
+				y.resultados - x.resultados ||
+				x.nombre.localeCompare(y.nombre, 'es')
+		);
+		filas.forEach((s, i) => {
+			s.rank = i > 0 && s.puntos === filas[i - 1].puntos ? filas[i - 1].rank : i + 1;
+		});
+		return filas;
+	});
+	const standings0 = $derived(q2Standings0);
+	const top30 = $derived(
+		[...new Set(standings0.map((s) => s.puntos))]
+			.filter((p) => p > 0)
+			.sort((a, b) => b - a)
+			.slice(0, 3)
+	);
+	const mitadPos0 = $derived(Math.ceil(standings0.length / 2));
+	const posIzq0 = $derived(standings0.slice(0, mitadPos0));
+	const posDer0 = $derived(standings0.slice(mitadPos0));
+	// Config del snippet para Lugares 0: su propio top3 y tooltips.
+	const cfg0 = $derived({
+		t3: top30,
+		tipExacto: 'Marcador exacto: 3 pts (requiere países correctos), si no 0',
+		tipResultado: 'Resultado (sin marcador): 1 pt (requiere países correctos), si no 0'
+	});
+
 	// Mismas interacciones que Participantes: VARIAS columnas resaltadas (1 clic), UNA fijada (doble
 	// clic), VARIAS filas marcadas (clic en la identidad del juego).
 	let highlighted = $state<Set<number>>(new Set());
@@ -646,7 +717,7 @@
 		<div id="panel-lugares0" role="tabpanel" aria-labelledby="subtab-lugares0" tabindex="0">
 			<div class="pos">
 				<p class="pos-sub">
-					Marcador exacto: 4 con países / 3 sin · Resultado: 2 con países / 1 sin ·
+					Sin los países correctos: 0 pts · Con los países: 3 por marcador exacto, 1 por resultado ·
 					<strong>{jugados}</strong> de {q2Juegos.length} juegos con resultado
 				</p>
 				{#if jugados === 0}
@@ -655,11 +726,11 @@
 					</p>
 				{/if}
 				<div class="pos-cols-desktop">
-					{@render tablaPos(posIzqA, 'columna izquierda', cfgA)}
-					{@render tablaPos(posDerA, 'columna derecha', cfgA)}
+					{@render tablaPos(posIzq0, 'columna izquierda', cfg0)}
+					{@render tablaPos(posDer0, 'columna derecha', cfg0)}
 				</div>
 				<div class="pos-cols-mobile">
-					{@render tablaPos(standingsA, 'tabla completa', cfgA)}
+					{@render tablaPos(standings0, 'tabla completa', cfg0)}
 				</div>
 			</div>
 		</div>
