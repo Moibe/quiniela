@@ -375,15 +375,18 @@
 		{ id: 'participantes', label: 'Participantes' },
 		{ id: 'posiciones', label: 'Lugares' },
 		{ id: 'lugaresN', label: 'Lugares N' },
-		{ id: 'lugaresA', label: 'Lugares A' }
+		{ id: 'lugaresA', label: 'Lugares A' },
+		{ id: 'lugares0', label: 'Lugares 0' }
 	] as const;
 	type SubtabId = (typeof SUBTABS)[number]['id'];
 	let subtab = $state<SubtabId>('participantes');
-	// Lugares, Lugares N y Lugares A son SOLO admin por ahora (no visibles al público). El resto de subtabs son
+	// Lugares, Lugares N, Lugares A y Lugares 0 son SOLO admin por ahora (no visibles al público). El resto de subtabs son
 	// públicos; en "Partidos" todos ven los marcadores pero solo el admin los edita.
 	const subtabsVisibles = $derived(
 		SUBTABS.filter(
-			(t) => (t.id !== 'posiciones' && t.id !== 'lugaresN' && t.id !== 'lugaresA') || data.isAdmin
+			(t) =>
+				(t.id !== 'posiciones' && t.id !== 'lugaresN' && t.id !== 'lugaresA' && t.id !== 'lugares0') ||
+				data.isAdmin
 		)
 	);
 
@@ -620,6 +623,27 @@
 		</div>
 	{:else if subtab === 'lugaresA'}
 		<div id="panel-lugaresA" role="tabpanel" aria-labelledby="subtab-lugaresA" tabindex="0">
+			<div class="pos">
+				<p class="pos-sub">
+					Marcador exacto: 4 con países / 3 sin · Resultado: 2 con países / 1 sin ·
+					<strong>{jugados}</strong> de {q2Juegos.length} juegos con resultado
+				</p>
+				{#if jugados === 0}
+					<p class="pos-empty">
+						Aún no hay resultados de Q2. La tabla se irá llenando conforme se capturen los marcadores.
+					</p>
+				{/if}
+				<div class="pos-cols-desktop">
+					{@render tablaPos(posIzqA, 'columna izquierda', cfgA)}
+					{@render tablaPos(posDerA, 'columna derecha', cfgA)}
+				</div>
+				<div class="pos-cols-mobile">
+					{@render tablaPos(standingsA, 'tabla completa', cfgA)}
+				</div>
+			</div>
+		</div>
+	{:else if subtab === 'lugares0'}
+		<div id="panel-lugares0" role="tabpanel" aria-labelledby="subtab-lugares0" tabindex="0">
 			<div class="pos">
 				<p class="pos-sub">
 					Marcador exacto: 4 con países / 3 sin · Resultado: 2 con países / 1 sin ·
