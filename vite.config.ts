@@ -3,8 +3,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
-	// Puerto fijo para que la app siempre cargue en la misma URL (http://localhost:2026 — el año del
-	// Mundial). strictPort: si está ocupado, falla en vez de saltar a otro puerto silenciosamente.
-	server: { port: 2026, strictPort: true },
-	preview: { port: 2026, strictPort: true }
+	// Mismo puerto que en el droplet (pm2 en 127.0.0.1:3000 detrás de nginx, noxoroxo.com), para
+	// que local y prod coincidan. strictPort: si está ocupado, falla en vez de saltar a otro puerto.
+	server: { port: 3000, strictPort: true },
+	preview: { port: 3000, strictPort: true }
 });
